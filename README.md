@@ -16,7 +16,7 @@ punto de partida.
 
 ## Uso
 
-1. Completar los nombres de los integrantes en la portada (o pasar a `author:` en el
+1. Verificar los nombres de los integrantes en la portada (o pasar a `author:` en el
    YAML si el examen es individual).
 2. Escribir cada respuesta debajo de su enunciado.
 3. Completar el bloque **Fuentes** de cada ejercicio: la consigna exige detallar la

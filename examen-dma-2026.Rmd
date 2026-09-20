@@ -48,10 +48,8 @@ header-includes:
 
 \begin{center}
 {\Large \textbf{Integrantes del grupo}}\\[2em]
-Apellido, Nombre\\[0.5em]
-Apellido, Nombre\\[0.5em]
-Apellido, Nombre\\[0.5em]
-Apellido, Nombre
+Andres Rodriguez\\[0.5em]
+Marcos Maceo
 \end{center}
 
 \newpage
