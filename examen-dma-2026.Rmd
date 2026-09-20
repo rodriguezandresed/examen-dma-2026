@@ -1,0 +1,354 @@
+---
+title: "Examen Final"
+subtitle: "Data Mining Avanzado · Maestría en Explotación de Datos y Gestión del Conocimiento · Universidad Austral"
+date: "`r paste0(format(Sys.Date(),'%d'), ' de ', c('enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre')[as.integer(format(Sys.Date(),'%m'))], ' de ', format(Sys.Date(),'%Y'))`"
+lang: es
+geometry: "margin=2.5cm"
+fontsize: 12pt
+output:
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    toc_depth: 3
+    number_sections: false
+    fig_caption: true
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \usepackage{graphicx}
+  - \usepackage{grffile}
+  - \usepackage{titling}
+  - \setlength{\droptitle}{1cm}
+  - \pretitle{\begin{center}\includegraphics[width=5cm]{Austral logo.png}\\[1.5em]\LARGE\bfseries}
+  - \posttitle{\par\end{center}\vspace{0.5em}}
+  - \usepackage{fancyhdr}
+  - \setlength{\headheight}{14.5pt}
+  - \addto\captionsspanish{\renewcommand{\tablename}{Tabla}}
+  - \renewcommand\contentsname{\'Indice}
+  - \pagestyle{fancy}
+  - \fancyhf{}
+  - \fancyhead[L]{\small DMA · Examen final}
+  - \fancyhead[R]{}
+  - \fancyfoot[C]{\thepage}
+  - \renewcommand{\headrulewidth}{0.4pt}
+  - \clubpenalty=10000
+  - \widowpenalty=10000
+  - \displaywidowpenalty=10000
+  - \usepackage{etoolbox}
+  - \pretocmd{\tableofcontents}{\clearpage}{}{}
+  - \apptocmd{\tableofcontents}{\clearpage}{}{}
+  - \apptocmd{\maketitle}{\thispagestyle{empty}}{}{}
+---
+
+<!-- PORTADA: la consigna exige que figuren los nombres de todos los integrantes.
+     Completar la lista de abajo. Si el examen es individual, borrar este bloque
+     y agregar  author: "Apellido, Nombre"  en el YAML. -->
+
+\thispagestyle{empty}
+
+\begin{center}
+{\Large \textbf{Integrantes del grupo}}\\[2em]
+Apellido, Nombre\\[0.5em]
+Apellido, Nombre\\[0.5em]
+Apellido, Nombre\\[0.5em]
+Apellido, Nombre
+\end{center}
+
+\newpage
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+
+knitr::opts_chunk$set(
+  echo      = FALSE,
+  warning   = FALSE,
+  message   = FALSE,
+  fig.pos   = "H",
+  out.width = "80%",
+  fig.align = "center"
+)
+```
+
+<!-- ============================================================================
+     CONSIGNA GENERAL (transcripta del PDF del examen)
+
+     - Grupos de hasta 4 alumnos. Es valido el examen individual.
+     - Entrega: antes del 5 de octubre de 2026, en un archivo PDF.
+     - Se debe detallar la fuente de cada respuesta.
+     - No mas de 4 hojas por pregunta.
+     - Portada con los nombres de los miembros del grupo.
+     - El profesor puede pedir a cualquier integrante una explicacion adicional.
+     - Rigor en las expresiones y en las descripciones.
+     - La nota se normaliza en funcion del mejor examen.
+
+     CRITERIOS DE DETECCION DE USO INADECUADO DE LLM
+     - Inconsistencias entre secciones del trabajo.
+     - Terminologia muy avanzada sin comprension demostrable.
+     - Codigo perfecto sin comentarios personales.
+     - Referencias irrelevantes o inexistentes.
+     - Estilo de escritura inconsistente.
+
+     PENALIZACIONES POR ESTILO ARTIFICIAL
+     - -20 % por respuesta que use jerga tecnica sin explicar.
+     - -30 % por respuesta que no muestre proceso de razonamiento personal.
+     - -50 % por respuesta que parezca generada automaticamente.
+     ============================================================================ -->
+
+# Ejercicio 1 · Redes neuronales
+
+## Punto I
+
+*Explique el papel de las funciones de activación en redes neuronales profundas.
+Discuta por qué son necesarias, cómo afectan la capacidad de representación y cuáles
+son sus ventajas y desventajas más importantes.*
+
+<!-- respuesta -->
+
+## Punto II
+
+*Describa el proceso de entrenamiento de una red neuronal (forward pass, función de
+pérdida, backpropagation, optimización). Analice conceptualmente qué factores
+determinan la calidad del aprendizaje. Explique las diferencias esenciales entre redes
+"Deep" y "Shallow".*
+
+<!-- respuesta -->
+
+## Punto III
+
+*Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
+De ejemplos de uso.*
+
+<!-- respuesta -->
+
+## Punto IV
+
+*De un tipo de red neuronal que sirve para obtener clustering. La que elija, explique
+brevemente cómo funciona.*
+
+<!-- respuesta -->
+
+## Punto V
+
+*¿Qué es una convolución y como aplica en las redes neuronales? De un diagrama de las
+distintas capas de una red convolucional y explique.*
+
+<!-- respuesta + diagrama -->
+
+## Punto VI
+
+*¿Qué es una red neuronal recurrente clásica? ¿Las redes LSTM en que se diferencian de
+las redes recurrentes clásicas? De un diagrama de su topología y explíquela brevemente.
+Cantidad de parámetros que utiliza en base a su configuración. Genere un ejemplo
+completo en Python de aplicación de una red LSTM para predecir una serie de tiempo
+arbitraria. Pruebe diferentes configuraciones de capas y cantidad de neuronas.*
+
+<!-- respuesta + diagrama + codigo Python -->
+
+## Punto VII
+
+*Describa el algoritmo encoder-decoder. Usos habituales.*
+
+<!-- respuesta -->
+
+## Punto VIII
+
+*Explique de qué manera la arquitectura de una red neuronal artificial influye en su
+capacidad de representación y generalización.*
+
+*Describa qué se entiende por capacidad de representación y por capacidad de
+generalización en el contexto del aprendizaje automático.*
+
+- *Analice cómo distintos elementos arquitectónicos (cantidad de capas, número de
+  neuronas, funciones de activación, regularización, tipo de conexión, etc.) modifican
+  estas capacidades.*
+- *Discuta el rol del sesgo y la varianza en redes neuronales y cómo la arquitectura
+  puede afectar este equilibrio.*
+- *Incluya ejemplos conceptuales (no numéricos) que ilustren cuándo una red puede estar
+  subajustada (underfitting) o sobreajustada (overfitting) por decisiones
+  arquitectónicas.*
+- *Fundamente cómo un cambio arquitectónico puede mejorar o empeorar el desempeño,
+  incluso sin modificar los datos de entrenamiento.*
+- *Reflexione sobre por qué modelos con más parámetros no siempre son mejores, y cómo
+  esto se conecta con el principio de mínima complejidad y el aprendizaje profundo
+  moderno.*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 1.**
+
+<!-- la consigna exige detallar la fuente de cada respuesta -->
+
+\newpage
+
+# Ejercicio 2 · Support Vector Machines
+
+*Mencione y describa los tipos de SVM. Que parámetros externos necesita el algoritmo en
+su versión no lineal separable. ¿Qué característica especial tiene SVM en relación al
+resto de los algoritmos de Machine Learning?*
+
+*¿Cómo se adapta SVM clasificación, para poder usarlo como regresión?*
+
+<!-- El PDF original escribe "VSM"; es un error de tipeo por SVM. -->
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 2.**
+
+\newpage
+
+# Ejercicio 3 · Statistical Learning Theory
+
+*Explique brevemente de que trata el campo de Statistical Learning Theory. ¿Qué
+indicador muestra la complejidad de un data set usando el algoritmo SVM? ¿Qué es la
+capacidad de un algoritmo y qué manera heurística propone Vapnik-Chervonenkis para
+estimarla, dado un data set de 1000 observaciones con k variables (deje de lado el caso
+particular de SVM en el cual existe una forma matemática de estimarla)?*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 3.**
+
+\newpage
+
+# Ejercicio 4 · Algoritmos genéticos
+
+*Escriba el pseudocódigo de algoritmos genéticos. Explique brevemente las principales
+diferencias entre AG binarios y reales. De 3 casos de aplicación de AG y sus respectivas
+fuentes (paper, autor, fecha), con breve explicación. Cómo lo implementaría usando
+programas disponibles open-source (cita y breve explicación).*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 4.**
+
+\newpage
+
+# Ejercicio 5 · Componentes principales y kernels
+
+*Explique brevemente la utilización de Componente principal en Machine Learning.
+Investigue la implicancia de utilizar Kernel en Componentes principales (citar fuentes y
+explique con sus palabras).*
+
+*¿Qué significa el "Truco del Kernel"? De ejemplos de los kernel más utilizados.*
+
+*¿Investigue si existen métodos sencillos que se pueden utilizar para seleccionar el
+Kernel apropiado en un determinado data set? Mencione fuentes y conclusiones
+brevemente.*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 5.**
+
+\newpage
+
+# Ejercicio 6 · Análisis de supervivencia
+
+*Análisis de supervivencia. Explique porque este enfoque es superior a los métodos de
+regresión para estimar días a un evento. Qué tipos existen y qué implementaciones en
+Python/R conoce.*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 6.**
+
+\newpage
+
+# Ejercicio 7 · Clustering y t-SNE
+
+*Mencione las técnicas de pre-proceso que existen en clustering para visualizar la
+potencial existencia de grupos. Explique brevemente 1 de ellas.*
+
+*¿Habiendo aplicado alguna técnica de clustering y obteniendo los grupos finales, de qué
+manera puede estimar qué diferencias existen en los perfiles de los grupos obtenidos?
+Explicar los resultados.*
+
+*Ayuda: utilice el último capítulo de la guía de clustering (Assessment Clustering).*
+
+*¿En qué consiste el algoritmo t-SNE? ¿Para qué se utiliza? De un ejemplo de
+implementación en Python. ¿Qué limitantes tiene? ¿Qué ventajas tiene?*
+
+<!-- respuesta + codigo Python -->
+
+**Fuentes del Ejercicio 7.**
+
+\newpage
+
+# Ejercicio 8 · AdaBoost y Gradient Boosting
+
+*Qué diferencias existen entre el algoritmo Adaboost y Gradiente Boosting. Explique
+brevemente.*
+
+*De una explicación intuitiva de cómo trabaja el Gradiente Boosting.*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 8.**
+
+\newpage
+
+# Ejercicio 9 · Random Forest
+
+*Random Forest. Describir el algoritmo y su diferencia con el resto de los algoritmos de
+ensamblaje. Describa los principales usos del algoritmo.*
+
+<!-- respuesta -->
+
+**Fuentes del Ejercicio 9.**
+
+\newpage
+
+# Ejercicio 10 · Pipeline en Python
+
+*Puede elegir cualquiera de las 2 opciones (si desea puede hacer las 2. A los fines de
+la evaluación uno es suficiente).*
+
+## Opción 1
+
+*Seleccione dos datasets públicos (uno de clasificación y uno de regresión) y construya
+un Pipeline completo en Python que compare el desempeño de cuatro modelos: Support
+Vector Machine, Random Forest, Gradient Boosting y Multi-Layer Perceptron.*
+
+*El pipeline debe incluir: (1) preprocesamiento adecuado de los datos, (2) definición
+explícita del espacio de búsqueda de hiperparámetros para cada modelo, (3) una
+estrategia de optimización (GridSearch o RandomSearch), y (4) validación mediante k-fold
+cross-validation.*
+
+*Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
+tarea.*
+
+## Opción 2
+
+*Seleccione dos datasets reales obtenidos de Internet: uno para un problema de
+clasificación y otro para un problema de regresión. Diseñe y programe en Python (usando
+TensorFlow o PyTorch) un pipeline completo de Deep Learning que compare el desempeño de
+al menos dos arquitecturas diferentes para cada tarea, incluyendo obligatoriamente un
+MLP y al menos una arquitectura moderna (CNN, RNN/LSTM o Transformers, según
+corresponda al tipo de dato).*
+
+*El pipeline debe incluir: (1) preprocesamiento y normalización adecuados, (2)
+definición explícita de cada arquitectura (capas, activaciones, regularización), (3)
+búsqueda de hiperparámetros esenciales (learning rate, batch size, número de
+capas/neuronas o bloques) mediante una estrategia sistemática (Grid, Random o Bayesian
+Search), (4) validación mediante k-fold cross-validation o validación hold-out robusta y
+(5) análisis final comparando el rendimiento del MLP frente a las arquitecturas
+modernas, discutiendo por qué el MLP presenta limitaciones estructurales frente a
+CNN/LSTM/Transformers según el tipo de dato.*
+
+*Entregue el código completo y una interpretación breve de los resultados.*
+
+<!-- respuesta: borrar la opcion no elegida -->
+
+**Fuentes del Ejercicio 10.**
+
+\newpage
+
+# Apéndice · Código
+
+<!-- codigo completo de los ejercicios 1.VI, 7 y 10 -->
+
+\newpage
+
+# Referencias
+
+<!-- todas las fuentes citadas, APA 7ma, orden alfabetico -->

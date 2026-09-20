@@ -1,0 +1,15 @@
+# salidas de knit
+*.pdf
+*.tex
+*.log
+*.aux
+*.toc
+*.out
+*_files/
+*_cache/
+
+# RStudio
+.Rproj.user/
+.Rhistory
+.RData
+*.Rproj
