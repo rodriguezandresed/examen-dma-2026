@@ -95,16 +95,63 @@ Ejercicio 5 son los dos casos), decirlo explícitamente y traer bibliografía ex
 - Si algo no se pudo correr (por ejemplo, falta TensorFlow), se dice que **queda
   pendiente**; nunca se afirma que se corrió.
 
-## Citas y referencias
+## Citas y referencias (APA 7)
 
 - Toda cita externa tiene que ser real y verificable. Antes de entregar, se chequea
   una por una: "referencias irrelevantes o inexistentes" es criterio de detección.
-- APA 7. Dos autores: `(García & López, 2020)` en paréntesis, `García y López (2020)`
-  en narrativa. Tres o más: `et al.` desde la primera cita.
 - No se citan paquetes de R o Python salvo que la consigna lo pida (el Ejercicio 4 pide
   citar el software open source, ahí sí).
 - Las fuentes de clase se citan por archivo y clase (`clase2/SVM Universidad
   Austral.pdf`), y el material de cátedra tiene una entrada única en Referencias.
+
+### Citas en el texto
+
+- **Parentética:** `(Vapnik, 1995)`. **Narrativa:** `Vapnik (1995) sostiene que...`.
+- **Dos autores:** `&` en la parentética, `(Freund & Schapire, 1997)`; `y` en la
+  narrativa, `Freund y Schapire (1997)`.
+- **Tres o más:** solo el primero y `et al.` desde la primera cita, `(Schölkopf et al.,
+  1998)`. Sin cursiva, punto solo en `al.`.
+- **Sin fecha:** `(Autor, s.f.)`. **Institucional:** `(SAS Institute, 1983)`.
+- **Paráfrasis:** solo autor y año, sin página. **Cita textual:** entre comillas y con
+  página obligatoria, `(Burges, 1998, p. 124)`. Si la obra no tiene páginas, capítulo o
+  párrafo. **Nunca el símbolo `§`**, que en APA es solo para material legal.
+- Cita textual de 40 palabras o más: bloque aparte con sangría, sin comillas, con la
+  página al final.
+- **Sin citas redundantes consecutivas:** si una oración termina con `(Breiman, 2001)`,
+  la siguiente no empieza con `Breiman (2001)`. Se unifica en una sola oración.
+- Nunca se pega texto en inglés: se parafrasea en español y se cita.
+
+### Lista de referencias
+
+Orden alfabético por apellido del primer autor, sangría francesa. Qué va en cursiva
+depende del tipo de fuente:
+
+| Tipo | Cursiva | Formato |
+|---|---|---|
+| Libro | título | `Vapnik, V. N. (1995). *The nature of statistical learning theory*. Springer.` |
+| Artículo | revista **y** volumen | `Breiman, L. (2001). Random forests. *Machine Learning, 45*(1), 5-32.` |
+| Capítulo | título del libro | `Apellido, I. (Año). Título del capítulo. En I. Editor (Ed.), *Título del libro* (pp. 1-20). Editorial.` |
+| Actas | nombre del congreso | `Davis, L. (1985). Job shop scheduling with genetic algorithms. *Proceedings of the First International Conference on Genetic Algorithms*, 136-140.` |
+| Dataset | título, con `[Conjunto de datos]` | `Wolberg, W. H., Street, W. N., & Mangasarian, O. L. (1995). *Breast Cancer Wisconsin (Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.` |
+| Software | título, con `[Software]` o su paper | `Fortin, F.-A., et al. (2012). DEAP: Evolutionary algorithms made easy. *Journal of Machine Learning Research, 13*, 2171-2175.` |
+
+- En artículos el rango de páginas va solo; `pp.` es únicamente para capítulos y actas.
+- Hasta 20 autores se listan todos. Con 21 o más, los primeros 19, puntos suspensivos
+  y el último.
+- DOI o URL al final cuando existe.
+
+### Tablas y figuras
+
+- Siempre "Tabla" y "Figura", nunca "Cuadro", "Gráfico" ni "Imagen". El YAML ya
+  fuerza "Tabla" con `\addto\captionsspanish`.
+- Numeración correlativa por orden de aparición, título descriptivo, y `*Nota.*`
+  debajo (la palabra en cursiva, el texto no). "Elaboración propia" cuando la hizo el
+  autor; si usa datos externos, "Elaboración propia con datos de (Fuente, año)".
+- En LaTeX el caption de `kable` sale como "Tabla 1: Título" en una línea: es la
+  convención aceptada en los TP.
+- Los símbolos estadísticos latinos van en cursiva (*p*, *N*, *R²*); las letras griegas
+  no. Formato de un estadístico: `χ²(4, N = 1838) = 22,4; p < 0,001`. Para *p* muy
+  chicos, `p < 0,001`, nunca notación científica.
 
 ## R Markdown y compilación
 
