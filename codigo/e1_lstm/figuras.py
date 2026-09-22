@@ -50,33 +50,35 @@ def _arrow(ax, x1, y1, x2, y2):
 
 
 def figura_cnn() -> None:
-    fig, ax = plt.subplots(figsize=(10.2, 3.4))
-    ax.set_xlim(0, 20)
-    ax.set_ylim(0, 4.2)
+    # Lienzo chato y tipografía grande: en el PDF entra al ancho del texto
+    # y los rótulos tienen que leerse a unos 9 pt, no como una tira.
+    fig, ax = plt.subplots(figsize=(7.4, 1.58))
+    ax.set_xlim(0, 17.6)
+    ax.set_ylim(0, 2.05)
     ax.axis("off")
 
     boxes = [
-        (0.2, 1.35, 2.2, 1.5, "Imagen\n$n\\times n\\times 3$", "#e8e8e8"),
-        (2.9, 1.35, 2.4, 1.5, "CONV + ReLU\nfiltros\nlocales", "#d9e2ec"),
-        (5.8, 1.35, 2.2, 1.5, "POOL\nmax pooling", "#f0e6d2"),
-        (8.5, 1.35, 2.4, 1.5, "CONV + ReLU\nrasgos más\nabstractos", "#d9e2ec"),
-        (11.4, 1.35, 2.2, 1.5, "POOL", "#f0e6d2"),
-        (14.1, 1.35, 2.0, 1.5, "FLATTEN\nvector", "#e8e8e8"),
-        (16.5, 1.35, 1.6, 1.5, "FC\ndensa", "#dce8d4"),
-        (18.4, 1.35, 1.4, 1.5, "Softmax\nclases", "#dce8d4"),
+        (0.10, 0.46, 1.9, 1.22, "Imagen\nn × n × 3", "#e8e8e8"),
+        (2.22, 0.46, 2.15, 1.22, "CONV\n+ ReLU", "#d9e2ec"),
+        (4.59, 0.46, 1.7, 1.22, "POOL\nmáximo", "#f0e6d2"),
+        (6.51, 0.46, 2.25, 1.22, "CONV 2\n+ ReLU", "#d9e2ec"),
+        (8.98, 0.46, 1.7, 1.22, "POOL\nmáximo", "#f0e6d2"),
+        (10.90, 0.46, 1.85, 1.22, "Aplanado\nvector", "#e8e8e8"),
+        (12.97, 0.46, 1.85, 1.22, "Capa\ndensa", "#dce8d4"),
+        (15.04, 0.46, 2.15, 1.22, "Softmax\nclases", "#dce8d4"),
     ]
     for x, y, w, h, t, fc in boxes:
-        _box(ax, x, y, w, h, t, fc=fc, size=7.2)
+        _box(ax, x, y, w, h, t, fc=fc, size=9.0)
 
-    xs = [0.2, 2.9, 5.8, 8.5, 11.4, 14.1, 16.5, 18.4]
-    ws = [2.2, 2.4, 2.2, 2.4, 2.2, 2.0, 1.6, 1.4]
+    xs = [b[0] for b in boxes]
+    ws = [b[2] for b in boxes]
     for i in range(len(xs) - 1):
-        _arrow(ax, xs[i] + ws[i] + 0.02, 2.1, xs[i + 1] - 0.02, 2.1)
+        _arrow(ax, xs[i] + ws[i] + 0.02, 1.07, xs[i + 1] - 0.02, 1.07)
 
     ax.text(
-        10,
-        0.35,
-        "Bloques CONV-POOL repetibles; peso compartido en cada filtro.",
+        8.8,
+        0.08,
+        "El bloque CONV-POOL se puede repetir. Cada filtro comparte sus pesos.",
         ha="center",
         fontsize=8,
         color="#333333",
@@ -87,53 +89,51 @@ def figura_cnn() -> None:
 
 
 def figura_lstm() -> None:
-    fig, ax = plt.subplots(figsize=(8.6, 4.6))
-    ax.set_xlim(0, 12)
-    ax.set_ylim(0, 7)
+    # Las cuatro puertas van en una fila. Cada flecha baja a su caja y no
+    # atraviesa otra: olvido, entrada y candidata entran a c_t; la salida, a h_t.
+    fig, ax = plt.subplots(figsize=(7.05, 2.32))
+    ax.set_xlim(0, 13.8)
+    ax.set_ylim(0, 4.45)
     ax.axis("off")
 
-    # Celda grande
-    _box(ax, 1.6, 0.7, 8.6, 5.5, "", fc="#fafafa", ec="#444444")
-    ax.text(5.9, 5.9, "Celda LSTM (paso $t$)", ha="center", fontsize=10, fontweight="bold")
+    ax.text(6.9, 4.18, "Celda LSTM, paso $t$", ha="center", fontsize=11, fontweight="bold")
 
-    # Entradas
-    ax.text(0.2, 4.7, r"$x_t$", fontsize=11)
-    ax.text(0.2, 3.3, r"$h_{t-1}$", fontsize=11)
-    ax.text(0.2, 1.5, r"$c_{t-1}$", fontsize=11)
-    _arrow(ax, 0.9, 4.75, 1.58, 4.75)
-    _arrow(ax, 0.9, 3.4, 1.58, 3.4)
-    _arrow(ax, 0.9, 1.55, 1.58, 1.55)
+    _box(ax, 1.85, 2.58, 2.45, 1.12, "Olvido $f_t$\nsigmoidal", fc="#f7d6d6", size=9)
+    _box(ax, 4.55, 2.58, 2.45, 1.12, "Entrada $i_t$\nsigmoidal", fc="#d6e8f7", size=9)
+    _box(ax, 7.25, 2.58, 2.55, 1.12, "Candidata $\\tilde{c}_t$\ntanh", fc="#e8e0d6", size=9)
+    _box(ax, 10.15, 2.58, 2.45, 1.12, "Salida $o_t$\nsigmoidal", fc="#d6f0d6", size=9)
 
-    # Cuatro transformaciones
-    _box(ax, 2.0, 4.35, 2.15, 1.05, "Olvido $f_t$\nsigmoidal", fc="#f7d6d6", size=7.5)
-    _box(ax, 4.35, 4.35, 2.15, 1.05, "Entrada $i_t$\nsigmoidal", fc="#d6e8f7", size=7.5)
-    _box(ax, 6.7, 4.35, 2.15, 1.05, "Candidata $\\tilde{c}_t$\ntanh", fc="#e8e0d6", size=7.5)
-    _box(ax, 2.0, 2.85, 2.15, 1.05, "Salida $o_t$\nsigmoidal", fc="#d6f0d6", size=7.5)
-
-    # Estado de celda
-    _box(ax, 4.6, 1.15, 3.4, 1.25, r"$c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t$", fc="#fff6cc", size=7.4)
-    _box(ax, 8.3, 2.85, 1.6, 1.05, r"$h_t = o_t \odot \tanh(c_t)$", fc="#e8e8e8", size=7.2)
-
-    _arrow(ax, 3.07, 4.35, 3.07, 2.40)  # f -> c
-    _arrow(ax, 5.42, 4.35, 5.8, 2.42)  # i -> c
-    _arrow(ax, 7.77, 4.35, 7.2, 2.42)  # g -> c
-    _arrow(ax, 4.15, 3.35, 8.28, 3.35)  # o -> h
-    _arrow(ax, 8.0, 1.77, 9.1, 2.82)  # c -> h
-
-    # Salidas
-    _arrow(ax, 10.22, 3.35, 11.3, 3.35)
-    _arrow(ax, 8.0, 1.20, 11.3, 1.20)
-    ax.text(11.4, 3.25, r"$h_t$", fontsize=11)
-    ax.text(11.4, 1.10, r"$c_t$", fontsize=11)
-
-    ax.text(
-        5.9,
-        0.25,
-        r"Cuatro transformaciones: 4 $\times$ [(units $\times$ input_dim) + units$^2$ + units] parámetros.",
-        ha="center",
-        fontsize=7.5,
-        color="#333333",
+    _box(
+        ax,
+        1.85,
+        0.38,
+        7.95,
+        1.22,
+        r"$c_t = f_t \odot c_{t-1} + i_t \odot \tilde{c}_t$",
+        fc="#fff6cc",
+        size=9,
     )
+    _box(ax, 10.15, 0.72, 2.45, 0.88, r"$h_t = o_t \odot \tanh(c_t)$", fc="#e8e8e8", size=8.2)
+
+    # De cada puerta a la caja de abajo. Terminan en el borde superior.
+    _arrow(ax, 3.07, 2.58, 3.07, 1.62)
+    _arrow(ax, 5.77, 2.58, 5.77, 1.62)
+    _arrow(ax, 8.52, 2.58, 8.52, 1.62)
+    _arrow(ax, 11.37, 2.58, 11.37, 1.62)
+
+    # c_t alimenta a h_t por el costado, sin cruzar la caja gris.
+    _arrow(ax, 9.82, 1.15, 10.13, 1.15)
+
+    ax.text(0.08, 3.05, r"$x_t,\, h_{t-1}$", fontsize=10)
+    _arrow(ax, 1.42, 3.14, 1.83, 3.14)
+    ax.text(0.15, 0.85, r"$c_{t-1}$", fontsize=11)
+    _arrow(ax, 1.15, 0.98, 1.83, 0.98)
+
+    _arrow(ax, 12.62, 1.16, 13.15, 1.16)
+    ax.text(13.2, 1.02, r"$h_t$", fontsize=11)
+    # c_t sale por debajo de h_t: la caja gris queda arriba de esta flecha.
+    _arrow(ax, 9.82, 0.52, 13.15, 0.52)
+    ax.text(13.2, 0.38, r"$c_t$", fontsize=11)
     fig.tight_layout()
     fig.savefig(OUT / "lstm_celda.png", dpi=180, bbox_inches="tight", facecolor="white")
     plt.close(fig)
