@@ -1,3 +1,10 @@
+# entornos locales
+.venv/
+.venv-tf/
+
+# notas internas, no van al entregable
+docs/
+
 # salidas de knit
 *.pdf
 *.tex

@@ -3,7 +3,7 @@ title: "Examen Final"
 subtitle: "Data Mining Avanzado · Maestría en Explotación de Datos y Gestión del Conocimiento · Universidad Austral"
 date: "`r paste0(format(Sys.Date(),'%d'), ' de ', c('enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre')[as.integer(format(Sys.Date(),'%m'))], ' de ', format(Sys.Date(),'%Y'))`"
 lang: es
-geometry: "margin=2.5cm"
+geometry: "margin=2.0cm"
 fontsize: 12pt
 output:
   pdf_document:
@@ -37,24 +37,15 @@ header-includes:
   - \usepackage{etoolbox}
   - \pretocmd{\tableofcontents}{\clearpage}{}{}
   - \apptocmd{\tableofcontents}{\clearpage}{}{}
-  - \apptocmd{\maketitle}{\thispagestyle{empty}}{}{}
+  - \apptocmd{\maketitle}{\thispagestyle{empty}\begin{center}\vspace{1.2em}{\large Andres Rodriguez}\\[0.35em]{\large Marcos Maceo}\end{center}}{}{}
 ---
 
-<!-- PORTADA: la consigna exige que figuren los nombres de todos los integrantes.
-     Completar la lista de abajo. Si el examen es individual, borrar este bloque
-     y agregar  author: "Apellido, Nombre"  en el YAML. -->
-
-\thispagestyle{empty}
-
-\begin{center}
-{\Large \textbf{Integrantes del grupo}}\\[2em]
-Andres Rodriguez\\[0.5em]
-Marcos Maceo
-\end{center}
-
-\newpage
+<!-- PORTADA grupal: nombres en la misma hoja del título (via apptocmd maketitle).
+     Sin campo author: en el YAML. -->
 
 ```{r setup, include=FALSE}
+# Locale C imprime ó como el texto literal <U+00F3> en kable y en fig.cap.
+Sys.setlocale("LC_ALL", "en_US.UTF-8")
 library(knitr)
 library(kableExtra)
 
@@ -63,7 +54,7 @@ knitr::opts_chunk$set(
   warning   = FALSE,
   message   = FALSE,
   fig.pos   = "H",
-  out.width = "80%",
+  out.width = "42%",
   fig.align = "center"
 )
 ```
@@ -101,7 +92,53 @@ knitr::opts_chunk$set(
 Discuta por qué son necesarias, cómo afectan la capacidad de representación y cuáles
 son sus ventajas y desventajas más importantes.*
 
-<!-- respuesta -->
+La combinación agrega las entradas ponderadas, en general
+$w_0 + w_1 x_1 + \dots + w_d x_d$, y la activación transforma esa suma en la salida
+de la neurona (Volpacchio, s.f.-e). Sin no linealidad, capas apiladas colapsan a
+$W_2(W_1 x)=(W_2 W_1)x$ y la capacidad de representación iguala a una regresión
+lineal. Con no linealidades la red es una familia de funciones por composición.
+Cybenko (1989) muestra que una capa oculta sigmoidal aproxima cualquier función
+continua sobre un compacto. El apunte cubre escalón, sigmoidal, tanh y softmax
+(salida multiclase). Se agrega ReLU, la unidad lineal rectificada, por su uso actual
+(Goodfellow et al., 2016). Variantes como Leaky ReLU se descartan: no cambian el
+argumento.
+
+```{r e1-act, echo=FALSE}
+act <- data.frame(
+  Funcion = c("Escalón", "Sigmoidal", "Tanh", "Softmax", "ReLU"),
+  Rango = c("-1 / 1", "(0, 1)", "(-1, 1)", "suma 1", "[0, +inf)"),
+  Ventaja = c(
+    "Separa linealmente",
+    "Salida como probabilidad",
+    "Centrada en cero",
+    "Multiclase",
+    "Barata; menos desvanecimiento"
+  ),
+  Limitante = c(
+    "Derivada nula",
+    "Saturación",
+    "Saturación",
+    "Solo en la salida",
+    "Neuronas muertas"
+  ),
+  check.names = FALSE,
+  stringsAsFactors = FALSE
+)
+names(act) <- c("Función", "Rango", "Ventaja", "Limitante")
+kable(
+  act,
+  booktabs = TRUE,
+  caption = "Activaciones: rango, ventaja y limitante."
+) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 10) %>%
+  column_spec(1, width = "2.2cm") %>%
+  column_spec(2, width = "2.2cm") %>%
+  column_spec(3, width = "4.6cm") %>%
+  column_spec(4, width = "3.6cm")
+```
+
+*Nota.* Elaboración propia (Volpacchio, s.f.-e). Desvanecimiento del gradiente: producto
+de derivadas en cascada que se acerca a cero.
 
 ## Punto II
 
@@ -110,28 +147,90 @@ pérdida, backpropagation, optimización). Analice conceptualmente qué factores
 determinan la calidad del aprendizaje. Explique las diferencias esenciales entre redes
 "Deep" y "Shallow".*
 
-<!-- respuesta -->
+El entrenamiento busca los pesos que minimizan el error sobre los datos. El ciclo,
+con la notación del apunte de MLP, tiene cuatro etapas (Volpacchio, s.f.-e). En el
+forward pass (propagar hacia adelante) cada neurona combina y activa hasta la
+predicción $o$. La función de pérdida mide la discrepancia entre $o$ y el objetivo
+$t$: desviación cuadrática o verosimilitud logarítmica (log-likelihood). En
+backpropagation (propagar el error hacia atrás) hay un $\delta$ por unidad de salida
+y por unidad oculta; con sigmoidal y error cuadrático,
+$w_{ji} \leftarrow w_{ji} - \eta\, \delta_j\, o_i$. En la optimización, $\eta$ es la
+tasa de aprendizaje (learning rate), entre 0 y 1. La variante online actualiza por
+observación (una pasada es una época); la variante batch, por lectura completa, con
+momentum o un Newton aproximado (Quasi-Newton) según el tamaño de la red.
+
+La calidad depende de los datos frente a la cantidad de pesos, de $\eta$, de partir
+con pesos pequeños, de los mínimos locales y del corte. El apunte frena el
+sobreajuste con corte temprano (early stopping) y con penalización de pesos grandes
+(weight decay). Ese apunte trata redes superficiales (shallow), de un solo salto no
+lineal. Goodfellow et al. (2016) oponen esa red a la profunda (deep), que apila capas
+y aprende jerarquías, con más datos y más riesgo de desvanecimiento.
 
 ## Punto III
 
 *Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
 De ejemplos de uso.*
 
-<!-- respuesta -->
+Embedding y autoencoder no aparecen con este detalle en los PDF de redes; se definen
+con bibliografía externa. El apunte sí comprime una imagen al agrupar píxeles con una
+red no supervisada (Volpacchio, s.f.-e).
+
+Un embedding es un vector denso, mucho más corto que una codificación por indicadoras,
+para un objeto discreto (palabra, producto, cliente). La cercanía refleja similitud:
+en word2vec, palabras de contextos parecidos quedan próximas (Mikolov et al., 2013).
+Un autoencoder se entrena para reconstruir su entrada. El encoder comprime hacia un
+código de menor dimensión (el cuello de botella) y el decoder reconstruye; la pérdida
+es el error de reconstrucción y no hay etiquetas. Ese código es un embedding de la
+entrada. Usos: reducción de dimensión no lineal (Hinton & Salakhutdinov, 2006),
+anomalías y eliminación de ruido.
 
 ## Punto IV
 
 *De un tipo de red neuronal que sirve para obtener clustering. La que elija, explique
 brevemente cómo funciona.*
 
-<!-- respuesta -->
+Se elige el SOM (Self Organizing Map, mapa autoorganizado), la red de Kohonen del
+apunte. Se descartan k-means y DBSCAN, que no son redes, y el competitive learning del
+apunte introductorio: agrupa, pero no ordena el mapa. El SOM lo contiene como caso
+límite cuando el entorno se reduce a la ganadora (Volpacchio, s.f.-e; Kohonen, 1990).
+
+El SOM tiene una capa de entrada (input layer) y una de Kohonen (Kohonen layer), una
+grilla en general bidimensional. Cada neurona $U_j$ tiene pesos $w_j$ de la misma
+dimensión $r$ que las entradas. El entrenamiento es no supervisado. Tras inicializar
+al azar, para cada entrada $x$ la ganadora $U_{win}$ minimiza $\lVert x - w_j \rVert$,
+y se actualiza
+
+$$w_j(t) = w_j(t-1) + (x - w_j)\,\eta(t)\,N_{win}(j,t)$$
+
+$\eta(t)$ es la tasa de aprendizaje y $N_{win}(j,t)$ el entorno de la ganadora. Ambos
+decrecen hasta dejar la corrección en $U_{win}$ (Volpacchio, s.f.-e). El resultado
+es una partición, como k-means, con un extra topológico: entradas parecidas caen en
+neuronas próximas.
 
 ## Punto V
 
 *¿Qué es una convolución y como aplica en las redes neuronales? De un diagrama de las
 distintas capas de una red convolucional y explique.*
 
-<!-- respuesta + diagrama -->
+Una convolución recorre un filtro, una matriz de pesos mucho más chica que la
+entrada, sobre un mapa de píxeles o de rasgos. En cada posición la suma de productos
+elemento a elemento forma un mapa de características. El *kernel* de las slides de
+CNN es ese filtro, distinto del kernel de SVM del Ejercicio 2. El stride es el salto
+entre posiciones; el padding, el relleno del borde, en general con ceros. Con lado de
+entrada $n$, filtro $f$, padding $p$ y stride $s$, el lado de la salida es
+$\lfloor (n + 2p - f)/s \rfloor + 1$ (Ng, s.f.). El detalle no está en los PDF de MLP
+o de SOM: sale de `deep_learning_CONV_Ng.pptx`. En la CNN el filtro se aprende por
+backpropagation con conexión local y pesos compartidos, con menos parámetros que una
+capa densa e invariancia a traslación. La salida es un volumen
+$n_H \times n_W \times n_C$. El pooling (submuestreo, en general el máximo de la
+ventana) achica el mapa; el volumen se aplana, una capa densa lo combina y softmax
+entrega la clase.
+
+```{r e1-cnn, out.width="22%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
+knitr::include_graphics("codigo/resultados/e1/cnn_capas.png")
+```
+
+*Nota.* Elaboración propia a partir de `deep_learning_CONV_Ng.pptx` (Ng, s.f.).
 
 ## Punto VI
 
@@ -141,41 +240,107 @@ Cantidad de parámetros que utiliza en base a su configuración. Genere un ejemp
 completo en Python de aplicación de una red LSTM para predecir una serie de tiempo
 arbitraria. Pruebe diferentes configuraciones de capas y cantidad de neuronas.*
 
-<!-- respuesta + diagrama + codigo Python -->
+```{r e1-load, include=FALSE}
+e1lstm <- read.csv("codigo/resultados/e1/lstm_configs.csv", stringsAsFactors = FALSE)
+e1best <- e1lstm[which.min(e1lstm$test_mae), ]
+fmt_e1 <- function(x, d = 4) formatC(as.numeric(x), format = "f", digits = d, decimal.mark = ",")
+p32 <- e1lstm[e1lstm$config == "lstm_32", ]
+```
+
+El apunte llama Recurrent Networks a las redes con ciclos dirigidos (Volpacchio,
+s.f.-e). Una RNN clásica vuelve a usar el estado,
+$h_t = f(W x_t + U h_{t-1} + b)$, con los mismos pesos en cada paso. Al desenrollarla,
+el gradiente se multiplica una vez por paso y en dependencias largas se desvanece o
+explota. La LSTM (Long Short-Term Memory) no está en los PDF; la topología sale de
+Hochreiter y Schmidhuber (1997). Agrega un estado $c_t$ que se actualiza por suma, y
+tres puertas sigmoidales en $(0,1)$: olvido (cuánto se descarta de $c_{t-1}$),
+entrada (cuánto ingresa de la candidata $\tilde{c}_t$) y salida (cuánto de $c_t$
+pasa a $h_t$). Por la suma, el gradiente sobrevive muchos pasos.
+
+```{r e1-lstm-topo, out.width="18%", fig.cap="Celda LSTM en un paso temporal."}
+knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
+```
+
+*Nota.* Elaboración propia. Entran $x_t$, $h_{t-1}$, $c_{t-1}$; salen $c_t$, $h_t$.
+
+Según el apunte, una capa LSTM tiene
+$4 \times [(\text{units} \times \text{input\_dim}) + \text{units}^{2} + \text{units}]$
+parámetros: el 4 son tres puertas más la candidata, y el corchete junta la matriz
+sobre el input, la matriz recurrente y el sesgo. Para `lstm_32`
+($\text{input\_dim}=1$) da $4 \times [(32 \times 1) + 32^{2} + 32] = 4352$, igual a
+la línea LSTM de `model.summary()`. Keras suma la `Dense(1)` y el total queda en
+`r p32$params_keras`.
+
+`codigo/e1_lstm/lstm_serie.py` (Apéndice) usa semilla 42, ventanas de 20 pasos y un
+corte temporal 80/20. Compara 32, 64, 32-16 y 64-32, con 20 épocas y `shuffle=False`,
+en TensorFlow (CPython 3.12). Una prueba previa en NumPy, con los pesos recurrentes
+congelados, aplanó el pronóstico: sin retropropagación a través del tiempo (BPTT) no
+hay serie que reportar.
+
+```{r e1-lstm-tab}
+tab_e1 <- data.frame(
+  Config = e1lstm$config,
+  Capas = e1lstm$layers,
+  Formula = e1lstm$params_formula_lstm,
+  Keras = e1lstm$params_keras,
+  MSE = round(e1lstm$test_mse, 4),
+  MAE = round(e1lstm$test_mae, 4)
+)
+names(tab_e1) <- c("Config", "Capas", "Params fórmula", "Params Keras", "MSE test", "MAE test")
+kable(
+  tab_e1,
+  booktabs = TRUE,
+  caption = "LSTM: parámetros de cátedra, parámetros de Keras y error de test.",
+  format.args = list(decimal.mark = ",")
+) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "2.2cm") %>%
+  column_spec(2, width = "1.6cm") %>%
+  column_spec(3, width = "2.2cm") %>%
+  column_spec(4, width = "2.2cm") %>%
+  column_spec(5, width = "1.7cm") %>%
+  column_spec(6, width = "1.7cm")
+```
+
+*Nota.* Elaboración propia. Semilla 42, ventana de 20, 20 épocas. La fórmula cuenta
+solo la LSTM; Keras suma la `Dense(1)`. El menor MAE de test es `r e1best$config`
+(`r fmt_e1(e1best$test_mae)`).
 
 ## Punto VII
 
 *Describa el algoritmo encoder-decoder. Usos habituales.*
 
-<!-- respuesta -->
+Dos redes acopladas, ausentes con este detalle en los PDF de la materia. El encoder
+resume la entrada en un vector de contexto; el decoder emite de a un elemento y
+realimenta lo ya dicho. La pérdida cubre la secuencia entera. Usos: traducción
+(Sutskever et al., 2014), resumen, voz, descripción automática de imágenes
+(captioning: CNN más una recurrente) y el autoencoder del Punto III.
 
 ## Punto VIII
 
-*Explique de qué manera la arquitectura de una red neuronal artificial influye en su
-capacidad de representación y generalización.*
+*Arquitectura, representación y generalización: capas, neuronas, activación,
+regularización, conexión, sesgo, varianza, ejemplos conceptuales de subajuste
+(underfitting) y sobreajuste (overfitting), un cambio sin modificar los datos, y por
+qué más parámetros no siempre son mejores.*
 
-*Describa qué se entiende por capacidad de representación y por capacidad de
-generalización en el contexto del aprendizaje automático.*
+Representación: la familia de funciones que la red puede computar; crece con la red
+(Volpacchio, s.f.-e). Generalización: que el desempeño no caiga fuera de muestra. La
+brecha entre entrenamiento y validación marca el sobreajuste; capas, neuronas y
+activaciones lo mueven. Weight decay (penalización de pesos grandes),
+early stopping (corte temprano) y dropout (apagado aleatorio de neuronas) bajan la
+capacidad efectiva. Convolución supone localidad, la recurrencia supone tiempo y la
+capa densa no supone nada. Sesgo alto es una familia rígida; varianza alta, una red
+sin freno. Sin cifras, el perceptrón subajusta el XOR por su frontera lineal y un
+MLP ancho memoriza pocos cientos de filas. En el Punto VI las pilas no bajaron el MAE, con los mismos datos. La regla
+$d/l < 0{,}05$ ($d$: dimensión VC; $l$: observaciones) es la mínima complejidad
+(Vapnik, 1995): más parámetros generalizan igual si la regularización o el descenso
+estocástico (SGD) acotan la complejidad efectiva. Belkin et al. (2019) describen el
+doble descenso, una baja del riesgo de test tras el punto de interpolación.
 
-- *Analice cómo distintos elementos arquitectónicos (cantidad de capas, número de
-  neuronas, funciones de activación, regularización, tipo de conexión, etc.) modifican
-  estas capacidades.*
-- *Discuta el rol del sesgo y la varianza en redes neuronales y cómo la arquitectura
-  puede afectar este equilibrio.*
-- *Incluya ejemplos conceptuales (no numéricos) que ilustren cuándo una red puede estar
-  subajustada (underfitting) o sobreajustada (overfitting) por decisiones
-  arquitectónicas.*
-- *Fundamente cómo un cambio arquitectónico puede mejorar o empeorar el desempeño,
-  incluso sin modificar los datos de entrenamiento.*
-- *Reflexione sobre por qué modelos con más parámetros no siempre son mejores, y cómo
-  esto se conecta con el principio de mínima complejidad y el aprendizaje profundo
-  moderno.*
-
-<!-- respuesta -->
-
-**Fuentes del Ejercicio 1.**
-
-<!-- la consigna exige detallar la fuente de cada respuesta -->
+**Fuentes del Ejercicio 1.** Volpacchio (s.f.-e); Ng (s.f.); Hochreiter y Schmidhuber
+(1997); Mikolov et al. (2013); Hinton y Salakhutdinov (2006); Sutskever et al. (2014);
+Cybenko (1989); LeCun et al. (1998); Kohonen (1990); Goodfellow et al. (2016); Belkin
+et al. (2019); Vapnik (1995); `codigo/e1_lstm/lstm_serie.py`.
 
 \newpage
 
@@ -189,164 +354,314 @@ resto de los algoritmos de Machine Learning?*
 
 <!-- El PDF original escribe "VSM"; es un error de tipeo por SVM. -->
 
-<!-- respuesta -->
+Una máquina de vectores soporte (SVM, por Support Vector Machine) es un algoritmo de
+clasificación de la familia de los métodos de kernel que busca un hiperplano separador
+entre dos clases. En las diapositivas de la materia el título es Vector Support
+Machines (VSM); se unifica a SVM, la sigla de Burges (1998), la referencia de base del
+apunte.
 
-**Fuentes del Ejercicio 2.**
+Un hiperplano es la generalización de una recta a espacios de mayor dimensión: en un
+espacio de $k$ variables explicativas queda definido por la ecuación
+$w \cdot x - b = 0$, donde $w$ es un vector de pesos y $b$ un escalar. Entre todos los
+hiperplanos que separan las clases, SVM elige el de margen máximo: el margen es la
+distancia entre los dos hiperplanos paralelos $H_{+1}$ y $H_{-1}$ que pasan por las
+observaciones más cercanas de cada clase, y vale $2/\lVert w \rVert$.
+
+La maximización del margen equivale a la minimización de $\lVert w \rVert$ con la
+restricción $y_i (w \cdot x_i - b) \ge 1$ para todos los puntos. El problema resultante
+es de programación cuadrática, una optimización con función objetivo cuadrática y
+restricciones lineales, que posee un mínimo global dentro de un conjunto convexo de
+soluciones (Burges, 1998). Los puntos de entrenamiento que quedan sobre $H_{+1}$ o
+$H_{-1}$, los más cercanos al hiperplano clasificador, se llaman vectores soporte y son
+los únicos que definen la solución: en la versión dual del problema cada punto recibe un
+multiplicador $\alpha_i$, y solo los vectores soporte terminan con $\alpha_i > 0$; el
+resto de la muestra no participa del cálculo del hiperplano.
+
+Los tipos de SVM se presentan en el orden del apunte de la materia, porque cada versión
+relaja un supuesto de la anterior y ese recorrido muestra por qué aparece cada
+componente nuevo del algoritmo.
+
+- SVM lineal con datos separables (margen duro). Es la versión básica descripta arriba:
+  exige que ningún punto quede entre $H_{+1}$ y $H_{-1}$, por lo que solo funciona si
+  las clases se separan en forma perfecta con un hiperplano.
+- SVM lineal con separación imperfecta (margen blando). Admite ruido en la frontera: se
+  introducen las variables de holgura $\xi_i \ge 0$ (slack), que miden cuánto viola
+  cada punto la frontera de su clase, y se agrega a la función objetivo el término de
+  penalización $C \sum_i \xi_i$. El parámetro $C$ regula el compromiso entre un margen
+  ancho y pocos errores de clasificación (Cortes & Vapnik, 1995).
+- SVM no lineal. Cuando la frontera entre clases no es lineal, los datos se transforman
+  con una función $\phi$ desde el Input Space (espacio de entrada, donde viven las
+  variables originales) hacia el Feature Space (espacio de características de mayor
+  dimensión), donde el problema tiene alta probabilidad de volverse linealmente
+  separable.
+
+  El costo de esa transformación se evita con el truco del kernel: en la formulación
+  dual los datos solo aparecen como productos internos, y una función kernel
+  $K(x_i, x_j) = \phi(x_i) \cdot \phi(x_j)$ calcula ese producto sin pasar por el
+  Feature Space. La frontera resultante es lineal en el espacio transformado y no
+  lineal en el original.
+- SVM para regresión (SVR, Support Vector Regression). Adapta el esquema anterior a la
+  predicción de una variable continua; se desarrolla al final de este ejercicio.
+
+El apunte se detiene en esas cuatro versiones. Variantes de paquete ($\nu$-SVM,
+One-Class SVM) quedan fuera porque no forman parte de la clase.
+
+En la versión no lineal con separación imperfecta, los parámetros externos, los valores
+que el usuario fija antes del entrenamiento y que el algoritmo no aprende de los datos,
+son los siguientes.
+
+- La constante de penalización $C$, que en el dual acota los multiplicadores:
+  $C \ge \alpha_i \ge 0$.
+- La elección de la función kernel: polinómica, de base radial o sigmoide, entre las
+  más usadas.
+- Los parámetros propios del kernel elegido: el grado $d$ en el kernel polinómico
+  $K(x, x_i) = \langle x, x_i \rangle^d$; la dispersión $\sigma$ en el kernel de
+  función de base radial (RBF), $K(x, x_i) = \exp(-\lVert x - x_i \rVert^2 /
+  2\sigma^2)$; los parámetros $\kappa$ y $\theta$ en el kernel sigmoide, que no
+  satisface la condición de Mercer para cualquier combinación de valores. La condición
+  de Mercer es el requisito que garantiza que una función simétrica se comporte como un
+  producto interno: la matriz de Gram, la matriz con los valores $K(x_i, x_j)$ para
+  todos los pares de datos, debe ser semidefinida positiva.
+
+Estos valores se eligen por prueba sobre datos de validación. La presentación de la
+materia lo ejemplifica con una herramienta en Visual Basic: corridas con distintos
+valores de $C$, con kernel RBF y polinómicos de varios grados, y con distintos tamaños
+de conjunto de entrenamiento, con la eficacia de clasificación como criterio de
+comparación.
+
+La característica que distingue a SVM del resto de los algoritmos de Machine Learning
+es su vínculo con la teoría del aprendizaje estadístico que se desarrolla en el
+Ejercicio 3. La mayoría de los algoritmos implementa solamente la minimización del
+riesgo empírico, la reducción del error sobre la muestra de entrenamiento. SVM, en
+cambio, sigue el paradigma de minimización del riesgo estructural de Vapnik: la
+maximización del margen controla al mismo tiempo el error de entrenamiento y la
+capacidad del modelo, con lo cual la estructura final busca ajustar la capacidad a la
+complejidad de los datos.
+
+Esa propiedad tiene una expresión concreta: la solución depende únicamente de los
+vectores soporte, unos pocos puntos de la muestra. Vapnik da una cota alternativa del
+riesgo real por medio del procedimiento leave-one-out (dejar uno afuera: entrenar con
+todos los datos menos uno, evaluar sobre el punto excluido y repetir para cada punto):
+
+$$E\bigl[P(\text{error})\bigr]
+\le \frac{E\bigl[\#\{\text{vectores soporte}\}\bigr]}{n}$$
+
+donde $n$ es la cantidad de observaciones de entrenamiento. En la práctica: si la
+solución se sostiene con pocos vectores soporte, el error esperado de generalización
+queda acotado sin armar un conjunto de prueba aparte (hold-out). Ningún otro algoritmo
+de los vistos en la materia deja una cota así, leída desde la propia solución. El problema de optimización,
+además, es convexo (mínimo global), a diferencia de las redes neuronales, que sí pueden
+quedar atrapadas en mínimos locales.
+
+Para usar SVM como regresión se cambia el criterio de ajuste: en lugar del margen entre
+clases se mide el error de aproximación entre la predicción $f(x) = w \cdot x + b$ y el
+valor observado $y$. La pieza nueva es la función de pérdida lineal de Vapnik con zona
+de $\varepsilon$-insensibilidad (Vapnik, 1995):
+
+$$
+E_{\varepsilon}(y, f(x)) =
+\begin{cases}
+0, & \text{si } \lvert y - f(x)\rvert \le \varepsilon, \\[4pt]
+\lvert y - f(x)\rvert - \varepsilon, & \text{si } \lvert y - f(x)\rvert > \varepsilon.
+\end{cases}
+$$
+
+Esta pérdida define un tubo de radio $\varepsilon$ alrededor de la función: los puntos
+dentro del tubo no aportan error, y los que quedan fuera aportan solo el excedente
+sobre $\varepsilon$. El procedimiento del apunte tiene tres pasos: se calcula el riesgo
+empírico con la pérdida de $\varepsilon$-insensibilidad, se controla la capacidad con
+la minimización de $\frac{1}{2} \lVert w \rVert^2$, el mismo término que en
+clasificación, y se combinan ambos aspectos en el funcional
+$R = \frac{1}{2} \lVert w \rVert^2 + C \sum_i (\xi_i + \xi_i^*)$, donde las variables
+de holgura $\xi_i$ y $\xi_i^*$ miden cuánto se sale cada punto del tubo por arriba y
+por abajo.
+
+El problema dual resultante es análogo al de clasificación y admite el truco del kernel
+para regresiones no lineales. La función de aproximación final queda
+$F(x) = \sum_i \alpha_i K(x_i, x) + b$, donde los vectores soporte son ahora los puntos
+que caen sobre el borde del tubo o fuera de él. El parámetro externo adicional respecto
+de la clasificación es $\varepsilon$, el radio del tubo, que fija cuánta desviación se
+tolera sin costo.
+
+**Fuentes del Ejercicio 2.** Material de cátedra (Volpacchio, s.f.-b): presentación
+`SVM Universidad Austral.pdf` (clases 1 y 2), en particular las secciones de la
+versión lineal, la separación imperfecta, el kernel trick, la cota por vectores
+soporte y Support Vector Regression. Burges (1998) para la formulación del
+clasificador; Cortes y Vapnik (1995) para el margen blando; Vapnik (1995) para la
+pérdida con zona de $\varepsilon$-insensibilidad.
 
 \newpage
 
 # Ejercicio 3 · Statistical Learning Theory
 
 *Explique brevemente de que trata el campo de Statistical Learning Theory. ¿Qué
-indicador muestra la complejidad de un data set usando el algoritmo SVM? ¿Qué es la
+indicador muestra la complejidad de un data set con el algoritmo SVM? ¿Qué es la
 capacidad de un algoritmo y qué manera heurística propone Vapnik-Chervonenkis para
 estimarla, dado un data set de 1000 observaciones con k variables (deje de lado el caso
 particular de SVM en el cual existe una forma matemática de estimarla)?*
 
-<!-- respuesta -->
+La Statistical Learning Theory (SLT, teoría del aprendizaje estadístico) es el marco
+teórico del aprendizaje automático: estudia cómo inducir, a partir de la información
+empírica de una muestra, el comportamiento de una población, con un riesgo de error
+medible en términos de probabilidad. El planteo formal parte de un conjunto de
+entrenamiento de pares $(x_i, y_i)$ generados por una distribución de probabilidad $P$
+desconocida, y de una función de pérdida que cuantifica el costo de cada error de
+predicción. Con esos elementos se definen dos riesgos: el riesgo empírico
+$R_{emp}(f)$, el promedio de la pérdida sobre la muestra de entrenamiento, y el riesgo
+real $R(f)$, la esperanza de la pérdida sobre la distribución completa, que es el que
+importa y no se puede calcular porque $P$ es desconocida.
 
-**Fuentes del Ejercicio 3.**
+El problema central del campo es que un riesgo empírico pequeño no implica un riesgo
+real pequeño. El apunte lo ilustra con un clasificador que memoriza: responde la
+etiqueta guardada si el punto ya apareció en el entrenamiento y una etiqueta fija en
+caso contrario. Ese clasificador tiene riesgo empírico cero y sin embargo no aprende
+nada. La teoría de Vapnik y Chervonenkis establece bajo qué condiciones la minimización
+del riesgo empírico es consistente, es decir, converge al mejor clasificador posible a
+medida que crece la muestra: la condición es la restricción de la capacidad del espacio
+de funciones del algoritmo. De este marco surgió el desarrollo de SVM.
 
-\newpage
+Con el algoritmo SVM, el indicador de la complejidad de un conjunto de datos es la cantidad de
+vectores soporte de la solución, los puntos de entrenamiento definidos en el Ejercicio
+2 que determinan el hiperplano clasificador. Un conjunto de datos con clases bien separadas se
+resuelve con pocos vectores soporte; una frontera con clases superpuestas obliga al
+algoritmo a retener muchos puntos como soporte de la solución. La cota
+$E[P(\text{error})] \le E[\#\text{vectores soporte}]/n$ del Ejercicio 2 le da contenido
+formal a esa lectura: la proporción esperada de vectores soporte acota el error
+esperado de generalización, con lo cual una solución con muchos vectores soporte delata
+un problema complejo, difícil de generalizar.
 
-# Ejercicio 4 · Algoritmos genéticos
+La capacidad de un algoritmo es la aptitud de su familia de funciones para adaptarse a
+los datos: cuanto más grande es el espacio de funciones entre las que el algoritmo
+puede elegir, más patrones distintos puede representar y más riesgo corre de
+sobreajuste, la memorización de la muestra con pérdida de generalización. La medida
+formal de la capacidad es la dimensión VC (Vapnik-Chervonenkis), definida a partir del
+concepto de shattering: un conjunto de puntos queda shattered (discriminado por
+completo) por una familia de funciones si, para cualquier asignación de etiquetas a
+esos puntos, existe una función de la familia que los clasifica sin error. La dimensión
+VC es la cantidad máxima de puntos que la familia puede shatter. El ejemplo del apunte:
+las rectas orientadas en el plano pueden shatter tres puntos pero no cuatro, por lo que
+su dimensión VC es 3; en general, los hiperplanos orientados en un espacio de $N$
+dimensiones tienen dimensión VC igual a $N + 1$.
 
-*Escriba el pseudocódigo de algoritmos genéticos. Explique brevemente las principales
-diferencias entre AG binarios y reales. De 3 casos de aplicación de AG y sus respectivas
-fuentes (paper, autor, fecha), con breve explicación. Cómo lo implementaría usando
-programas disponibles open-source (cita y breve explicación).*
+La dimensión VC importa porque aparece en la cota de riesgo de Vapnik y Chervonenkis,
+que relaciona el riesgo real con el empírico:
 
-<!-- respuesta -->
+$$
+R(\alpha) \le R_{\mathrm{emp}}(\alpha) + \text{intervalo de confianza VC},
+$$
 
-**Fuentes del Ejercicio 4.**
+donde ese intervalo crece con la dimensión VC $d$ y decrece con el tamaño de
+muestra $l$ (en el apunte también depende de la confianza $1-\eta$). En las
+diapositivas esa dimensión aparece como $h$ dentro de la cota y como $d$ en la
+regla $d/l$; acá se unifica en $d$. La lectura operativa es la minimización del
+riesgo estructural: no alcanza un $R_{\mathrm{emp}}$ bajo; hay que elegir la familia
+cuya suma de riesgo empírico e intervalo de confianza VC sea la menor (Vapnik, 1995).
 
-\newpage
+Fuera del caso de SVM, la dimensión VC en general no se calcula en forma exacta. La
+manera heurística que propone la teoría, según el apunte, es una regla operativa sobre
+la relación entre capacidad y datos: la razón $d/l$ entre la dimensión VC y la cantidad
+de observaciones debe cumplir $d/l < 0{,}05$ para garantizar que el riesgo real quede
+cerca del empírico. La estimación de $d$ usa la vía geométrica del párrafo anterior:
+para un clasificador del tipo hiperplano sobre $k$ variables explicativas,
+$d = k + 1$. Esa vía no es la fórmula de capacidad propia de SVM (allí el margen acota
+la dimensión VC); es la estimación geométrica genérica que pide la consigna.
 
-# Ejercicio 5 · Componentes principales y kernels
+Con el conjunto de datos de la consigna, de $l = 1000$ observaciones y $k$ variables, la regla
+exige $d < 0{,}05 \times 1000 = 50$; con $d = k + 1$, la condición se cumple si
+$k + 1 < 50$, es decir con hasta 48 variables. Si el conjunto tiene más variables, las
+salidas posibles son dos: reducir la dimensión, por ejemplo con componentes
+principales, o aumentar la cantidad de observaciones hasta
+restablecer la relación. El apunte agrega una regla complementaria del mismo espíritu
+para el control del sobreajuste: contar con 30 veces más datos que parámetros cuando
+los datos tienen ruido, y 5 veces cuando no lo tienen. Se deja de lado el caso
+particular de SVM, tal como pide la consigna, porque allí la capacidad se controla en
+forma matemática a través del margen y la regla heurística no hace falta.
 
-*Explique brevemente la utilización de Componente principal en Machine Learning.
-Investigue la implicancia de utilizar Kernel en Componentes principales (citar fuentes y
-explique con sus palabras).*
-
-*¿Qué significa el "Truco del Kernel"? De ejemplos de los kernel más utilizados.*
-
-*¿Investigue si existen métodos sencillos que se pueden utilizar para seleccionar el
-Kernel apropiado en un determinado data set? Mencione fuentes y conclusiones
-brevemente.*
-
-<!-- respuesta -->
-
-**Fuentes del Ejercicio 5.**
-
-\newpage
-
-# Ejercicio 6 · Análisis de supervivencia
-
-*Análisis de supervivencia. Explique porque este enfoque es superior a los métodos de
-regresión para estimar días a un evento. Qué tipos existen y qué implementaciones en
-Python/R conoce.*
-
-<!-- respuesta -->
-
-**Fuentes del Ejercicio 6.**
-
-\newpage
-
-# Ejercicio 7 · Clustering y t-SNE
-
-*Mencione las técnicas de pre-proceso que existen en clustering para visualizar la
-potencial existencia de grupos. Explique brevemente 1 de ellas.*
-
-*¿Habiendo aplicado alguna técnica de clustering y obteniendo los grupos finales, de qué
-manera puede estimar qué diferencias existen en los perfiles de los grupos obtenidos?
-Explicar los resultados.*
-
-*Ayuda: utilice el último capítulo de la guía de clustering (Assessment Clustering).*
-
-*¿En qué consiste el algoritmo t-SNE? ¿Para qué se utiliza? De un ejemplo de
-implementación en Python. ¿Qué limitantes tiene? ¿Qué ventajas tiene?*
-
-<!-- respuesta + codigo Python -->
-
-**Fuentes del Ejercicio 7.**
-
-\newpage
-
-# Ejercicio 8 · AdaBoost y Gradient Boosting
-
-*Qué diferencias existen entre el algoritmo Adaboost y Gradiente Boosting. Explique
-brevemente.*
-
-*De una explicación intuitiva de cómo trabaja el Gradiente Boosting.*
-
-<!-- respuesta -->
-
-**Fuentes del Ejercicio 8.**
-
-\newpage
-
-# Ejercicio 9 · Random Forest
-
-*Random Forest. Describir el algoritmo y su diferencia con el resto de los algoritmos de
-ensamblaje. Describa los principales usos del algoritmo.*
-
-<!-- respuesta -->
-
-**Fuentes del Ejercicio 9.**
-
-\newpage
-
-# Ejercicio 10 · Pipeline en Python
-
-*Puede elegir cualquiera de las 2 opciones (si desea puede hacer las 2. A los fines de
-la evaluación uno es suficiente).*
-
-## Opción 1
-
-*Seleccione dos datasets públicos (uno de clasificación y uno de regresión) y construya
-un Pipeline completo en Python que compare el desempeño de cuatro modelos: Support
-Vector Machine, Random Forest, Gradient Boosting y Multi-Layer Perceptron.*
-
-*El pipeline debe incluir: (1) preprocesamiento adecuado de los datos, (2) definición
-explícita del espacio de búsqueda de hiperparámetros para cada modelo, (3) una
-estrategia de optimización (GridSearch o RandomSearch), y (4) validación mediante k-fold
-cross-validation.*
-
-*Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
-tarea.*
-
-## Opción 2
-
-*Seleccione dos datasets reales obtenidos de Internet: uno para un problema de
-clasificación y otro para un problema de regresión. Diseñe y programe en Python (usando
-TensorFlow o PyTorch) un pipeline completo de Deep Learning que compare el desempeño de
-al menos dos arquitecturas diferentes para cada tarea, incluyendo obligatoriamente un
-MLP y al menos una arquitectura moderna (CNN, RNN/LSTM o Transformers, según
-corresponda al tipo de dato).*
-
-*El pipeline debe incluir: (1) preprocesamiento y normalización adecuados, (2)
-definición explícita de cada arquitectura (capas, activaciones, regularización), (3)
-búsqueda de hiperparámetros esenciales (learning rate, batch size, número de
-capas/neuronas o bloques) mediante una estrategia sistemática (Grid, Random o Bayesian
-Search), (4) validación mediante k-fold cross-validation o validación hold-out robusta y
-(5) análisis final comparando el rendimiento del MLP frente a las arquitecturas
-modernas, discutiendo por qué el MLP presenta limitaciones estructurales frente a
-CNN/LSTM/Transformers según el tipo de dato.*
-
-*Entregue el código completo y una interpretación breve de los resultados.*
-
-<!-- respuesta: borrar la opcion no elegida -->
-
-**Fuentes del Ejercicio 10.**
+**Fuentes del Ejercicio 3.** Material de cátedra (Volpacchio, s.f.-c): presentación
+`SLT Universidad Austral1.pdf` y diapositivas `Statistical Learning Theory.pptx`
+(clase 1), en particular las secciones de riesgo empírico y real, consistencia,
+dimensión VC, intervalo de confianza VC y minimización del riesgo estructural.
+Vapnik (1995) para la formulación general de la teoría y la cota de riesgo.
 
 \newpage
 
 # Apéndice · Código
 
-<!-- codigo completo de los ejercicios 1.VI, 7 y 10 -->
+El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts del
+Ejercicio 1 (LSTM y figuras).
+
+## A.1 LSTM serie temporal (Ejercicio 1.VI)
+
+```{r e1-lstm-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e1_lstm/lstm_serie.py"), sep = "\n")
+```
+
+## A.2 Figuras CNN y celda LSTM (Ejercicio 1)
+
+Los diagramas de `codigo/resultados/e1/cnn_capas.png` y `lstm_celda.png` los
+generó `codigo/e1_lstm/figuras.py`.
+
+```{r e1-fig-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
+```
 
 \newpage
 
+\setlength{\parindent}{0pt}
+\setlength{\leftskip}{1.5em}
+\setlength{\parindent}{-1.5em}
+\setlength{\parskip}{0.55em}
+
 # Referencias
 
-<!-- todas las fuentes citadas, APA 7ma, orden alfabetico -->
+Belkin, M., Hsu, D., Ma, S., & Mandal, S. (2019). Reconciling modern machine-learning
+practice and the classical bias-variance trade-off. *Proceedings of the National
+Academy of Sciences, 116*(32), 15849-15854. https://doi.org/10.1073/pnas.1903070116
+
+Burges, C. J. C. (1998). A tutorial on support vector machines for pattern
+recognition. *Data Mining and Knowledge Discovery, 2*(2), 121-167.
+https://doi.org/10.1023/A:1009715923555
+
+Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*(3),
+273-297. https://doi.org/10.1007/BF00994018
+
+Cybenko, G. (1989). Approximation by superpositions of a sigmoidal function.
+*Mathematics of Control, Signals and Systems, 2*(4), 303-314.
+https://doi.org/10.1007/BF02551274
+
+Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
+
+Hinton, G. E., & Salakhutdinov, R. R. (2006). Reducing the dimensionality of data with
+neural networks. *Science, 313*(5786), 504-507. https://doi.org/10.1126/science.1127647
+
+Hochreiter, S., & Schmidhuber, J. (1997). Long short-term memory. *Neural Computation,
+9*(8), 1735-1780. https://doi.org/10.1162/neco.1997.9.8.1735
+
+Kohonen, T. (1990). The self-organizing map. *Proceedings of the IEEE, 78*(9),
+1464-1480. https://doi.org/10.1109/5.58325
+
+LeCun, Y., Bottou, L., Bengio, Y., & Haffner, P. (1998). Gradient-based learning applied
+to document recognition. *Proceedings of the IEEE, 86*(11), 2278-2324.
+https://doi.org/10.1109/5.726791
+
+Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word
+representations in vector space. *Workshop track of the 1st International Conference
+on Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
+
+Ng, A. (s.f.). *Deep learning: Convolutional neural networks* [Material de cátedra].
+Universidad Austral, Data Mining Avanzado.
+
+Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with
+neural networks. *Advances in Neural Information Processing Systems 27*, pp. 3104-3112.
+
+Vapnik, V. N. (1995). *The nature of statistical learning theory*. Springer.
+
+Volpacchio, M. (s.f.-b). *SVM Universidad Austral* [Presentación de clase].
+Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
+
+Volpacchio, M. (s.f.-c). *SLT Universidad Austral1* [Presentación de clase].
+Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
+
+Volpacchio, M. (s.f.-e). *Data Mining Avanzado: redes neuronales* [Material de
+cátedra]. Universidad Austral, Maestría en Explotación de Datos y Gestión del
+Conocimiento.

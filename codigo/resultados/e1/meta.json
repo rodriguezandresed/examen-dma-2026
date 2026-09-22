@@ -1,0 +1,22 @@
+{
+  "status": "ok",
+  "backend": "tensorflow-cpu",
+  "tf_version": "2.21.0",
+  "keras_version": "3.15.1",
+  "seed": 42,
+  "lookback": 20,
+  "epochs": 20,
+  "split": "temporal_80_20",
+  "shuffle": false,
+  "best": {
+    "config": "lstm_32",
+    "layers": "32",
+    "params_formula_lstm": 4352,
+    "params_keras": 4385,
+    "test_mse": 0.013448343612253666,
+    "test_mae": 0.09250428527593613,
+    "val_mae_last": 0.10255036503076553
+  },
+  "formula": "4*((units*input_dim)+units^2+units)",
+  "nota_numpy_previo": "Corrida NumPy en resultados/e1_lstm/ documentada como limitante; métricas del informe salen de esta corrida TF."
+}
