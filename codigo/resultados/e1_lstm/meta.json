@@ -1,0 +1,17 @@
+{
+  "seed": 42,
+  "backend": "numpy_lstm_bptt",
+  "lookback": 16,
+  "epochs": 40,
+  "split": "temporal_80_20",
+  "best_units": 32,
+  "best_layers": 1,
+  "best_rmse": 0.13453907122428815,
+  "formula_example_units8": {
+    "lstm": 320,
+    "head": 9,
+    "total": 329,
+    "detalle": "4*((8*1)+64+8)=320; head=9; total=329"
+  },
+  "nota": "BPTT sobre W, U, b y cabeza lineal. Se variaron units y n_layers. params_lstm_formula aplica solo la fórmula de cátedra."
+}
