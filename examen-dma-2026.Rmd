@@ -657,12 +657,11 @@ e7conc_e <- e7conc[e7conc$espacio == "Embedding t-SNE 2D", ]
 
 Los tres puntos se apoyan en una corrida común, `codigo/e7_tsne/tsne_clustering.py`
 (Apéndice), con semilla `r e7meta$semilla` sobre los dígitos manuscritos de
-`r e7meta$n_obs` observaciones y `r e7meta$n_var_original` píxeles en escala 0 a 16
-(Alpaydin & Kaynak, 1998), sin faltantes. Se descartan `r e7meta$n_var_descartadas`
-píxeles de varianza nula que dejarían indefinido el estadístico *F* del perfilado y se
-estandarizan los `r e7meta$n_var_usadas` restantes. El dígito queda fuera del modelo, como
-juez externo medido con el índice de Rand ajustado (ARI: 0 para el acuerdo fortuito entre
-dos particiones, 1 para la identidad).
+`r e7meta$n_obs` observaciones y `r e7meta$n_var_original` píxeles (Alpaydin & Kaynak,
+1998). Se descartan `r e7meta$n_var_descartadas` píxeles de varianza nula y se estandarizan
+los `r e7meta$n_var_usadas` restantes. El dígito queda fuera del modelo, como juez externo
+medido con el índice de Rand ajustado (ARI: 0 para el acuerdo fortuito, 1 para la
+identidad).
 
 El capítulo de preparación separa el preproceso en dos familias (SAS Institute, s.f.-a).
 Una corrige las variables antes de cualquier gráfico: VARCLUS reemplaza cada subgrupo
@@ -704,7 +703,7 @@ variables nuevas, no correlacionadas, que explican proporciones decrecientes de 
 total; si la nube se apoya sobre un plano, el par de primeras componentes alcanza para
 ubicar los grupos, y la varianza que retiene mide cuánta información queda afuera.
 
-```{r e7-fig, out.width="76%", fig.cap="Proyecciones, criterio de $k$ y mapas t-SNE del mismo conjunto de d\\'{\\i}gitos."}
+```{r e7-fig, out.width="64%", fig.cap="Proyecciones, criterio de $k$ y mapas t-SNE del mismo conjunto de d\\'{\\i}gitos."}
 knitr::include_graphics("codigo/resultados/e7/ayudas_graficas.png")
 ```
 
@@ -718,30 +717,23 @@ construcción, porque sus ejes maximizan la distancia entre grupos ya asignados.
 en la fila de abajo, muestra unas diez islas sin usar ninguna etiqueta.
 
 El último capítulo responde primero cuántos grupos hay, con cinco indicadores (SAS
-Institute, s.f.-b): el nivel de fusión del dendrograma, donde solo las soluciones al final
-de una rama larga son candidatas; el criterio cúbico de clustering (CCC) de Sarle (1983),
-que contrasta la hipótesis nula de una muestra uniforme sobre un hiper-rectángulo contra
-una mezcla de normales esféricas y toma como evidencia los valores mayores que 2; el
-pseudo-*F* de separación entre grupos; el pseudo-*T²*, que dice si los dos últimos grupos
-unidos debían unirse; y el estadístico de tipo *F* de Beale. Ninguno se distribuye como la
-variable aleatoria que su nombre sugiere, y el capítulo pide quedarse con las soluciones en
-que varios coinciden.
+Institute, s.f.-b): el nivel de fusión del dendrograma, el criterio cúbico de clustering
+(CCC) de Sarle (1983), el pseudo-*F*, el pseudo-*T²* y el estadístico de Beale. Ninguno se
+distribuye como la variable aleatoria que su nombre sugiere, así que se buscan picos y se
+retienen las soluciones donde varios coinciden. Acá el pseudo-*F* es el índice de Calinski
+y Harabasz de `scikit-learn` y el CCC no tiene implementación fuera de SAS. El barrido de
+$k$ entre 2 y 15 no da el pico interior que el capítulo manda buscar: el pseudo-*F* cae
+hasta su mínimo en $k = `r e7kmin`$ y la silueta llega a su máximo en el otro extremo,
+$k = `r e7meta$silhouette_k_max`$, así que $k = `r e7meta$k_elegido`$ se fija por las diez
+islas de la Figura 3 y por el dominio.
 
-El pseudo-*F* es el índice de Calinski y Harabasz de `scikit-learn`; el CCC no tiene
-implementación fuera de SAS. El barrido de $k$ entre 2 y 15 no da el pico interior que el
-capítulo manda buscar: el pseudo-*F* cae hasta su mínimo en $k = `r e7kmin`$ y la silueta
-llega a su máximo en el otro extremo, $k = `r e7meta$silhouette_k_max`$. Los dos empujan
-hacia los bordes, así que $k = `r e7meta$k_elegido`$ se fija por las diez islas de la
-Figura 3 y por el dominio.
-
-El perfilado tiene después tres pasos: las medias por grupo, un MANOVA (análisis
-multivariado de la varianza) que contrasta la igualdad de los vectores de medias sobre
-todas las variables a la vez, y un ANOVA por variable más un discriminante canónico para
-ver cuáles producen la diferencia; las que no difieren se podan. El capítulo corrige la
-multiplicidad con Tukey, de a pares dentro de cada variable; acá se usa Bonferroni, que el
-capítulo da como alternativa más conservadora, porque lo que se controla es la familia de
-las `r e7meta$n_var_usadas` pruebas de variable. La Tabla 4 trae las de mayor *F* con el
-tamaño de efecto $\eta^2$, la varianza de la variable que explica la partición.
+El perfilado tiene después tres pasos: las medias por grupo; un MANOVA (análisis
+multivariado de la varianza), que contrasta la igualdad de los vectores de medias sobre
+todas las variables a la vez y así controla el error de tipo I a nivel del experimento; y
+un ANOVA por variable con un discriminante canónico, para ver cuáles producen la
+diferencia y podar las que no. La multiplicidad se corrige con Bonferroni sobre las
+`r e7meta$n_var_usadas` pruebas de variable, la alternativa conservadora que el propio
+capítulo admite. La Tabla 4 trae las de mayor *F* con su tamaño de efecto.
 
 ```{r e7-tab-perfil, echo=FALSE}
 names(e7tp) <- c("Píxel (fila, col.)", "F", "Eta cuadrado", "Media alta",
@@ -760,58 +752,38 @@ kable(e7tp, booktabs = TRUE, row.names = FALSE,
 *Nota.* Elaboración propia. Medias en la escala 0 a 16, con el grupo entre paréntesis.
 
 El píxel de la esquina inferior derecha promedia `r fmt_e7(max(e7gm[1, ]), 1)` en el grupo
-`r e7grp[which.max(e7gm[1, ])]` y menos de 0,05 en `r e7ceros` de los diez, con un $\eta^2$
-de `r fmt_e7(e7med$eta2[1], 3)`. Bajo el umbral de Bonferroni,
-`r fmt_e7(e7meta$alfa_bonferroni, 5)`, resultan significativas `r e7nsig` variables: la
-poda del capítulo casi no tiene efecto acá. La primera función canónica absorbe
-`r fmt_e7(100 * e7meta$cda_var_can1, 1)` % de la varianza entre grupos, con coeficiente de
-estructura intra-grupo máximo `r fmt_e7(e7cda$Can1[1], 3)` en ese mismo píxel.
+`r e7grp[which.max(e7gm[1, ])]` y menos de 0,05 en `r e7ceros` de los diez. Bajo el umbral
+de Bonferroni resultan significativas `r e7nsig` variables, así que la poda del capítulo
+casi no tiene efecto acá; la primera función canónica absorbe
+`r fmt_e7(100 * e7meta$cda_var_can1, 1)` % de la varianza entre grupos.
 
 El capítulo advierte que esas pruebas se leen con cuidado, porque el clustering viola sus
 supuestos, y dos controles miden hasta dónde llega la advertencia. Una partición al azar de
-los mismos datos no deja ninguna variable significativa, con *F* mediana
-`r fmt_e7(e7ctrl$F_mediana[2], 2)`. k-means sobre datos uniformes en un hiper-rectángulo,
-que es la hipótesis nula del CCC y por definición no tiene grupos, deja
-`r e7ctrl$n_signif[3]` de las `r e7meta$n_var_usadas` significativas, con *F* máximo
-`r fmt_e7(e7ctrl$F_max[3], 0)` y $\eta^2$ de `r fmt_e7(e7ctrl$eta2_max[3], 2)`. El grueso
-de la distribución sí distingue los dos casos, con *F* mediana
-`r fmt_e7(e7ctrl$F_mediana[3], 2)` contra `r fmt_e7(e7ctrl$F_mediana[1], 1)` en los
-dígitos, así que el ANOVA no queda invalidado. Lo que el control muestra es más acotado:
-sobre datos sin estructura, el solo hecho de particionar fabrica un puñado de variables con
-*F* enorme y efecto grande. La significación de una variable tomada de a una no certifica
-que los grupos existan; eso queda del lado del CCC y la validación externa.
+los mismos datos no deja ninguna variable significativa. En cambio k-means sobre datos
+uniformes, que por definición no tienen grupos, deja `r e7ctrl$n_signif[3]` de las
+`r e7meta$n_var_usadas` significativas, con *F* máximo
+`r fmt_e7(e7ctrl$F_max[3], 0)`. El grueso de la distribución sí distingue los dos casos
+(*F* mediana `r fmt_e7(e7ctrl$F_mediana[3], 2)` contra
+`r fmt_e7(e7ctrl$F_mediana[1], 1)` en los dígitos), así que el ANOVA no queda invalidado.
+Lo que el control muestra es más acotado: sobre datos sin estructura, el solo hecho de
+particionar fabrica un puñado de variables con *F* enorme. La significación de una variable
+tomada de a una no certifica que los grupos existan.
 
-El apunte define t-SNE (t-Distributed Stochastic Neighbor Embedding) como una técnica de
-aprendizaje de variedades no lineal que proyecta datos de alta dimensión a dos o tres
-dimensiones con preservación de la vecindad local (Volpacchio, s.f.-d), según la
-formulación de van der Maaten y Hinton (2008). Convierte distancias en probabilidades:
-centra en cada $x_i$ una gaussiana de varianza $\sigma_i^2$, define la probabilidad de que
-$x_j$ sea su vecino y la simetriza,
+t-SNE (t-Distributed Stochastic Neighbor Embedding) proyecta datos de alta dimensión a dos
+o tres dimensiones con preservación de la vecindad local (Volpacchio, s.f.-d; van der
+Maaten & Hinton, 2008). Traduce distancias a probabilidades de vecindad en el espacio
+original, hace lo mismo en el mapa pero con una t de Student, cuyas colas pesadas evitan
+que los puntos se amontonen al perder dimensiones, y mueve los puntos del mapa hasta que
+las dos distribuciones se parezcan. La discrepancia se mide con la divergencia de
+Kullback-Leibler, cuya asimetría castiga mucho más separar vecinos que acercar puntos
+lejanos: de ahí la fidelidad local por encima de la global, que explica sus ventajas y
+también sus limitantes.
 
-$$p_{j|i} = \frac{\exp\bigl(-\lVert x_i - x_j \rVert^2 / 2\sigma_i^2\bigr)}
-{\sum_{k \ne i} \exp\bigl(-\lVert x_i - x_k \rVert^2 / 2\sigma_i^2\bigr)},
-\qquad
-p_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}.$$
-
-En el mapa, las similitudes entre los puntos $y_i$ usan una t de Student de un grado de
-libertad, $q_{ij} \propto (1 + \lVert y_i - y_j \rVert^2)^{-1}$, cuyas colas pesadas
-resuelven el problema de aglomeración, la tendencia de los puntos moderadamente distantes a
-amontonarse cuando el destino tiene muchas menos dimensiones que el origen. La función de
-costo es la divergencia de Kullback-Leibler
-$KL(P\lVert Q) = \sum_{i \ne j} p_{ij} \log (p_{ij}/q_{ij})$, minimizada por descenso de
-gradiente. Su asimetría es deliberada: el término $p_{ij} \log(p_{ij}/q_{ij})$ castiga
-mucho más que dos vecinos del espacio original terminen lejos en el mapa que el caso
-inverso, y de ahí la fidelidad local por encima de la global.
-
-El único parámetro externo relevante es la perplejidad, que no es una cantidad fija de
-vecinos sino un regulador de la entropía de la distribución condicional,
-$\mathrm{Perp}(P_i) = 2^{H(P_i)}$ con $H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}$. Fijada la
-perplejidad objetivo, cada $\sigma_i$ sale de una búsqueda binaria hasta igualar esa
-entropía, y el ancho de la gaussiana se adapta a la densidad local. El gradiente suma
-fuerzas entre todos los pares y cuesta $O(N^2)$; Barnes-Hut (van der Maaten, 2014) arma un
-quadtree sobre el mapa, calcula exacto las pocas fuerzas de atracción, aproxima las de
-repulsión por el centro de masa de cada celda con $s/r < \theta$, y baja el costo a
-$O(N \log N)$.
+El único parámetro externo relevante es la perplejidad, la cantidad efectiva de vecinos que
+cada punto tiene en cuenta; el ancho de la campana se ajusta punto por punto hasta
+alcanzarla, así que se adapta solo a la densidad de cada zona. La variante Barnes-Hut (van
+der Maaten, 2014) trata los grupos lejanos como un solo punto y es la que hace viable el
+método sobre decenas de miles de observaciones.
 
 **Para qué se utiliza.** Para visualización exploratoria, y nada más. El apunte es
 enfático: t-SNE no es un algoritmo de clustering ni un modelo predictivo, sino una
@@ -830,60 +802,52 @@ Z = TSNE(n_components=2, perplexity=30, init="pca", learning_rate="auto",
 ```
 
 **Limitantes.** La perplejidad es la primera: en la fila inferior de la Figura 3, con 5 los
-grupos se parten en subgrumos y el espacio vacío entre ellos desaparece, y con 50 las islas
-vecinas se acercan hasta tocarse. La divergencia KL baja de
-`r fmt_e7(e7perp$kl_final[1], 3)` a `r fmt_e7(e7perp$kl_final[3], 3)`, pero esa caída no
-indica un mapa mejor: cada perplejidad define una matriz $P$ distinta y dos divergencias
-contra distribuciones objetivo diferentes no se comparan. La que sí compara es la
-confiabilidad (*trustworthiness*), la proporción de vecinos del espacio original que siguen
-siéndolo en el mapa, entre `r fmt_e7(min(e7perp$trustworthiness), 3)` y
-`r fmt_e7(max(e7perp$trustworthiness), 3)` sobre los doce más cercanos. La segunda es que
+grupos se parten en subgrumos y con 50 las islas vecinas se acercan hasta tocarse, o sea que
+la cantidad de grupos que uno cree ver depende del parámetro. La divergencia KL no sirve
+para elegir entre esos mapas, porque cada perplejidad define un objetivo distinto; la medida
+que sí compara es la confiabilidad (*trustworthiness*), la proporción de vecinos del espacio
+original que siguen siéndolo en el mapa, acá entre
+`r fmt_e7(min(e7perp$trustworthiness), 3)` y
+`r fmt_e7(max(e7perp$trustworthiness), 3)`. La segunda es que
 las coordenadas carecen de interpretación métrica: el tamaño de una isla y la separación
 entre dos no admiten lectura cuantitativa. La tercera es que no hay función de proyección:
 la clase `TSNE` de `scikit-learn` no expone `transform`, verificado en la corrida, y una
 observación nueva exige recalcular el mapa entero. Se suman el costo cuadrático sin
 Barnes-Hut y el carácter no convexo del costo, expuesto a mínimos locales.
 
-**Ventajas.** Captura dependencias no lineales que una proyección lineal no desenrolla
-(paneles 1 y 5 de la Figura 3), conserva la vecindad local con confiabilidad por encima de
-`r fmt_e7(min(e7perp$trustworthiness), 3)`, evita la aglomeración por la t de Student, y
-entrega la hipótesis sobre la cantidad de grupos que los criterios del capítulo de
-evaluación no dieron.
+**Ventajas.** Captura dependencias no lineales que componentes principales y MDS no
+desenrollan (paneles 1 y 5 de la Figura 3), con confiabilidad por encima de
+`r fmt_e7(min(e7perp$trustworthiness), 3)`. Contra UMAP pierde: es más lento y no proyecta
+datos nuevos.
 
-**Dónde conviene correr el clustering.** El apunte recomienda modelar sobre el espacio
-original, o sobre una reducción por componentes principales si la dimensión es extrema, y
-admite también aplicarlo sobre la proyección. La corrida no respalda esa preferencia por el
-lado del resultado: contra el dígito real, k-means sobre el embedding llega a un ARI de
+**Dónde conviene correr el clustering.** El apunte recomienda el espacio original, o una
+reducción por componentes principales si la dimensión es extrema, y admite también la
+proyección. La corrida no respalda esa preferencia por el lado del resultado: contra el
+dígito real, k-means sobre el embedding llega a un ARI de
 `r fmt_e7(e7ce$ari_vs_digito, 3)` y sobre las `r e7meta$n_var_usadas` variables a
 `r fmt_e7(e7co$ari_vs_digito, 3)`; con DBSCAN la brecha es mayor todavía,
 `r fmt_e7(e7dbe$ari_vs_digito, 3)` contra `r fmt_e7(e7dbo$ari_vs_digito, 3)`. Medido por el
 juez externo, en este conjunto agrupar sobre el mapa funciona mejor.
 
-Lo que no se sostiene es comparar los índices internos entre espacios. La silueta de la
-partición del embedding vale `r fmt_e7(e7ce$silhouette_propio, 3)` en las coordenadas del
-mapa y `r fmt_e7(e7meta$silhouette_particion_embedding_en_espacio_original, 3)` sobre las
-variables originales, por debajo de la partición nativa
-(`r fmt_e7(e7co$silhouette_propio, 3)`): la misma partición cambia de nota según dónde se la
-mida, porque t-SNE construyó esas coordenadas para que los grupos se vieran separados. El
-único criterio disponible sin etiquetas no puede arbitrar entre los dos caminos.
+Lo que no se sostiene es comparar los índices internos entre espacios: la silueta de la
+partición del embedding cae de `r fmt_e7(e7ce$silhouette_propio, 3)` en el mapa a
+`r fmt_e7(e7meta$silhouette_particion_embedding_en_espacio_original, 3)` sobre las variables
+originales, porque t-SNE construyó esas coordenadas para que los grupos se vieran separados.
+El único criterio disponible sin etiquetas no puede arbitrar. Las dos razones que sí deciden
+no dependen de qué índice gane: sin `transform`, la partición del mapa no se aplica a una
+observación nueva sin recalcularlo entero, lo cual la deja fuera del scoring del capítulo de
+evaluación; y sin interpretación métrica, los centroides no se leen en unidades de las
+variables. Para un mapa que se mira una vez, agrupar sobre la proyección es defendible; para
+un modelo que se vuelve a aplicar y hay que explicar, no.
 
-Las dos razones que sí deciden son las limitantes ya señaladas y no dependen de qué índice
-gane. Sin `transform`, la partición del mapa no se aplica a una observación nueva sin
-recalcularlo entero, lo cual la deja fuera del scoring del capítulo de evaluación; y sin
-interpretación métrica, los centroides no se leen en unidades de las variables ni se
-perfilan como en la Tabla 4. Para un mapa que se mira una vez, agrupar sobre la proyección
-es defendible; para un modelo que se vuelve a aplicar y hay que explicar, no.
-
-**Lo que falló.** Se esperaba que la partición del embedding fuera además inestable frente a
-la perplejidad. No ocurrió: el ARI entre la partición con perplejidad 5 y la de 50 es
-`r fmt_e7(e7ce$estabilidad, 3)`, casi igual a la estabilidad de k-means en el espacio
-original entre dos semillas, `r fmt_e7(e7co$estabilidad, 3)`, así que esa vía del argumento
-se descarta. El segundo fracaso es DBSCAN (Ester et al., 1996), que el apunte propone como
-complemento de t-SNE: se barrieron `r e7dbo$eps_probados` configuraciones por espacio, con
-$\varepsilon$ en `r e7meta$n_eps_por_espacio` valores entre los percentiles 1 y 99 de la
-distancia al décimo vecino y `MinPts` en 5 y 10, así que la Tabla 5 no es por falta de
-búsqueda. En las `r e7meta$n_var_usadas` dimensiones la mejor configuración por silueta deja
-un bloque único con migas alrededor, y la reducción a diez componentes no lo corrige.
+**Lo que falló.** Se esperaba que la partición del embedding fuera además inestable frente
+a la perplejidad, y no lo es (ARI `r fmt_e7(e7ce$estabilidad, 3)` entre perplejidad 5 y 50,
+contra `r fmt_e7(e7co$estabilidad, 3)` de k-means entre dos semillas), así que esa vía del
+argumento se descarta. El segundo fracaso es DBSCAN (Ester et al., 1996), que el apunte propone como
+complemento de t-SNE: se barrieron `r e7dbo$eps_probados` configuraciones por espacio, así
+que la Tabla 5 no es por falta de búsqueda. En las `r e7meta$n_var_usadas` dimensiones la
+mejor configuración deja un bloque único con migas alrededor, y la reducción a diez
+componentes no lo corrige.
 
 ```{r e7-tab-db, echo=FALSE}
 e7td <- data.frame(
@@ -916,24 +880,17 @@ kable(e7td, booktabs = TRUE, row.names = FALSE,
 
 La causa está en las dos últimas columnas: con la distancia máxima a
 `r fmt_e7(e7conc_o$razon_max_min, 1)` veces la mínima contra
-`r fmt_e7(e7conc_e$razon_max_min, 0)` en el mapa, no hay radio $\varepsilon$ global que
-distinga una región densa de una rala, que es la limitante en alta dimensión que el propio
-apunte le atribuye a DBSCAN. El complemento que el apunte le propone a t-SNE depende
-entonces del espacio: k-means, que compara cada punto contra diez centroides en lugar de
-apoyarse en un radio de densidad global, sí recupera la estructura en las
-`r e7meta$n_var_usadas` dimensiones, y sus etiquetas sobre el mapa coinciden con las islas
-salvo en dos grupos que las cortan.
+`r fmt_e7(e7conc_e$razon_max_min, 0)` en el mapa, no hay radio global que distinga una
+región densa de una rala, que es la limitante en alta dimensión que el propio apunte le
+atribuye a DBSCAN. El complemento de t-SNE depende entonces del espacio: k-means, que
+compara contra centroides en lugar de apoyarse en un radio de densidad, sí recupera la
+estructura en las `r e7meta$n_var_usadas` dimensiones.
 
-**Fuentes del Ejercicio 7.** Material de cátedra: SAS Institute (s.f.-a), capítulo 2
-`Preparation for Clustering.pdf` (clase 7), clustering de variables, ayudas gráficas,
-estandarización y preproceso; SAS Institute (s.f.-b), capítulo 5
-`Assessing Clustering Results.pdf` (clase 7), cantidad de clusters y perfilado; Volpacchio
-(s.f.-d), apunte `TSNE_Perplejidad_Clustering_NoLineal` (clase 8), para la formulación de
-t-SNE, la perplejidad, Barnes-Hut y el flujo de trabajo. Los dos capítulos son del curso de
-SAS, sin fecha ni autor personal visible, y se citan como obra institucional. Sarle (1983)
-para el CCC; van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE y
-Barnes-Hut; Ester et al. (1996) para DBSCAN; Alpaydin y Kaynak (1998) para el conjunto de
-datos. Corrida propia: `codigo/e7_tsne/tsne_clustering.py`.
+**Fuentes del Ejercicio 7.** `Preparation for Clustering.pdf` cap. 2 y `Assessing
+Clustering Results.pdf` cap. 5 (clase 7, SAS Institute, s.f.-a y s.f.-b);
+`TSNE_Perplejidad_Clustering_NoLineal` (clase 8, Volpacchio, s.f.-d). Sarle (1983), van der
+Maaten y Hinton (2008), van der Maaten (2014), Ester et al. (1996), Alpaydin y Kaynak
+(1998).
 
 \newpage
 
