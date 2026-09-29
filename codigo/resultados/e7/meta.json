@@ -1,0 +1,28 @@
+{
+  "semilla": 42,
+  "var_pca2": 0.21594970500832816,
+  "n_eps_por_espacio": 18,
+  "python": "3.10.6",
+  "sklearn": "1.7.2",
+  "numpy": "2.2.6",
+  "scipy": "1.15.3",
+  "n_obs": 1797,
+  "n_var_original": 64,
+  "n_var_usadas": 61,
+  "n_var_descartadas": 3,
+  "k_elegido": 10,
+  "k_pico_pseudo_f": 2,
+  "alfa": 0.05,
+  "alfa_bonferroni": 0.000819672131147541,
+  "silhouette_particion_embedding_en_espacio_original": 0.11031194132052993,
+  "cda_var_can1": 0.2267483210762433,
+  "cda_var_can2": 0.18505083541459047,
+  "perplejidades": [
+    5,
+    30,
+    50
+  ],
+  "tsne_tiene_transform": false,
+  "pseudo_f_pico_interior": false,
+  "silhouette_k_max": 15
+}

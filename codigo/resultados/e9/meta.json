@@ -1,0 +1,80 @@
+{
+  "status": "ok",
+  "semilla": 42,
+  "datos": "Breast Cancer Wisconsin (Diagnostic), sklearn",
+  "n_train": 398,
+  "n_test": 171,
+  "n_variables": 30,
+  "curva_oob": {
+    "err_oob_10": 0.05025125628140703,
+    "err_oob_1000": 0.03266331658291455,
+    "err_oob_min": 0.03266331658291455,
+    "arboles_desde_100": 100,
+    "amplitud_desde_100": 0.01005025125628145,
+    "err_test_1000": 0.052631578947368474
+  },
+  "barrido_m": {
+    "m_optimo": 3,
+    "err_oob_optimo": 0.03015075376884424,
+    "err_oob_max": 0.042713567839196,
+    "amplitud_err_oob": 0.012562814070351758,
+    "ee_binomial": 0.008571556008219695,
+    "rango_plano": [
+      1,
+      30
+    ],
+    "n_plano": 13,
+    "n_puntos": 15,
+    "corr_m1": 0.2521705443534424,
+    "corr_m30": 0.4127104380791044,
+    "fuerza_m1": 0.7680701754385963,
+    "fuerza_m30": 0.8355945419103313,
+    "cota_min": 0.16148759562170328
+  },
+  "oob_vs_test": {
+    "brecha_media_barrido": -0.022469070498692335,
+    "n_brechas_negativas_barrido": 15,
+    "particiones": {
+      "n": 20,
+      "err_oob_medio": 0.040326633165829136,
+      "err_test_medio": 0.043567251461988324,
+      "brecha_media": -0.0032406182961591925,
+      "brecha_sd": 0.017575501853640433,
+      "brecha_abs_media": 0.015120191601281262,
+      "t": -0.8245844539387169,
+      "p": 0.41983960709982826,
+      "gl": 19
+    }
+  },
+  "importancias": {
+    "rank_gini_ruido_continuo": 31,
+    "rank_perm_ruido_continuo": 28,
+    "gini_ruido_continuo": 0.003070332362206147,
+    "gini_ruido_binario": 0.000531706939983421,
+    "gini_cat4": 0.000953344295118173,
+    "razon_gini_continuo_binario": 5.774482391186923,
+    "perm_max_ruido": 0.0,
+    "n_variables_gini_menor_que_ruido": 0,
+    "spearman_gini_perm": 0.6518744443376113
+  },
+  "bagging": [
+    {
+      "metodo": "Bagging de arboles",
+      "m": 30,
+      "err_oob": 0.03768844221105527,
+      "err_test": 0.05847953216374269,
+      "fuerza": 0.8355945419103313,
+      "correlacion": 0.4127104380791044,
+      "acierto_arbol_solo": 0.9177972709551657
+    },
+    {
+      "metodo": "Random Forest",
+      "m": 5,
+      "err_oob": 0.03266331658291455,
+      "err_test": 0.05847953216374269,
+      "fuerza": 0.8282261208576998,
+      "correlacion": 0.36809079238684334,
+      "acierto_arbol_solo": 0.9141130604288499
+    }
+  ]
+}

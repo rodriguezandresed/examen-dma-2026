@@ -1,0 +1,10 @@
+chequeo,esperado,obtenido,ok
+D_t con la convención de las diapositivas y con la de sklearn,0,8.33e-17,True
+alpha de sklearn sobre alpha de las diapositivas,2,2.0000,True
+Predicciones de test iguales a las de AdaBoostClassifier,100 %,100 %,True
+Accuracy de test de la implementación propia,0.9591,0.9591,True
+F_0 con pérdida cuadrática (media de los alquileres),1418,1418,True
+F_0 con pérdida absoluta (mediana de los alquileres),1280,1280,True
+Gradiente de la MSE contra el vector residual (máx. dif.),0,5.01e-07,True
+Gradiente de la MAE contra el vector de signos (máx. dif.),0,4.66e-09,True
+MSE de test propio contra GradientBoostingRegressor (dif. rel.),< 5 %,0.13 %,True
