@@ -84,14 +84,19 @@ def panel_curvas(ax_izq, ax_der):
 
 
 def figura():
-    fig, ax = plt.subplots(2, 2, figsize=(9.2, 5.1))
-    panel_mecanismo(ax[0, 0], ax[0, 1])
-    panel_curvas(ax[1, 0], ax[1, 1])
-    ax[1, 1].sharey(ax[1, 0])
+    # Solo los dos paneles del mecanismo. La fila de curvas de error se saco del
+    # informe: la consigna pide la diferencia entre los dos algoritmos y una
+    # explicacion intuitiva, no el comportamiento del error contra iteraciones.
+    # panel_curvas() queda en el script por si hace falta para el oral.
+    fig, ax = plt.subplots(1, 2, figsize=(9.2, 2.9))
+    panel_mecanismo(ax[0], ax[1])
     for a in ax.ravel():
         a.grid(alpha=0.25, lw=0.6)
-        a.tick_params(labelsize=7.5)
-    fig.tight_layout(h_pad=1.4)
+        a.tick_params(labelsize=9)
+        a.title.set_fontsize(10.5)
+        a.xaxis.label.set_fontsize(9.5)
+        a.yaxis.label.set_fontsize(9.5)
+    fig.tight_layout()
     fig.savefig(OUT / "mecanismo_y_error.png", dpi=150)
     plt.close(fig)
 
