@@ -772,6 +772,15 @@ Kullback-Leibler, cuya asimetría castiga mucho más separar vecinos que acercar
 lejanos: de ahí la fidelidad local por encima de la global, que explica sus ventajas y
 también sus limitantes.
 
+```{r e7-esquema, out.width="96%", fig.cap="Flujo de t-SNE."}
+knitr::include_graphics("codigo/resultados/e7/esquema_tsne.png")
+```
+
+*Nota.* Elaboración propia. En el espacio original la vecindad se mide con una campana por
+punto; en el mapa, con una t de Student, cuyas colas pesadas evitan la aglomeración.
+
+La entrada es la matriz de datos estandarizada y la salida son dos coordenadas por observación, sin etiquetas de por medio: no hay nada que predecir. Lo que se minimiza es la discrepancia entre las dos distribuciones de vecindad, y el resultado del entrenamiento no es un modelo sino el propio mapa, un conjunto de posiciones.
+
 El único parámetro externo relevante es la perplejidad, la cantidad efectiva de vecinos que
 cada punto tiene en cuenta; el ancho de la campana se ajusta punto por punto hasta
 alcanzarla, así que se adapta solo a la densidad de cada zona. La variante Barnes-Hut (van
@@ -873,6 +882,8 @@ $e^{\alpha_t}$ y la que acertó lo divide por lo mismo, con lo cual el clasifica
 de la ronda siguiente se concentra sobre lo que quedó mal resuelto. La salida es el voto
 ponderado $H(x) = \mathrm{sign}\bigl(\sum_t \alpha_t h_t(x)\bigr)$.
 
+En los dos casos lo que se pretende aprender es la misma función, la que asigna una clase o un valor a cada observación, y lo que se minimiza es el error sobre el conjunto de entrenamiento; lo que cambia es el camino.
+
 Gradient Boosting (Friedman, 2001) trabaja sobre el target, la variable de respuesta, y
 no sobre los pesos. El modelo se escribe $F_m(x) = F_{m-1}(x) + \beta_m\, h(x; a_m)$, y
 en cada iteración $h$ se ajusta por mínimos cuadrados a los pseudo-residuos, que son el
@@ -882,6 +893,13 @@ $\tilde{y}_{im} = -\bigl[\partial \psi(y_i, F(x_i)) / \partial F(x_i)\bigr]_{F =
 Con pérdida cuadrática ese pseudo-residuo es el residuo común $y_i - F_{m-1}(x_i)$. Todas
 las observaciones pesan siempre $1/N$: lo que cambia de una iteración a la otra es qué se
 le pide predecir al árbol.
+
+```{r e8-esquema, out.width="92%", fig.cap="El ciclo de boosting en sus dos variantes."}
+knitr::include_graphics("codigo/resultados/e8/esquema_boosting.png")
+```
+
+*Nota.* Elaboración propia. Las dos filas tienen la misma forma y difieren en una sola
+caja, que es donde está la diferencia entre los dos algoritmos.
 
 ```{r e8-tab-dif, echo=FALSE}
 # Sin $...$ en las celdas: pandoc reescribe la tabla y la notación matemática
@@ -974,13 +992,30 @@ knitr::include_graphics("codigo/resultados/e8/mecanismo_y_error.png")
 por su valor inicial. A la izquierda, el peso medio de las observaciones según las haya
 errado o no el primer stump; a la derecha, el desvío estándar del pseudo-residuo.
 
-La Figura 4 contrasta los dos mecanismos sobre una corrida propia. En AdaBoost, las
+La Figura 6 contrasta los dos mecanismos sobre una corrida propia. En AdaBoost, las
 observaciones que el primer stump erró pesan a lo largo de las `r nrow(e8rondas)` rondas
 entre `r fm(min(e8ratio), 1)` y `r fm(max(e8ratio), 1)` veces lo que las fáciles, con una
 media de `r fm(mean(e8ratio), 1)`, mientras el target permanece intacto. En Gradient
 Boosting ocurre lo contrario: el peso de cada observación queda fijo en $1/N$ y lo que se
 achica es el target, cuyo desvío estándar cae de `r fm(e8sd0, 1)` a `r fm(e8sdT, 1)` en
 `r nrow(e8gb)` iteraciones.
+
+**Cuándo conviene cada uno, y contra qué compiten.** AdaBoost sigue siendo razonable en
+clasificación binaria sobre datos limpios, donde su sensibilidad a los atípicos no
+molesta, y tiene la ventaja de no exigir casi ajuste: la cantidad de rondas es
+prácticamente el único parámetro. Gradient Boosting conviene apenas el problema se sale
+de ese molde, sea por el tipo de target (regresión, conteos, supervivencia) o por la
+presencia de ruido en las etiquetas, porque cambiar la función de pérdida es cambiar un
+argumento. Esa flexibilidad explica cuál de las dos ramas sobrevivió: XGBoost y LightGBM
+descienden de Gradient Boosting, no de AdaBoost, y son hoy la referencia en datos
+tabulares.
+
+Frente a Random Forest, que es el otro gran ensamblaje, la elección es distinta y no se
+juega en la precisión sino en el costo de ajuste. Random Forest se construye en paralelo,
+tolera hiperparámetros por defecto y da su error de generalización sin partir la muestra;
+boosting suele superarlo cuando está bien ajustado, pero exige elegir la cantidad de
+iteraciones, que en su caso sí es un parámetro de capacidad. Para una línea de base rápida
+conviene Random Forest; para exprimir el último punto de performance, boosting.
 
 **Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.-a):
 `Ensemble Methods Universidad Austral.pdf` (clase 6), para P&C y Arcing, el pseudocódigo
@@ -1021,6 +1056,8 @@ las diapositivas solo contiene imágenes, sin texto, por lo que la descripción 
 documento de Breiman y Cutler de la clase 6, con las definiciones formales tomadas del
 artículo original (Breiman, 2001).
 
+La entrada es una tabla de $N$ filas y $M$ variables con su etiqueta, y la salida es la clase votada por el bosque, o el promedio de los árboles si el target es continuo. Lo que se aprende son los cortes de cada árbol; no hay una función de pérdida global que se minimice de forma conjunta, a diferencia de boosting: cada árbol se ajusta por separado y la combinación es posterior.
+
 Cada árbol crece en tres pasos. Si el conjunto de entrenamiento tiene $N$ filas, se
 muestrean $N$ casos al azar con reemplazo, y esa muestra bootstrap es el conjunto con el
 que crece ese árbol. Si hay $M$ variables de entrada, se fija un número $m \ll M$ tal
@@ -1029,6 +1066,13 @@ mantiene constante durante todo el crecimiento del bosque. El árbol crece sin p
 que cada registro queda en un nodo terminal propio. La aleatoriedad entra entonces por
 dos puertas, las filas vía bootstrap y las columnas vía el sorteo en cada nodo, y esa
 segunda es la que define a RF.
+
+```{r e9-esquema, out.width="94%", fig.cap="Armado de un Random Forest."}
+knitr::include_graphics("codigo/resultados/e9/esquema_rf.png")
+```
+
+*Nota.* Elaboración propia. La rama inferior no interviene en el voto: son los casos que
+cada árbol no vio, y de ahí sale el error de generalización sin partir la muestra.
 
 El resultado central es que la tasa de error del bosque depende de dos cantidades: la
 correlación entre dos árboles cualesquiera, que al aumentar aumenta el error, y la fuerza
@@ -1196,6 +1240,7 @@ discovering clusters in large spatial databases with noise. *Proceedings of the 
 International Conference on Knowledge Discovery and Data Mining (KDD-96)*, 226-231.
 
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
+https://www.deeplearningbook.org/
 
 Hinton, G. E., & Salakhutdinov, R. R. (2006). Reducing the dimensionality of data with
 neural networks. *Science, 313*(5786), 504-507. https://doi.org/10.1126/science.1127647
@@ -1212,16 +1257,17 @@ https://doi.org/10.1109/5.726791
 
 van der Maaten, L. (2014). Accelerating t-SNE using tree-based algorithms. *Journal of
 Machine Learning Research, 15*, 3221-3245.
+https://www.jmlr.org/papers/v15/vandermaaten14a.html
 
 van der Maaten, L., & Hinton, G. (2008). Visualizing data using t-SNE. *Journal of
-Machine Learning Research, 9*, 2579-2605.
+Machine Learning Research, 9*, 2579-2605. https://www.jmlr.org/papers/v9/vandermaaten08a.html
 
 Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word
 representations in vector space. *Workshop track of the 1st International Conference on
 Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 
-Ng, A. (s.f.). *Deep learning: Convolutional neural networks* [Material de cátedra].
-Universidad Austral, Data Mining Avanzado.
+Ng, A. (s.f.). *Deep learning: convolutional neural networks* [Diapositivas].
+Material distribuido en la asignatura Data Mining Avanzado, Universidad Austral.
 
 Sarle, W. S. (1983). *Cubic clustering criterion* (SAS Technical Report A-108). SAS
 Institute.
@@ -1233,9 +1279,10 @@ SAS Institute. (s.f.-b). *Assessing clustering results* [Capítulo 5 del curso d
 clustering]. Material de cátedra, Data Mining Avanzado, Universidad Austral.
 
 Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with
-neural networks. *Advances in Neural Information Processing Systems 27*, pp. 3104-3112.
+neural networks. *Advances in Neural Information Processing Systems 27*, pp. 3104-3112. https://arxiv.org/abs/1409.3215
 
 Vapnik, V. N. (1995). *The nature of statistical learning theory*. Springer.
+https://doi.org/10.1007/978-1-4757-2440-0
 
 Volpacchio, M. (s.f.-b). *SVM Universidad Austral* [Presentación de clase]. Universidad
 Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
