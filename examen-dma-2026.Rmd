@@ -656,7 +656,7 @@ e7conc_e <- e7conc[e7conc$espacio == "Embedding t-SNE 2D", ]
 ```
 
 Los tres puntos se apoyan en una corrida común, `codigo/e7_tsne/tsne_clustering.py`
-(Apéndice), con semilla `r e7meta$semilla` sobre los dígitos manuscritos de
+(repositorio), con semilla `r e7meta$semilla` sobre los dígitos manuscritos de
 `r e7meta$n_obs` observaciones y `r e7meta$n_var_original` píxeles (Alpaydin & Kaynak,
 1998). Se descartan `r e7meta$n_var_descartadas` píxeles de varianza nula y se estandarizan
 los `r e7meta$n_var_usadas` restantes. El dígito queda fuera del modelo, como juez externo
@@ -1059,7 +1059,7 @@ extrae en cada iteración una submuestra de $N_0 \le N$ observaciones para entre
 (Friedman, 2002). Los tres parámetros fundamentales, según las diapositivas, son la
 cantidad de iteraciones, el shrinkage y esa proporción de entrenamiento.
 
-El código de `codigo/e8_boosting/` (Apéndice) contrasta los dos mecanismos sobre datos
+El código de `codigo/e8_boosting/` contrasta los dos mecanismos sobre datos
 reales, con semilla 42. AdaBoost corre sobre Breast Cancer Wisconsin, con stumps (árboles
 de un solo corte) como clasificador base y partición estratificada 70/30, es decir con la
 proporción de las dos clases conservada en cada parte. Gradient Boosting corre sobre el
@@ -1297,7 +1297,7 @@ boosting el número de rondas $T$ sí lo es. El Ejercicio 8 acota hasta dónde l
 diferencia: sobre esta misma partición, el error de test de AdaBoost tampoco vuelve a subir
 en 400 rondas con las etiquetas originales, y sube recién al dar vuelta el 10 % de ellas.
 
-El script `codigo/e9_rf/rf_breiman.py` (Apéndice) corre cinco experimentos sobre Breast
+El script `codigo/e9_rf/rf_breiman.py` corre cinco experimentos sobre Breast
 Cancer Wisconsin (Diagnostic), 569 casos, 30 variables continuas y dos clases, con
 partición estratificada 70/30, semilla 42 y 398 casos de entrenamiento; el test se
 reserva y no interviene en ninguna elección de hiperparámetros.
@@ -1457,51 +1457,15 @@ Breiman (1996) y Wolberg et al. (1995).
 
 # Apéndice · Código
 
-El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts de los
-Ejercicios 1, 7, 8 y 9.
+El código se desarrolló y ejecutó fuera del `.Rmd`. Se transcribe el del Ejercicio 1.VI,
+que es el que la consigna pide completo. Los scripts de los Ejercicios 7, 8 y 9, que
+producen todas las tablas y figuras de esas secciones, están en la carpeta `codigo/` del
+repositorio con sus resultados intermedios.
 
 ## A.1 LSTM serie temporal (Ejercicio 1.VI)
 
 ```{r e1-lstm-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e1_lstm/lstm_serie.py"), sep = "\n")
-```
-
-## A.2 Figuras CNN y celda LSTM (Ejercicio 1)
-
-Los diagramas de `codigo/resultados/e1/cnn_capas.png` y `lstm_celda.png` los
-generó `codigo/e1_lstm/figuras.py`.
-
-```{r e1-fig-code, echo=FALSE, comment=NA}
-cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
-```
-
-
-\newpage
-
-## A.3 Clustering y t-SNE (Ejercicio 7)
-
-```{r e7-code, echo=FALSE, comment=NA}
-cat(readLines("codigo/e7_tsne/tsne_clustering.py"), sep = "\n")
-```
-
-\newpage
-
-## A.4 AdaBoost y Gradient Boosting (Ejercicio 8)
-
-```{r e8-code, echo=FALSE, comment=NA}
-cat(readLines("codigo/e8_boosting/adaboost_vs_gb.py"), sep = "\n")
-```
-
-```{r e8-fig-code, echo=FALSE, comment=NA}
-cat(readLines("codigo/e8_boosting/figuras.py"), sep = "\n")
-```
-
-\newpage
-
-## A.5 Random Forest (Ejercicio 9)
-
-```{r e9-code, echo=FALSE, comment=NA}
-cat(readLines("codigo/e9_rf/rf_breiman.py"), sep = "\n")
 ```
 
 \newpage
