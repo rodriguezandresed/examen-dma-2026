@@ -1,0 +1,35 @@
+{
+  "status": "ok",
+  "sklearn": "1.7.2",
+  "numpy": "2.2.6",
+  "seed": 42,
+  "dataset_clasificacion": "breast_cancer (569 x 30), split 70/30 estratificado",
+  "dataset_regresion": "diabetes (442 x 10), split 70/30",
+  "adaboost": {
+    "M": 50,
+    "base": "stump max_depth=1",
+    "acc_test_propio": 0.9590643274853801,
+    "acc_test_sklearn": 0.9590643274853801,
+    "eps_ronda1": 0.07286432160804018,
+    "alpha_ronda1": 1.2717504070270267
+  },
+  "gb": {
+    "M": 200,
+    "v": 0.1,
+    "max_depth": 2,
+    "F0": 153.90291262135923,
+    "mse_test_propio": 2897.310988282614,
+    "mse_test_sklearn": 2893.6669944108744
+  },
+  "grilla_lr_mejor": {
+    "v": 0.1,
+    "n_estimators": 50,
+    "mse_test": 2713.8204389400307
+  },
+  "gradiente": {
+    "max_dif_mse": 5.010674304917195e-07,
+    "max_dif_mae": 4.6629367034256575e-09
+  },
+  "nota_ruido": "Las curvas con ruido dan vuelta el 10 % de las etiquetas de train. Sin ruido el error de test de AdaBoost no sube, que es lo contrario de lo que avisan las slides.",
+  "nota_schapire": "No se reconstruyeron las coordenadas de los diez puntos del ejemplo de Schapire: las slides no las dan. Solo se chequeo la formula de alpha sobre los eps impresos."
+}

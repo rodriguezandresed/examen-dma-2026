@@ -1,0 +1,2 @@
+semilla,var_pca2,n_eps_por_espacio,python,sklearn,numpy,scipy,n_obs,n_var_original,n_var_usadas,n_var_descartadas,k_elegido,k_pico_pseudo_f,alfa,alfa_bonferroni,silhouette_particion_embedding_en_espacio_original,cda_var_can1,cda_var_can2,tsne_tiene_transform,pseudo_f_pico_interior,silhouette_k_max
+42,0.21594970500832816,18,3.10.6,1.7.2,2.2.6,1.15.3,1797,64,61,3,10,2,0.05,0.000819672131147541,0.11031194132052993,0.2267483210762433,0.18505083541459047,False,False,15

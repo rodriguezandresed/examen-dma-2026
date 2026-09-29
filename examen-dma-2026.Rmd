@@ -590,10 +590,918 @@ Vapnik (1995) para la formulación general de la teoría y la cota de riesgo.
 
 \newpage
 
+\newpage
+
+# Ejercicio 7 · Clustering: preproceso visual, perfilado y t-SNE
+
+*Mencione las técnicas de pre-proceso que existen en clustering para visualizar la
+potencial existencia de grupos. Explique brevemente 1 de ellas.*
+
+*¿Habiendo aplicado alguna técnica de clustering y obteniendo los grupos finales, de
+qué manera puede estimar qué diferencias existen en los perfiles de los grupos
+obtenidos? Explicar los resultados.*
+
+*Ayuda: utilice el último capítulo de la guía de clustering (Assessment Clustering).*
+
+*¿En qué consiste el algoritmo t-SNE? ¿Para qué se utiliza? De un ejemplo de
+implementación en Python. ¿Qué limitantes tiene? ¿Qué ventajas tiene?*
+
+```{r e7-load, include=FALSE}
+e7dir   <- "codigo/resultados/e7"
+e7meta  <- read.csv(file.path(e7dir, "meta.csv"), stringsAsFactors = FALSE)
+e7perp  <- read.csv(file.path(e7dir, "tsne_perplejidad.csv"), stringsAsFactors = FALSE)
+e7k     <- read.csv(file.path(e7dir, "pseudo_f.csv"), stringsAsFactors = FALSE)
+e7comp  <- read.csv(file.path(e7dir, "comparacion_espacios.csv"), stringsAsFactors = FALSE)
+e7dbr   <- read.csv(file.path(e7dir, "dbscan_resumen.csv"), stringsAsFactors = FALSE)
+e7conc  <- read.csv(file.path(e7dir, "concentracion_distancias.csv"), stringsAsFactors = FALSE)
+e7anv   <- read.csv(file.path(e7dir, "anova_perfil.csv"), stringsAsFactors = FALSE)
+e7ctrl  <- read.csv(file.path(e7dir, "anova_controles.csv"), stringsAsFactors = FALSE)
+e7med   <- read.csv(file.path(e7dir, "perfil_medias.csv"), stringsAsFactors = FALSE)
+e7cda   <- read.csv(file.path(e7dir, "cda_estructura.csv"), stringsAsFactors = FALSE)
+
+fmt_e7 <- function(x, d = 2) {
+  formatC(as.numeric(x), format = "f", digits = d, decimal.mark = ",")
+}
+e7grp <- paste0("G", 0:(e7meta$k_elegido - 1))
+
+# Perfil compacto: para cada variable, el grupo de media mas alta y el de media
+# mas baja. Las diez columnas de medias por grupo no entran en la hoja.
+e7gm <- as.matrix(e7med[, e7grp])
+e7tp <- data.frame(
+  Variable = e7med$variable,
+  F        = round(e7med$F, 1),
+  eta2     = round(e7med$eta2, 3),
+  Alto     = paste0(e7grp[apply(e7gm, 1, which.max)], " (",
+                    fmt_e7(apply(e7gm, 1, max), 1), ")"),
+  Bajo     = paste0(e7grp[apply(e7gm, 1, which.min)], " (",
+                    fmt_e7(apply(e7gm, 1, min), 1), ")"),
+  stringsAsFactors = FALSE
+)[1:5, ]
+e7nsig  <- sum(e7anv$significativa_bonf)
+# Grupos en los que el pixel de mayor F promedia menos de 0,05, o sea los que
+# imprimen 0,0 en la Tabla 2. Se cuenta, no se tipea.
+e7ceros <- sum(round(e7gm[1, ], 1) == 0)
+# El pseudo-F no es monotono: toca el minimo antes del final del barrido.
+e7kmin  <- e7k$k[which.min(e7k$pseudo_f)]
+e7dbo   <- e7dbr[e7dbr$espacio == "Original (61 var.)", ]
+e7dbe   <- e7dbr[e7dbr$espacio == "Embedding t-SNE 2D", ]
+e7co    <- e7comp[e7comp$espacio == "Original (61 var.)", ]
+e7ce    <- e7comp[e7comp$espacio == "Embedding t-SNE 2D", ]
+# Las tablas de DBSCAN y de concentracion se unen por el nombre del espacio y no
+# por la posicion, para que el orden de las filas no pueda desfasarse.
+e7db     <- merge(e7dbr, e7conc, by = "espacio", sort = FALSE)
+e7db     <- e7db[match(e7dbr$espacio, e7db$espacio), ]
+e7conc_o <- e7conc[e7conc$espacio == "Original (61 var.)", ]
+e7conc_e <- e7conc[e7conc$espacio == "Embedding t-SNE 2D", ]
+```
+
+Los tres puntos se apoyan en una corrida común, `codigo/e7_tsne/tsne_clustering.py`
+(Apéndice), con semilla `r e7meta$semilla` sobre los dígitos manuscritos de
+`r e7meta$n_obs` observaciones y `r e7meta$n_var_original` píxeles en escala 0 a 16
+(Alpaydin & Kaynak, 1998), sin faltantes. Se descartan `r e7meta$n_var_descartadas`
+píxeles de varianza nula que dejarían indefinido el estadístico *F* del perfilado y se
+estandarizan los `r e7meta$n_var_usadas` restantes. El dígito queda fuera del modelo, como
+juez externo medido con el índice de Rand ajustado (ARI: 0 para el acuerdo fortuito entre
+dos particiones, 1 para la identidad).
+
+El capítulo de preparación separa el preproceso en dos familias (SAS Institute, s.f.-a).
+Una corrige las variables antes de cualquier gráfico: VARCLUS reemplaza cada subgrupo
+colineal por un representante, STDIZE neutraliza la unidad de medida y ACECLUS estima la
+covarianza intra-cluster para volver más esféricos los grupos alargados. La otra proyecta
+la muestra sobre dos ejes, que es lo que pide la consigna: el diagrama de dispersión de
+GPLOT con dos variables y, con más de dos, las tres proyecciones de la Tabla 3.
+
+```{r e7-tab-prep, echo=FALSE}
+e7prep <- data.frame(
+  Tecnica = c("Componentes principales", "Escalado multidimensional",
+              "Discriminante canónico"),
+  Proc = c("PRINCOMP", "MDS", "CANDISC"),
+  Que = c("Ejes no correlacionados de varianza decreciente",
+          "Respeta el orden de las distancias entre pares",
+          "Ejes de máxima separación entre grupos"),
+  Lim = c("Proyección lineal",
+          "Costo cuadrático en los puntos",
+          "Exige una variable de clase previa"),
+  stringsAsFactors = FALSE
+)
+names(e7prep) <- c("Técnica", "PROC", "Qué hace", "Limitante")
+kable(e7prep, booktabs = TRUE,
+      caption = "Proyecciones para detectar grupos antes de clusterizar.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
+  column_spec(1, width = "3.4cm") %>%
+  column_spec(2, width = "1.6cm") %>%
+  column_spec(3, width = "6.1cm") %>%
+  column_spec(4, width = "4.3cm")
+```
+
+*Nota.* Elaboración propia a partir de SAS Institute (s.f.-a), capítulo 2.
+
+Se desarrolla el gráfico de componentes principales, la única que no exige información
+previa: el escalado multidimensional necesita la matriz de distancias entre todos los pares
+y el discriminante canónico, la variable de clase que todavía no existe, límite que el
+capítulo señala para su uso en clustering. El método transforma las variables originales en
+variables nuevas, no correlacionadas, que explican proporciones decrecientes de la varianza
+total; si la nube se apoya sobre un plano, el par de primeras componentes alcanza para
+ubicar los grupos, y la varianza que retiene mide cuánta información queda afuera.
+
+```{r e7-fig, out.width="76%", fig.cap="Proyecciones, criterio de $k$ y mapas t-SNE del mismo conjunto de d\\'{\\i}gitos."}
+knitr::include_graphics("codigo/resultados/e7/ayudas_graficas.png")
+```
+
+*Nota.* Elaboración propia. Salvo los dos últimos, los paneles colorean por dígito real.
+TW: confiabilidad de la proyección. El escalado multidimensional usa una submuestra de 400
+puntos, la cantidad que mantuvo el cómputo en tiempos razonables.
+
+En la fila superior de la Figura 3 las diez clases quedan superpuestas bajo componentes
+principales y bajo escalado multidimensional. El panel canónico separa, pero en parte por
+construcción, porque sus ejes maximizan la distancia entre grupos ya asignados. Solo t-SNE,
+en la fila de abajo, muestra unas diez islas sin usar ninguna etiqueta.
+
+El último capítulo responde primero cuántos grupos hay, con cinco indicadores (SAS
+Institute, s.f.-b): el nivel de fusión del dendrograma, donde solo las soluciones al final
+de una rama larga son candidatas; el criterio cúbico de clustering (CCC) de Sarle (1983),
+que contrasta la hipótesis nula de una muestra uniforme sobre un hiper-rectángulo contra
+una mezcla de normales esféricas y toma como evidencia los valores mayores que 2; el
+pseudo-*F* de separación entre grupos; el pseudo-*T²*, que dice si los dos últimos grupos
+unidos debían unirse; y el estadístico de tipo *F* de Beale. Ninguno se distribuye como la
+variable aleatoria que su nombre sugiere, y el capítulo pide quedarse con las soluciones en
+que varios coinciden.
+
+El pseudo-*F* es el índice de Calinski y Harabasz de `scikit-learn`; el CCC no tiene
+implementación fuera de SAS. El barrido de $k$ entre 2 y 15 no da el pico interior que el
+capítulo manda buscar: el pseudo-*F* cae hasta su mínimo en $k = `r e7kmin`$ y la silueta
+llega a su máximo en el otro extremo, $k = `r e7meta$silhouette_k_max`$. Los dos empujan
+hacia los bordes, así que $k = `r e7meta$k_elegido`$ se fija por las diez islas de la
+Figura 3 y por el dominio.
+
+El perfilado tiene después tres pasos: las medias por grupo, un MANOVA (análisis
+multivariado de la varianza) que contrasta la igualdad de los vectores de medias sobre
+todas las variables a la vez, y un ANOVA por variable más un discriminante canónico para
+ver cuáles producen la diferencia; las que no difieren se podan. El capítulo corrige la
+multiplicidad con Tukey, de a pares dentro de cada variable; acá se usa Bonferroni, que el
+capítulo da como alternativa más conservadora, porque lo que se controla es la familia de
+las `r e7meta$n_var_usadas` pruebas de variable. La Tabla 4 trae las de mayor *F* con el
+tamaño de efecto $\eta^2$, la varianza de la variable que explica la partición.
+
+```{r e7-tab-perfil, echo=FALSE}
+names(e7tp) <- c("Píxel (fila, col.)", "F", "Eta cuadrado", "Media alta",
+                 "Media baja")
+kable(e7tp, booktabs = TRUE, row.names = FALSE,
+      caption = "Perfilado por ANOVA: variables que más separan los grupos.",
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "3.1cm") %>%
+  column_spec(2, width = "1.5cm") %>%
+  column_spec(3, width = "2.4cm") %>%
+  column_spec(4, width = "2.6cm") %>%
+  column_spec(5, width = "2.6cm")
+```
+
+*Nota.* Elaboración propia. Medias en la escala 0 a 16, con el grupo entre paréntesis.
+
+El píxel de la esquina inferior derecha promedia `r fmt_e7(max(e7gm[1, ]), 1)` en el grupo
+`r e7grp[which.max(e7gm[1, ])]` y menos de 0,05 en `r e7ceros` de los diez, con un $\eta^2$
+de `r fmt_e7(e7med$eta2[1], 3)`. Bajo el umbral de Bonferroni,
+`r fmt_e7(e7meta$alfa_bonferroni, 5)`, resultan significativas `r e7nsig` variables: la
+poda del capítulo casi no tiene efecto acá. La primera función canónica absorbe
+`r fmt_e7(100 * e7meta$cda_var_can1, 1)` % de la varianza entre grupos, con coeficiente de
+estructura intra-grupo máximo `r fmt_e7(e7cda$Can1[1], 3)` en ese mismo píxel.
+
+El capítulo advierte que esas pruebas se leen con cuidado, porque el clustering viola sus
+supuestos, y dos controles miden hasta dónde llega la advertencia. Una partición al azar de
+los mismos datos no deja ninguna variable significativa, con *F* mediana
+`r fmt_e7(e7ctrl$F_mediana[2], 2)`. k-means sobre datos uniformes en un hiper-rectángulo,
+que es la hipótesis nula del CCC y por definición no tiene grupos, deja
+`r e7ctrl$n_signif[3]` de las `r e7meta$n_var_usadas` significativas, con *F* máximo
+`r fmt_e7(e7ctrl$F_max[3], 0)` y $\eta^2$ de `r fmt_e7(e7ctrl$eta2_max[3], 2)`. El grueso
+de la distribución sí distingue los dos casos, con *F* mediana
+`r fmt_e7(e7ctrl$F_mediana[3], 2)` contra `r fmt_e7(e7ctrl$F_mediana[1], 1)` en los
+dígitos, así que el ANOVA no queda invalidado. Lo que el control muestra es más acotado:
+sobre datos sin estructura, el solo hecho de particionar fabrica un puñado de variables con
+*F* enorme y efecto grande. La significación de una variable tomada de a una no certifica
+que los grupos existan; eso queda del lado del CCC y la validación externa.
+
+El apunte define t-SNE (t-Distributed Stochastic Neighbor Embedding) como una técnica de
+aprendizaje de variedades no lineal que proyecta datos de alta dimensión a dos o tres
+dimensiones con preservación de la vecindad local (Volpacchio, s.f.-d), según la
+formulación de van der Maaten y Hinton (2008). Convierte distancias en probabilidades:
+centra en cada $x_i$ una gaussiana de varianza $\sigma_i^2$, define la probabilidad de que
+$x_j$ sea su vecino y la simetriza,
+
+$$p_{j|i} = \frac{\exp\bigl(-\lVert x_i - x_j \rVert^2 / 2\sigma_i^2\bigr)}
+{\sum_{k \ne i} \exp\bigl(-\lVert x_i - x_k \rVert^2 / 2\sigma_i^2\bigr)},
+\qquad
+p_{ij} = \frac{p_{j|i} + p_{i|j}}{2n}.$$
+
+En el mapa, las similitudes entre los puntos $y_i$ usan una t de Student de un grado de
+libertad, $q_{ij} \propto (1 + \lVert y_i - y_j \rVert^2)^{-1}$, cuyas colas pesadas
+resuelven el problema de aglomeración, la tendencia de los puntos moderadamente distantes a
+amontonarse cuando el destino tiene muchas menos dimensiones que el origen. La función de
+costo es la divergencia de Kullback-Leibler
+$KL(P\lVert Q) = \sum_{i \ne j} p_{ij} \log (p_{ij}/q_{ij})$, minimizada por descenso de
+gradiente. Su asimetría es deliberada: el término $p_{ij} \log(p_{ij}/q_{ij})$ castiga
+mucho más que dos vecinos del espacio original terminen lejos en el mapa que el caso
+inverso, y de ahí la fidelidad local por encima de la global.
+
+El único parámetro externo relevante es la perplejidad, que no es una cantidad fija de
+vecinos sino un regulador de la entropía de la distribución condicional,
+$\mathrm{Perp}(P_i) = 2^{H(P_i)}$ con $H(P_i) = -\sum_j p_{j|i} \log_2 p_{j|i}$. Fijada la
+perplejidad objetivo, cada $\sigma_i$ sale de una búsqueda binaria hasta igualar esa
+entropía, y el ancho de la gaussiana se adapta a la densidad local. El gradiente suma
+fuerzas entre todos los pares y cuesta $O(N^2)$; Barnes-Hut (van der Maaten, 2014) arma un
+quadtree sobre el mapa, calcula exacto las pocas fuerzas de atracción, aproxima las de
+repulsión por el centro de masa de cada celda con $s/r < \theta$, y baja el costo a
+$O(N \log N)$.
+
+**Para qué se utiliza.** Para visualización exploratoria, y nada más. El apunte es
+enfático: t-SNE no es un algoritmo de clustering ni un modelo predictivo, sino una
+transformación del espacio de características que vuelve visualmente identificables las
+estructuras latentes. Su flujo de trabajo tiene tres pasos: explorar con t-SNE sobre los
+datos estandarizados para hipotetizar cantidad y forma de los grupos, modelar con un
+algoritmo de clustering sobre el espacio original, o sobre una reducción por componentes
+principales si la dimensión es extrema, y validar con las etiquetas superpuestas sobre el
+mapa, que es el último panel de la Figura 3.
+
+```python
+from sklearn.manifold import TSNE
+X = StandardScaler().fit_transform(X_crudo)     # la escala manda en t-SNE
+Z = TSNE(n_components=2, perplexity=30, init="pca", learning_rate="auto",
+         max_iter=1000, random_state=42).fit_transform(X)   # Z: (n, 2)
+```
+
+**Limitantes.** La perplejidad es la primera: en la fila inferior de la Figura 3, con 5 los
+grupos se parten en subgrumos y el espacio vacío entre ellos desaparece, y con 50 las islas
+vecinas se acercan hasta tocarse. La divergencia KL baja de
+`r fmt_e7(e7perp$kl_final[1], 3)` a `r fmt_e7(e7perp$kl_final[3], 3)`, pero esa caída no
+indica un mapa mejor: cada perplejidad define una matriz $P$ distinta y dos divergencias
+contra distribuciones objetivo diferentes no se comparan. La que sí compara es la
+confiabilidad (*trustworthiness*), la proporción de vecinos del espacio original que siguen
+siéndolo en el mapa, entre `r fmt_e7(min(e7perp$trustworthiness), 3)` y
+`r fmt_e7(max(e7perp$trustworthiness), 3)` sobre los doce más cercanos. La segunda es que
+las coordenadas carecen de interpretación métrica: el tamaño de una isla y la separación
+entre dos no admiten lectura cuantitativa. La tercera es que no hay función de proyección:
+la clase `TSNE` de `scikit-learn` no expone `transform`, verificado en la corrida, y una
+observación nueva exige recalcular el mapa entero. Se suman el costo cuadrático sin
+Barnes-Hut y el carácter no convexo del costo, expuesto a mínimos locales.
+
+**Ventajas.** Captura dependencias no lineales que una proyección lineal no desenrolla
+(paneles 1 y 5 de la Figura 3), conserva la vecindad local con confiabilidad por encima de
+`r fmt_e7(min(e7perp$trustworthiness), 3)`, evita la aglomeración por la t de Student, y
+entrega la hipótesis sobre la cantidad de grupos que los criterios del capítulo de
+evaluación no dieron.
+
+**Dónde conviene correr el clustering.** El apunte recomienda modelar sobre el espacio
+original, o sobre una reducción por componentes principales si la dimensión es extrema, y
+admite también aplicarlo sobre la proyección. La corrida no respalda esa preferencia por el
+lado del resultado: contra el dígito real, k-means sobre el embedding llega a un ARI de
+`r fmt_e7(e7ce$ari_vs_digito, 3)` y sobre las `r e7meta$n_var_usadas` variables a
+`r fmt_e7(e7co$ari_vs_digito, 3)`; con DBSCAN la brecha es mayor todavía,
+`r fmt_e7(e7dbe$ari_vs_digito, 3)` contra `r fmt_e7(e7dbo$ari_vs_digito, 3)`. Medido por el
+juez externo, en este conjunto agrupar sobre el mapa funciona mejor.
+
+Lo que no se sostiene es comparar los índices internos entre espacios. La silueta de la
+partición del embedding vale `r fmt_e7(e7ce$silhouette_propio, 3)` en las coordenadas del
+mapa y `r fmt_e7(e7meta$silhouette_particion_embedding_en_espacio_original, 3)` sobre las
+variables originales, por debajo de la partición nativa
+(`r fmt_e7(e7co$silhouette_propio, 3)`): la misma partición cambia de nota según dónde se la
+mida, porque t-SNE construyó esas coordenadas para que los grupos se vieran separados. El
+único criterio disponible sin etiquetas no puede arbitrar entre los dos caminos.
+
+Las dos razones que sí deciden son las limitantes ya señaladas y no dependen de qué índice
+gane. Sin `transform`, la partición del mapa no se aplica a una observación nueva sin
+recalcularlo entero, lo cual la deja fuera del scoring del capítulo de evaluación; y sin
+interpretación métrica, los centroides no se leen en unidades de las variables ni se
+perfilan como en la Tabla 4. Para un mapa que se mira una vez, agrupar sobre la proyección
+es defendible; para un modelo que se vuelve a aplicar y hay que explicar, no.
+
+**Lo que falló.** Se esperaba que la partición del embedding fuera además inestable frente a
+la perplejidad. No ocurrió: el ARI entre la partición con perplejidad 5 y la de 50 es
+`r fmt_e7(e7ce$estabilidad, 3)`, casi igual a la estabilidad de k-means en el espacio
+original entre dos semillas, `r fmt_e7(e7co$estabilidad, 3)`, así que esa vía del argumento
+se descarta. El segundo fracaso es DBSCAN (Ester et al., 1996), que el apunte propone como
+complemento de t-SNE: se barrieron `r e7dbo$eps_probados` configuraciones por espacio, con
+$\varepsilon$ en `r e7meta$n_eps_por_espacio` valores entre los percentiles 1 y 99 de la
+distancia al décimo vecino y `MinPts` en 5 y 10, así que la Tabla 5 no es por falta de
+búsqueda. En las `r e7meta$n_var_usadas` dimensiones la mejor configuración por silueta deja
+un bloque único con migas alrededor, y la reducción a diez componentes no lo corrige.
+
+```{r e7-tab-db, echo=FALSE}
+e7td <- data.frame(
+  Espacio = e7db$espacio,
+  Dim = e7db$dim,
+  Cl = e7db$n_clusters,
+  May = round(e7db$pct_mayor_cluster, 1),
+  ARI = round(e7db$ari_vs_digito, 3),
+  CV = round(e7db$cv_distancias, 3),
+  Raz = round(e7db$razon_max_min, 1),
+  stringsAsFactors = FALSE
+)
+names(e7td) <- c("Espacio", "Dim.", "Grupos", "Mayor (%)", "ARI", "CV dist.",
+                 "Máx./mín.")
+kable(e7td, booktabs = TRUE, row.names = FALSE,
+      caption = "DBSCAN y concentración de distancias por espacio.",
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
+  column_spec(1, width = "3.4cm") %>%
+  column_spec(2, width = "1.1cm") %>%
+  column_spec(3, width = "1.5cm") %>%
+  column_spec(4, width = "1.9cm") %>%
+  column_spec(5, width = "1.4cm") %>%
+  column_spec(6, width = "1.6cm") %>%
+  column_spec(7, width = "1.7cm")
+```
+
+*Nota.* Elaboración propia. Mejor configuración por silueta con 2 a 30 grupos y menos de
+30 % de ruido; CV es el desvío sobre la media de las distancias entre pares.
+
+La causa está en las dos últimas columnas: con la distancia máxima a
+`r fmt_e7(e7conc_o$razon_max_min, 1)` veces la mínima contra
+`r fmt_e7(e7conc_e$razon_max_min, 0)` en el mapa, no hay radio $\varepsilon$ global que
+distinga una región densa de una rala, que es la limitante en alta dimensión que el propio
+apunte le atribuye a DBSCAN. El complemento que el apunte le propone a t-SNE depende
+entonces del espacio: k-means, que compara cada punto contra diez centroides en lugar de
+apoyarse en un radio de densidad global, sí recupera la estructura en las
+`r e7meta$n_var_usadas` dimensiones, y sus etiquetas sobre el mapa coinciden con las islas
+salvo en dos grupos que las cortan.
+
+**Fuentes del Ejercicio 7.** Material de cátedra: SAS Institute (s.f.-a), capítulo 2
+`Preparation for Clustering.pdf` (clase 7), clustering de variables, ayudas gráficas,
+estandarización y preproceso; SAS Institute (s.f.-b), capítulo 5
+`Assessing Clustering Results.pdf` (clase 7), cantidad de clusters y perfilado; Volpacchio
+(s.f.-d), apunte `TSNE_Perplejidad_Clustering_NoLineal` (clase 8), para la formulación de
+t-SNE, la perplejidad, Barnes-Hut y el flujo de trabajo. Los dos capítulos son del curso de
+SAS, sin fecha ni autor personal visible, y se citan como obra institucional. Sarle (1983)
+para el CCC; van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE y
+Barnes-Hut; Ester et al. (1996) para DBSCAN; Alpaydin y Kaynak (1998) para el conjunto de
+datos. Corrida propia: `codigo/e7_tsne/tsne_clustering.py`.
+
+\newpage
+
+# Ejercicio 8 · Boosting: AdaBoost y Gradient Boosting
+
+*Qué diferencias existen entre el algoritmo Adaboost y Gradiente Boosting. Explique
+brevemente.*
+
+*De una explicación intuitiva de cómo trabaja el Gradiente Boosting.*
+
+```{r e8-load, include=FALSE}
+e8dir  <- "codigo/resultados/e8/"
+e8ver  <- read.csv(paste0(e8dir, "verificaciones.csv"), stringsAsFactors = FALSE,
+                   fileEncoding = "UTF-8")
+e8pes  <- read.csv(paste0(e8dir, "adaboost_pesos.csv"), stringsAsFactors = FALSE)
+e8sch  <- read.csv(paste0(e8dir, "schapire.csv"), stringsAsFactors = FALSE)
+e8gb   <- read.csv(paste0(e8dir, "gb_residuos.csv"), stringsAsFactors = FALSE)
+e8cur  <- read.csv(paste0(e8dir, "curvas_error.csv"), stringsAsFactors = FALSE)
+e8lr   <- read.csv(paste0(e8dir, "lr_grilla.csv"), stringsAsFactors = FALSE)
+e8apt  <- read.csv(paste0(e8dir, "apartamentos.csv"), stringsAsFactors = FALSE)
+
+fm  <- function(x, d = 2) formatC(as.numeric(x), format = "f", digits = d,
+                                  decimal.mark = ",", big.mark = "")
+coma <- function(x) gsub(".", ",", x, fixed = TRUE)
+
+# AdaBoost: la fila 0 es D_1 uniforme; la fila t trae eps_t, alpha_t y D_{t+1}.
+e8rT    <- e8pes[e8pes$ronda == max(e8pes$ronda), ]
+e8base  <- e8pes$peso_uniforme[1]
+# Razon entre el peso de las dificiles y el de las faciles, ronda a ronda. Oscila
+# bastante, asi que se informa el rango y la media y no el valor de la ultima ronda.
+e8rondas <- e8pes[e8pes$ronda > 0, ]
+e8ratio  <- e8rondas$peso_mal_r1 / e8rondas$peso_bien_r1
+e8acc   <- coma(e8ver$obtenido[e8ver$chequeo == "Accuracy de test de la implementación propia"])
+e8coin  <- coma(e8ver$obtenido[grepl("AdaBoostClassifier$", e8ver$chequeo)])
+
+# Gradient Boosting: encogimiento del pseudo-residuo y mínimo del error de test.
+e8sd0   <- e8gb$sd_residuo[1]
+e8sdT   <- e8gb$sd_residuo[nrow(e8gb)]
+e8gbmin <- e8gb[which.min(e8gb$mse_test), ]
+
+# Curvas de error de AdaBoost.
+e8m0    <- min(e8cur$m[e8cur$err_train_limpio == 0])
+e8tefin <- e8cur$err_test_limpio[nrow(e8cur)]
+e8temin <- min(e8cur$err_test_limpio)
+e8rmin  <- e8cur[which.min(e8cur$err_test_ruido), ]
+e8rfin  <- e8cur$err_test_ruido[nrow(e8cur)]
+
+# Grilla de tasa de aprendizaje: mejor punto global, mejor punto con v < 0,1 y v = 1.
+e8lrbest <- e8lr[which.min(e8lr$mse_test), ]
+e8lrsub  <- e8lr[e8lr$v < 0.1, ]
+e8lrsub  <- e8lrsub[which.min(e8lrsub$mse_test), ]
+e8lr1    <- e8lr[e8lr$v == 1 & e8lr$n_estimators == e8lrbest$n_estimators, ]
+```
+
+AdaBoost y Gradient Boosting son las dos versiones de boosting que cubre la presentación
+de ensambles de la materia (Volpacchio, s.f.-a). Las dos pertenecen a la familia P\&C
+(perturbar y combinar) y, dentro de ella, al subgrupo Arcing (Adaptive Resampling and
+Combining, remuestreo adaptativo y combinación): el entrenamiento de cada iteración
+depende de los errores de la anterior. Las dos construyen un clasificador fuerte como
+combinación de clasificadores débiles, reglas de decisión simples e inestables que
+clasifican mejor que el azar, con probabilidad de error menor a 0,5. La diferencia no
+está ahí; está en qué modifica cada iteración.
+
+AdaBoost (Freund & Schapire, 1997) trabaja sobre una distribución de pesos de las
+observaciones. El pseudocódigo del apunte arranca con $D_1(i) = 1/m$ para las $m$
+observaciones de entrenamiento y repite $T$ veces: entrena el clasificador base con la
+distribución $D_t$ y obtiene $h_t$; calcula su error ponderado
+$\varepsilon_t = \Pr_{i \sim D_t}[h_t(x_i) \ne y_i]$; fija el peso de voto de esa
+hipótesis en $\alpha_t = \tfrac{1}{2}\log\bigl((1-\varepsilon_t)/\varepsilon_t\bigr)$; y
+actualiza $D_{t+1}(i) = D_t(i)\,e^{-\alpha_t y_i h_t(x_i)} / Z_t$, con $Z_t$ el factor
+que renormaliza la distribución. La observación que $h_t$ erró multiplica su peso por
+$e^{\alpha_t}$ y la que acertó lo divide por lo mismo, con lo cual el clasificador base
+de la ronda siguiente se concentra sobre lo que quedó mal resuelto. La salida es el voto
+ponderado $H(x) = \mathrm{sign}\bigl(\sum_t \alpha_t h_t(x)\bigr)$.
+
+Gradient Boosting (Friedman, 2001) trabaja sobre el target, la variable de respuesta, y
+no sobre los pesos. El modelo se escribe $F_m(x) = F_{m-1}(x) + \beta_m\, h(x; a_m)$, y
+en cada iteración $h$ se ajusta por mínimos cuadrados a los pseudo-residuos, que son el
+negativo de la derivada de la función de pérdida $\psi$ respecto de la predicción
+actual:
+$\tilde{y}_{im} = -\bigl[\partial \psi(y_i, F(x_i)) / \partial F(x_i)\bigr]_{F = F_{m-1}}$.
+Con pérdida cuadrática ese pseudo-residuo es el residuo común $y_i - F_{m-1}(x_i)$. Todas
+las observaciones pesan siempre $1/N$: lo que cambia de una iteración a la otra es qué se
+le pide predecir al árbol.
+
+```{r e8-tab-dif, echo=FALSE}
+# Sin $...$ en las celdas: pandoc reescribe la tabla y la notación matemática
+# sale literal. Los símbolos quedan definidos en los párrafos de arriba.
+dif <- data.frame(
+  Aspecto = c("Qué cambia por iteración", "Función de pérdida", "Peso del modelo débil",
+              "Clasificador base", "Parámetros externos", "Target original"),
+  AdaBoost = c(
+    "La distribución de pesos sobre las observaciones",
+    "Fija; la reponderación exponencial es parte del algoritmo",
+    "alfa, a partir del error ponderado de la hipótesis",
+    "Cualquier aprendiz débil: árbol, red, Naive Bayes, SVM",
+    "Cantidad de rondas T y los del clasificador base",
+    "Nunca se toca"
+  ),
+  GradientBoosting = c(
+    "El target: el pseudo-residuo de la iteración",
+    "Parámetro a especificar: cuadrática, absoluta, Huber-M o log-verosimilitud",
+    "beta, por una segunda minimización, más el shrinkage v",
+    "Árboles de regresión",
+    "Iteraciones M, shrinkage v y proporción de submuestreo N0/N",
+    "Se reemplaza en cada iteración"
+  ),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+names(dif) <- c("Aspecto", "AdaBoost", "Gradient Boosting")
+kable(dif, booktabs = TRUE,
+      caption = "Diferencias entre AdaBoost y Gradient Boosting.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
+  column_spec(1, width = "2.6cm") %>%
+  column_spec(2, width = "5.3cm") %>%
+  column_spec(3, width = "6.4cm")
+```
+
+*Nota.* Elaboración propia (Volpacchio, s.f.-a; Friedman, 2001). Shrinkage: reducción
+deliberada del paso de cada iteración. Huber-M: pérdida cuadrática cerca de cero y
+absoluta en las colas, para acotar el peso de los valores atípicos. Log-verosimilitud:
+logaritmo de la probabilidad que el modelo asigna a la clase verdadera.
+
+De esa tabla se desprenden dos consecuencias. AdaBoost nació para clasificación binaria,
+mientras que Gradient Boosting admite cualquier pérdida diferenciable y cubre regresión y
+clasificación multiclase con el mismo esquema. Y el peso de una observación mal
+clasificada crece en forma exponencial con $\alpha_t$, así que una etiqueta equivocada
+termina por acaparar la distribución; el cambio de pérdida a absoluta o Huber-M es la vía
+de Gradient Boosting para contener ese efecto. La lectura que unifica a los dos
+algoritmos, con AdaBoost como el caso particular de Gradient Boosting con pérdida
+exponencial, no forma parte del material de la materia y no se desarrolla acá.
+
+La explicación intuitiva de Gradient Boosting que usa el apunte de Parr y Howard (s.f.)
+es la del golfista. El jugador pega un primer golpe hacia el hoyo, que está en $y$, y
+llega solamente hasta $F_0(x)$. Desde ahí no vuelve a empezar: mira cuánto le falta,
+$y - F_0(x)$, y pega un segundo golpe más suave en esa dirección; vuelve a medir y pega
+el tercero, y así hasta el hoyo. Cada golpe corrige lo que dejó el anterior y ninguno
+rehace el camino ya recorrido: eso es un modelo aditivo, y los golpes sucesivos son los
+modelos débiles.
+
+El apunte lo aterriza con cinco departamentos, con la superficie como variable
+explicativa y el alquiler mensual como target. El primer golpe es el modelo trivial:
+predecir la media para todos, `r fm(e8apt$F0[1], 0)`, el valor único que minimiza el
+error cuadrático. Los residuos contra esa media son la distancia que falta, y un árbol
+chico se entrena para predecirlos a partir de la superficie. Ese árbol se suma al modelo,
+se recalculan los residuos y el ciclo se repite. Friedman llama pseudo-residuos a esas
+diferencias porque no son el error de un modelo terminado sino el objetivo intermedio del
+próximo modelo débil.
+
+El nombre "gradiente" viene del paso siguiente. El residuo no es solo una magnitud: es un
+vector que apunta desde la predicción actual hacia el valor verdadero, una dirección de
+mejora, y esa dirección coincide con el negativo del gradiente de la pérdida cuadrática
+respecto de la predicción. El ajuste sobre los residuos no es entonces una receta ad hoc
+sino descenso de gradiente, con la particularidad de que el descenso ocurre en el espacio
+de las predicciones y no en el de los parámetros del modelo (Parr & Howard, s.f.). Esa
+equivalencia permite cambiar de pérdida: con pérdida absoluta el negativo del gradiente
+es el vector de signos $\mathrm{sign}(y - F_{m-1}(x))$, y el arranque deja de ser la
+media para pasar a ser la mediana.
+
+Queda el tamaño del paso. Si cada árbol se sumara completo, el modelo llegaría rápido al
+target de entrenamiento y lo memorizaría; por eso la actualización se multiplica por la
+tasa de aprendizaje $v$, y el apunte recoge la estimación de Friedman de que valores
+menores a 0,1 generan los menores errores de generalización. La versión estocástica
+extrae en cada iteración una submuestra de $N_0 \le N$ observaciones para entrenar el
+árbol, y $N_0 = 0{,}5N$ equivale a muestras bootstrap, extraídas al azar con reposición
+(Friedman, 2002). Los tres parámetros fundamentales, según las diapositivas, son la
+cantidad de iteraciones, el shrinkage y esa proporción de entrenamiento.
+
+El código de `codigo/e8_boosting/` (Apéndice) contrasta los dos mecanismos sobre datos
+reales, con semilla 42. AdaBoost corre sobre Breast Cancer Wisconsin, con stumps (árboles
+de un solo corte) como clasificador base y partición estratificada 70/30, es decir con la
+proporción de las dos clases conservada en cada parte. Gradient Boosting corre sobre el
+conjunto de diabetes de scikit-learn, un problema de regresión donde el pseudo-residuo se
+lee en las unidades del target sin mediaciones.
+
+```{r e8-tab-ver, echo=FALSE}
+tv <- data.frame(
+  Chequeo  = e8ver$chequeo,
+  Esperado = coma(e8ver$esperado),
+  Obtenido = coma(e8ver$obtenido),
+  stringsAsFactors = FALSE
+)
+kable(tv, booktabs = TRUE, caption = "Verificaciones numéricas de la corrida.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
+  column_spec(1, width = "9.2cm") %>%
+  column_spec(2, width = "2.2cm") %>%
+  column_spec(3, width = "2.2cm")
+```
+
+*Nota.* Elaboración propia. Accuracy: proporción de aciertos sobre el conjunto de test.
+MSE: error cuadrático medio; MAE: error absoluto medio. Las dos primeras filas comparan
+la convención del pseudocódigo del apunte contra la de `AdaBoostClassifier`; las dos del
+gradiente lo aproximan por diferencias finitas, el cociente entre el cambio de la pérdida
+y un desplazamiento chico de la predicción.
+
+La implementación propia de AdaBoost reproduce las predicciones de `AdaBoostClassifier`
+(`r e8coin` de coincidencia, accuracy de test `r e8acc` en ambos casos), pero la
+coincidencia no es inmediata: scikit-learn usa
+$\alpha_t = \log((1-\varepsilon_t)/\varepsilon_t)$, sin el factor $\tfrac{1}{2}$ del
+apunte, y actualiza los pesos con $e^{\alpha_t}$ solo sobre las mal clasificadas. Las dos
+convenciones difieren en un factor 2 constante, que no altera el signo del voto ponderado
+ni la distribución $D_t$ una vez renormalizada, y las dos primeras filas de la Tabla 7
+confirman cada cosa por separado.
+
+El ejemplo que las diapositivas atribuyen a Schapire, con planos verticales y
+horizontales como clasificador base, informa $\varepsilon_t$ de
+`r fm(e8sch$eps_slide[1])`, `r fm(e8sch$eps_slide[2])` y `r fm(e8sch$eps_slide[3])`, y
+$\alpha_t$ de `r fm(e8sch$alpha_slide[1])`, `r fm(e8sch$alpha_slide[2])` y
+`r fm(e8sch$alpha_slide[3])`. La fórmula aplicada a esos $\varepsilon_t$ da
+`r fm(e8sch$alpha_formula[1])`, `r fm(e8sch$alpha_formula[2])` y
+`r fm(e8sch$alpha_formula[3])`: la primera ronda cierra y las otras dos no. El despeje
+inverso explica la brecha, porque los $\alpha_t$ publicados corresponden a
+$\varepsilon_t$ de `r fm(e8sch$eps_implicito[2], 3)` y `r fm(e8sch$eps_implicito[3], 3)`,
+que redondeados a dos decimales dan los de las diapositivas: la discrepancia está en el
+redondeo de la presentación, no en el algoritmo. No se reconstruyeron las coordenadas de
+los diez puntos porque las diapositivas muestran el dibujo y no los valores.
+
+```{r e8-fig, out.width="84%", fig.cap="Qu\\'e cambia en cada iteraci\\'on, y error contra iteraciones."}
+knitr::include_graphics("codigo/resultados/e8/mecanismo_y_error.png")
+```
+
+*Nota.* Elaboración propia. Fila superior: los dos paneles están en la misma unidad, el
+valor dividido por su valor inicial, con rangos distintos; a la izquierda el peso medio de
+las observaciones según las haya errado o no el primer stump, a la derecha el desvío
+estándar del pseudo-residuo. Fila inferior: el panel derecho repite el experimento después
+de dar vuelta la etiqueta del 10 \% de las observaciones de entrenamiento.
+
+La fila superior de la Figura 4 es el resultado central. En AdaBoost, las observaciones
+que el primer stump erró llegan a pesar hasta
+`r fm(max(e8pes$peso_mal_r1) / e8base, 1)` veces el peso inicial y a lo largo de las
+`r nrow(e8rondas)` rondas pesan entre `r fm(min(e8ratio), 1)` y `r fm(max(e8ratio), 1)`
+veces lo que las fáciles, con una media de `r fm(mean(e8ratio), 1)`, mientras el target
+permanece intacto: sobre el final, el 10 \% de las observaciones más pesadas concentra
+`r fm(100 * e8rT$share_top10, 1)` \% de la masa de probabilidad, contra el
+`r fm(100 * e8pes$share_top10[1], 1)` \% del reparto uniforme del arranque. En Gradient
+Boosting ocurre lo contrario: el peso de cada observación queda fijo en $1/N$ durante las
+`r nrow(e8gb)` iteraciones y lo que se achica es el target, cuyo desvío estándar cae de
+`r fm(e8sd0, 1)` a `r fm(e8sdT, 1)`.
+
+Las diapositivas avisan que el error de entrenamiento de boosting cae hasta cero y que el
+de test aumenta cuando $H$ se vuelve demasiado compleja. La primera mitad se reproduce:
+el error de train llega a cero en el stump `r e8m0`. La segunda no. Con las etiquetas
+originales, el error de test baja en las primeras rondas y después oscila alrededor de
+`r fm(e8tefin, 3)` hasta el stump `r nrow(e8cur)`, con un mínimo de `r fm(e8temin, 3)`,
+sin la subida anunciada. Recién con el 10 \% de las etiquetas de entrenamiento dadas vuelta el aviso se
+cumple: el error de test toca `r fm(e8rmin$err_test_ruido, 3)` en el stump `r e8rmin$m` y
+sube hasta `r fm(e8rfin, 3)` al final. El sobreajuste de AdaBoost aparece cuando hay
+etiquetas ruidosas que la reponderación exponencial persigue, no por el solo hecho de
+agregar iteraciones.
+
+```{r e8-tab-lr, echo=FALSE}
+wide <- reshape(e8lr, idvar = "v", timevar = "n_estimators", direction = "wide")
+names(wide) <- c("v", sub("mse_test\\.", "M = ", names(wide)[-1]))
+wide <- wide[order(-as.numeric(wide$v)), ]
+wide$v <- fm(wide$v, 2)
+kable(wide, booktabs = TRUE, digits = 0, row.names = FALSE,
+      caption = "MSE de test de Gradient Boosting por tasa de aprendizaje.",
+      format.args = list(decimal.mark = ",", big.mark = "")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "1.6cm")
+```
+
+*Nota.* Elaboración propia. Conjunto de diabetes, árboles de profundidad 2, sin
+submuestreo. $M$ es la cantidad de iteraciones.
+
+La grilla de la Tabla 8 acompaña en parte la estimación de Friedman. El mínimo del error
+de test está en $v =$ `r fm(e8lrbest$v)` con `r e8lrbest$n_estimators` iteraciones
+(`r fm(e8lrbest$mse_test, 0)`), justo en el borde del rango recomendado; dentro de la
+zona $v < 0{,}1$ el mejor punto es $v =$ `r fm(e8lrsub$v)` con `r e8lrsub$n_estimators`
+iteraciones (`r fm(e8lrsub$mse_test, 0)`), prácticamente el mismo error a costa de diez
+veces más árboles. El costo del extremo opuesto sí es nítido: $v = 1$ con
+`r e8lr1$n_estimators` iteraciones da `r fm(e8lr1$mse_test, 0)`. Y el error de test de la
+implementación propia con $v = 0{,}1$ toca su mínimo en la iteración `r e8gbmin$iter` y
+después empeora: igual que en el panel inferior derecho de la Figura 4, ser un ensamble no
+pone a ninguno de los dos algoritmos a salvo del sobreajuste.
+
+**Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.-a): presentación
+`Ensemble Methods Universidad Austral.pdf` (clase 6), en particular las secciones de
+Arcing y P\&C, el pseudocódigo de AdaBoost, el ejemplo de Schapire, el análisis del error
+de test, boosting con gradiente no estocástico y estocástico, y los clasificadores base.
+Parr y Howard (s.f.), apuntes `Gradient boosting_explicado 1, 2 y 3` (clase 6), para la
+analogía del golfista, el ejemplo de los alquileres, el vector de signos y la
+demostración de que el gradiente de la pérdida cuadrática es el vector residual. Freund y
+Schapire (1997) para AdaBoost; Friedman (2001) para la formulación de Gradient Boosting y
+los pseudo-residuos; Friedman (2002) para la versión estocástica.
+`codigo/e8_boosting/adaboost_vs_gb.py` y `codigo/e8_boosting/figuras.py`.
+
+\newpage
+
+# Ejercicio 9 · Random Forest
+
+*Random Forest. Describir el algoritmo y su diferencia con el resto de los algoritmos
+de ensamblaje. Describa los principales usos del algoritmo.*
+
+```{r e9-load, include=FALSE}
+e9curva <- read.csv("codigo/resultados/e9/oob_vs_arboles.csv")
+e9m     <- read.csv("codigo/resultados/e9/barrido_m.csv")
+e9part  <- read.csv("codigo/resultados/e9/oob_particiones.csv")
+e9imp   <- read.csv("codigo/resultados/e9/importancias.csv")
+# es_ruido viene del CSV como texto "True"/"False": se pasa a logico una
+# sola vez acá para que las expresiones inline no tengan que convertirlo.
+e9imp$es_ruido <- as.logical(e9imp$es_ruido)
+e9bag   <- read.csv("codigo/resultados/e9/bagging_vs_rf.csv")
+
+f9 <- function(x, d = 3) formatC(as.numeric(x), format = "f", digits = d, decimal.mark = ",")
+
+e9c100  <- e9curva[e9curva$n_arboles >= 100, ]
+e9amp   <- max(e9c100$err_oob) - min(e9c100$err_oob)
+e9mmin  <- e9m[which.min(e9m$err_oob), ]
+e9ee    <- sqrt(e9mmin$err_oob * (1 - e9mmin$err_oob) / 398)
+e9cota  <- e9m[which.min(e9m$cota_breiman), ]
+e9t     <- t.test(e9part$brecha)
+e9cont  <- e9imp[e9imp$variable == "ruido continuo", ]
+e9bin   <- e9imp[e9imp$variable == "ruido binario", ]
+e9rho   <- cor(e9imp$rank_gini, e9imp$rank_perm, method = "spearman")
+e9tex   <- e9imp[e9imp$variable == "worst texture", ]
+e9bg    <- e9bag[e9bag$metodo == "Bagging de arboles", ]
+e9rf    <- e9bag[e9bag$metodo == "Random Forest", ]
+```
+
+<!-- La seccion de Random Forest del PDF de Ensemble Methods son imagenes sin texto
+     extraible: por eso el nucleo del ejercicio sale del documento de Breiman y Cutler. -->
+
+Random Forest (RF, bosque aleatorio) es un ensamblaje de árboles de clasificación que
+decide por voto: cada árbol clasifica el vector de entrada y "vota" por una clase, y el
+bosque devuelve la más votada (Breiman & Cutler, s.f.). La sección de Random Forest de
+las diapositivas solo contiene imágenes, sin texto, por lo que la descripción sigue el
+documento de Breiman y Cutler de la clase 6, con las definiciones formales tomadas del
+artículo original (Breiman, 2001).
+
+Cada árbol crece en tres pasos. Si el conjunto de entrenamiento tiene $N$ filas, se
+muestrean $N$ casos al azar con reemplazo, y esa muestra bootstrap es el conjunto con el
+que crece ese árbol. Si hay $M$ variables de entrada, se fija un número $m \ll M$ tal
+que en cada nodo se sortean $m$ de las $M$ y se divide con la mejor de esas $m$; $m$ se
+mantiene constante durante todo el crecimiento del bosque. El árbol crece sin poda, hasta
+que cada registro queda en un nodo terminal propio. La aleatoriedad entra entonces por
+dos puertas, las filas vía bootstrap y las columnas vía el sorteo en cada nodo, y esa
+segunda es la que define a RF.
+
+El resultado central es que la tasa de error del bosque depende de dos cantidades: la
+correlación entre dos árboles cualesquiera, que al aumentar aumenta el error, y la fuerza
+de cada árbol individual, lo contrario de su tasa de error, que al aumentar lo disminuye.
+Las dos se mueven con $m$ en el mismo sentido: bajar $m$ baja la correlación, lo cual
+conviene, y también la fuerza, lo cual no. En algún punto intermedio queda un rango
+óptimo, por lo general bastante amplio, que la tasa de error OOB permite ubicar. Ese es
+el único parámetro ajustable al que RF resulta algo sensible.
+
+<!-- Blanqueo de la fuente: la traduccion usa M donde corresponde m. -->
+La traducción de la clase escribe esa relación como "la reducción de M reduce tanto la
+correlación como la fuerza", con $M$ mayúscula, que dos párrafos antes designa al total
+de variables. Por el sentido del enunciado corresponde $m$, la cantidad sorteada por
+nodo, y así se usa acá. Breiman (2001) le da forma cerrada: con $s$ la fuerza, esperanza
+de la función de margen del bosque, y $\bar{\rho}$ la correlación media entre las
+funciones de margen crudo de dos árboles, el error de generalización cumple
+$PE^{*} \le \bar{\rho}(1 - s^{2})/s^{2}$. La desigualdad no está en el documento de
+clase, que enuncia la relación solo en palabras; se trae del artículo porque es la que
+permite medir las dos cantidades por separado en la corrida.
+
+La otra pieza propia de RF es la bolsa. Como cada árbol se entrena sobre una muestra con
+reemplazo, alrededor de un tercio de los casos queda fuera; esos casos out of bag (OOB,
+fuera de la bolsa) se predicen con los árboles que no los vieron, y la proporción de mal
+clasificados es la estimación OOB del error, que Breiman y Cutler (s.f.) declaran
+insesgada y suficiente para prescindir de la validación cruzada y de un test separado. De
+la misma bolsa sale la importancia por permutación, que mide cuántos votos correctos se
+pierden al permutar al azar una variable en los casos OOB; la matriz de proximidad
+$N \times N$ cuenta en cuántos árboles cae en el mismo nodo terminal cada par de casos.
+
+La comparación con el resto de los métodos de ensamblaje parte de las tres razones para
+ensamblar hipótesis que dan las diapositivas (Volpacchio, s.f.-a). La estadística: con
+pocos datos frente al espacio de hipótesis el algoritmo encuentra muchas de exactitud
+parecida, y el promedio de sus votos reduce el error. La computacional: la búsqueda es
+local y cae en óptimos locales, tanto en redes como en árboles, y muchos clasificadores
+parten de muchos puntos iniciales. La representacional: la hipótesis verdadera puede no
+pertenecer al espacio, y el ensamblaje la aproxima por interpolación entre las que sí
+pertenecen. La condición es doble: cada clasificador debe errar menos que el azar y
+estar en alguna medida no correlacionado con los demás.
+
+Todos caen bajo la sigla P&C, perturbar y combinar: se generan múltiples versiones del
+predictor por perturbación del conjunto de entrenamiento o del método, y se combinan en
+uno solo. Las dos más conocidas son bagging (Breiman, 1996), que perturba con bootstrap,
+y boosting, que perturba con repesado adaptativo y da nombre a la familia Arcing
+(Adaptative Resampling and Combining). El factor que decide si la perturbación sirve es
+la inestabilidad del clasificador base: si cada réplica bootstrap produce un predictor
+apenas distinto, no hay mejora. El contraejemplo de las diapositivas es $k$ vecinos más
+cercanos, estable y sin ganancia por bagging, frente a árboles y redes, inestables.
+
+Frente a bagging, la diferencia de RF es un solo punto del algoritmo: el sorteo de $m$
+variables en cada nodo. Bagging de árboles evalúa las $M$ en cada nodo, con lo cual la
+única fuente de diversidad es el remuestreo de filas. El problema es que si una variable
+resulta muy predictiva todos los árboles la eligen en la raíz y en los nodos altos,
+terminan pareciéndose y sube la correlación, el término que empeora la cota. El
+subespacio aleatorio deja esa variable fuera de una fracción de los nodos y obliga a
+explorar variables de segundo orden: se paga con fuerza individual y se cobra en
+correlación.
+
+Frente a boosting hay tres diferencias. RF es paralelo, cada árbol se construye sin mirar
+a los demás, mientras que boosting es iterativo y cada clasificador depende del error de su
+predecesor. El clasificador base difiere: boosting suele partir de reglas débiles, del tipo
+decision stump (tocón de decisión, un árbol de una sola división), y RF de árboles crecidos
+sin poda, aunque las diapositivas también admiten árboles sin podar como base de boosting.
+La tercera es la que tiene consecuencias prácticas: en RF la cantidad de árboles no es un
+parámetro de regularización, porque el voto converge al sumar árboles, mientras que en
+boosting el número de rondas $T$ sí lo es. El Ejercicio 8 acota hasta dónde llega esa
+diferencia: sobre esta misma partición, el error de test de AdaBoost tampoco vuelve a subir
+en 400 rondas con las etiquetas originales, y sube recién al dar vuelta el 10 % de ellas.
+
+El script `codigo/e9_rf/rf_breiman.py` (Apéndice) corre cinco experimentos sobre Breast
+Cancer Wisconsin (Diagnostic), 569 casos, 30 variables continuas y dos clases, con
+partición estratificada 70/30, semilla 42 y 398 casos de entrenamiento; el test se
+reserva y no interviene en ninguna elección de hiperparámetros.
+
+La curva de error OOB contra cantidad de árboles (Figura 5, izquierda) baja de
+`r f9(e9curva$err_oob[1])` con 10 árboles a `r f9(tail(e9curva$err_oob, 1))` con 1000, y
+desde los 100 se mueve dentro de una banda de `r f9(e9amp)`. El error de test sigue el
+mismo patrón, con dos repuntes tempranos, entre 30 y 50 árboles y entre 75 y 100, y
+termina en `r f9(tail(e9curva$err_test, 1))`, su valor mínimo del recorrido. A partir de
+los 150 árboles ninguna de las dos curvas vuelve a subir, así que no hay un punto donde
+convenga frenar por riesgo de sobreajuste.
+
+El barrido de $m$ sobre las 30 variables, con 300 árboles por punto, reproduce el
+compromiso (Figura 5, derecha). La correlación sube de `r f9(e9m$correlacion[1])` con
+$m = 1$ a `r f9(tail(e9m$correlacion, 1))` con $m = 30$, y la fuerza sube en el mismo
+tramo de `r f9(e9m$fuerza[1])` a `r f9(tail(e9m$fuerza, 1))`: las dos cantidades se
+mueven juntas, tal como anticipa el documento de clase. La cota de Breiman, que las
+combina, tiene su mínimo en $m = `r e9cota$m`$, cerca de la raíz de 30, con valor
+`r f9(e9cota$cota_breiman)` frente a un error de test de `r f9(e9cota$err_test)`: se
+cumple, pero la excede por un factor de
+`r f9(e9cota$cota_breiman / e9cota$err_test, 1)` y no sirve para elegir $m$.
+
+```{r e9-fig-bosque, out.width="60%", fig.cap="Error seg\\'un la cantidad de \\'arboles, y correlaci\\'on, fuerza y cota seg\\'un $m$."}
+knitr::include_graphics("codigo/resultados/e9/bosque.png")
+```
+
+*Nota.* Elaboración propia con datos de Wolberg et al. (1995). Izquierda: bosque único
+con `warm_start` y $m = \sqrt{M} = 5$. Derecha: definiciones de Breiman (2001), medidas
+sobre el test.
+
+El error OOB, en cambio, no discrimina: recorre el barrido entre
+`r f9(min(e9m$err_oob))` y `r f9(max(e9m$err_oob))`, una amplitud de
+`r f9(max(e9m$err_oob) - min(e9m$err_oob))` frente a un error estándar binomial de
+`r f9(e9ee)` en el mínimo. El rango óptimo no es amplio: es todo el rango, porque el
+conjunto resulta demasiado fácil y la afirmación se verifica en su versión degenerada.
+
+El contraste con bagging aísla el efecto del subespacio aleatorio (Tabla 9): la única
+diferencia entre las dos filas es $m$. La correlación cae
+`r f9(e9bg$correlacion - e9rf$correlacion)` a cambio de
+`r f9(e9bg$acierto_arbol_solo - e9rf$acierto_arbol_solo)` de acierto por árbol suelto, y
+el saldo aparece en el error OOB. Sobre el test las dos empatan en los mismos
+`r round(e9rf$err_test * 171)` casos mal clasificados de 171, donde una diferencia de
+`r f9(e9bg$err_oob - e9rf$err_oob)` no es detectable.
+
+```{r e9-tab-bag}
+tb <- data.frame(
+  Metodo = c("Bagging de árboles", "Random Forest"),
+  m      = c(e9bg$m, e9rf$m),
+  OOB    = c(e9bg$err_oob, e9rf$err_oob),
+  Test   = c(e9bg$err_test, e9rf$err_test),
+  s      = c(e9bg$fuerza, e9rf$fuerza),
+  rho    = c(e9bg$correlacion, e9rf$correlacion),
+  Arbol  = c(e9bg$acierto_arbol_solo, e9rf$acierto_arbol_solo)
+)
+tb[, 3:7] <- round(tb[, 3:7], 3)
+# Sin notacion matematica dentro de las celdas: con escape = FALSE pandoc
+# reescribe la tabla como longtable y los $...$ salen literales en el PDF.
+# Los simbolos quedan definidos en la prosa de arriba.
+names(tb) <- c("Método", "Variables por nodo", "Error OOB", "Error test", "Fuerza",
+               "Correlación", "Acierto de un árbol")
+kable(
+  tb, booktabs = TRUE,
+  caption = "Bagging de árboles frente a Random Forest, 300 árboles.",
+  format.args = list(decimal.mark = ",")
+) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "2.7cm") %>%
+  column_spec(2, width = "1.9cm") %>%
+  column_spec(3, width = "1.8cm") %>%
+  column_spec(4, width = "1.8cm") %>%
+  column_spec(5, width = "1.8cm") %>%
+  column_spec(6, width = "1.9cm") %>%
+  column_spec(7, width = "2.3cm")
+```
+
+*Nota.* Elaboración propia. La segunda columna es $m$; la quinta, $s$; la sexta,
+$\bar{\rho}$.
+
+La insesgadez de la estimación OOB planteó el único problema de la corrida. En los 15
+puntos del barrido de $m$ el error OOB quedó por debajo del de test, siempre con el mismo
+signo y con una brecha media de `r f9(mean(e9m$brecha_oob_test))`; un sesgo sistemático
+de ese tamaño contradiría al documento de clase. La alternativa era que la partición con
+semilla 42 hubiese dejado un test difícil, y se separa con `r nrow(e9part)` particiones
+70/30 distintas: el OOB promedio da
+`r f9(mean(e9part$err_oob))`, el test `r f9(mean(e9part$err_test))` y la brecha media
+`r f9(mean(e9part$brecha))`, con *t*(`r e9t$parameter`) = `r f9(e9t$statistic, 2)`;
+*p* = `r f9(e9t$p.value)`, y un intervalo de confianza del 95 % para la brecha de
+`r f9(e9t$conf.int[1])` a `r f9(e9t$conf.int[2])`. Ese intervalo es lo que cierra el
+argumento: contiene al cero, así que los datos no permiten afirmar un sesgo, y además
+descarta brechas mayores a `r f9(abs(e9t$conf.int[1]))` en cualquiera de los dos sentidos,
+un orden menor al de la brecha observada en el barrido. El signo repetido venía de la
+partición, no del estimador.
+
+La comparación de las dos medidas de importancia expuso la limitación conocida de la
+Gini (Figura 6). Se agregaron tres variables sin relación con el diagnóstico, que
+difieren solo en cuántos cortes ofrecen: una continua, una de cuatro niveles y una
+binaria. La permutación, calculada sobre el test con 30 repeticiones, les asigna cero a
+las tres. La Gini, que suma las disminuciones de impureza sobre todos los árboles, les
+asigna `r f9(e9cont$gini, 4)`,
+`r f9(e9imp$gini[e9imp$variable == "ruido 4 niveles"], 4)` y `r f9(e9bin$gini, 4)`: la
+continua recibe `r f9(e9cont$gini / e9bin$gini, 1)` veces la de la binaria por ofrecer
+más puntos de corte donde el azar puede hallar una partición favorable.
+
+```{r e9-fig-imp, out.width="56%", fig.cap="Importancia Gini frente a importancia por permutaci\\'on."}
+knitr::include_graphics("codigo/resultados/e9/importancias.png")
+```
+
+*Nota.* Elaboración propia. Izquierda: puesto en los dos ordenamientos y diagonal de
+coincidencia. Derecha: el ruido en su escala.
+
+El sesgo va en la dirección esperada pero no alcanza para dar vuelta el ordenamiento: el
+ruido continuo queda en el puesto `r e9cont$rank_gini` de `r nrow(e9imp)` por Gini, por
+debajo de las variables reales. La permutación es más tajante y ahí aparece algo que no
+se esperaba: deja en cero exactamente `r sum(e9imp$permutacion <= 0)` variables, de las
+cuales solo `r sum(e9imp$permutacion <= 0 & e9imp$es_ruido)` son el ruido plantado y las
+otras `r sum(e9imp$permutacion <= 0 & !e9imp$es_ruido)` son variables reales del conjunto,
+indistinguibles del ruido por esta medida.
+
+La discrepancia grande está en otro lado: `worst texture` es la más importante por
+permutación y apenas la `r e9tex$rank_gini` por Gini, con un Spearman entre los dos
+ordenamientos de `r f9(e9rho, 2)`. La explicación es el grupo redundante de radio,
+perímetro y área, entre cuyos miembros Gini reparte el crédito de las divisiones mientras
+la permutación halla que ninguno es insustituible. Esto contradice al documento de clase,
+que describe a la importancia Gini como "usualmente muy consistente" con la de
+permutación: un Spearman de `r f9(e9rho, 2)` sobre `r nrow(e9imp)` variables no es
+consistencia, y la causa es justamente la redundancia entre predictores, que en este
+conjunto es alta y en otros puede no serlo.
+
+Los usos que enumera el documento de clase se agrupan en cinco. El directo es la
+clasificación supervisada sobre tablas, con miles de variables sin selección previa, sin
+escalado y sin tratamiento especial de las categóricas. La estimación OOB agrega el ajuste
+de $m$ y la del error de generalización sin partir la muestra, lo que conviene cuando los
+datos son pocos; sobre la importancia de variables, el documento propone correr el bosque
+con todas y volver a correrlo solo con las más importantes, es decir selección por filtro.
+
+La matriz de proximidad habilita el tercer grupo: imputación de faltantes, detección de
+atípicos, escalado métrico sobre los valores $1 - \text{prox}(k, r)$ y los prototipos, que
+describen el caso típico de cada clase. El cuarto uso es el aprendizaje no supervisado: se
+fabrica una clase sintética con cada coordenada muestreada por separado, lo cual destruye
+dependencia entre variables, y las proximidades de ese problema artificial sirven para
+agrupar. El quinto es el manejo de clases desbalanceadas por ponderación. Breiman y Cutler
+(s.f.) proponen como guía inicial pesos inversamente proporcionales al tamaño de cada
+clase, pero su propio ejemplo con 1000 y 50 casos muestra que esa guía se pasa de largo: el
+peso 20 que resulta de la proporción lleva el error general a 0,121 y el documento lo
+descarta por demasiado alto. Recién un peso de 10, hallado por tanteo, equilibra los
+errores por clase, y aun así sube el error general de 0,037 a 0,043, que el documento
+presenta como el resultado habitual: mejorar el equilibrio cuesta error general.
+
+
+**Fuentes del Ejercicio 9.** Material de cátedra: `Ensemble Methods Universidad
+Austral.pdf` (clase 6, Volpacchio, s.f.-a) para razones para ensamblar, P&C, Arcing y
+bagging; `randon forest explicado.pdf` (clase 6), traducción de Breiman y Cutler (s.f.),
+para el algoritmo, el OOB, las importancias, la proximidad y los usos. Breiman (2001),
+Breiman (1996) y Wolberg et al. (1995).
+
+\newpage
+
 # Apéndice · Código
 
-El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts del
-Ejercicio 1 (LSTM y figuras).
+El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts de los
+Ejercicios 1, 7, 8 y 9.
 
 ## A.1 LSTM serie temporal (Ejercicio 1.VI)
 
@@ -610,6 +1518,35 @@ generó `codigo/e1_lstm/figuras.py`.
 cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
 ```
 
+
+\newpage
+
+## A.3 Clustering y t-SNE (Ejercicio 7)
+
+```{r e7-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e7_tsne/tsne_clustering.py"), sep = "\n")
+```
+
+\newpage
+
+## A.4 AdaBoost y Gradient Boosting (Ejercicio 8)
+
+```{r e8-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e8_boosting/adaboost_vs_gb.py"), sep = "\n")
+```
+
+```{r e8-fig-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e8_boosting/figuras.py"), sep = "\n")
+```
+
+\newpage
+
+## A.5 Random Forest (Ejercicio 9)
+
+```{r e9-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e9_rf/rf_breiman.py"), sep = "\n")
+```
+
 \newpage
 
 \setlength{\parindent}{0pt}
@@ -619,12 +1556,15 @@ cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
 
 # Referencias
 
-Belkin, M., Hsu, D., Ma, S., & Mandal, S. (2019). Reconciling modern machine-learning
-practice and the classical bias-variance trade-off. *Proceedings of the National
-Academy of Sciences, 116*(32), 15849-15854. https://doi.org/10.1073/pnas.1903070116
+Alpaydin, E., & Kaynak, C. (1998). *Optical recognition of handwritten digits* [Conjunto
+de datos]. UCI Machine Learning Repository. https://doi.org/10.24432/C50P49
 
-Burges, C. J. C. (1998). A tutorial on support vector machines for pattern
-recognition. *Data Mining and Knowledge Discovery, 2*(2), 121-167.
+Belkin, M., Hsu, D., Ma, S., & Mandal, S. (2019). Reconciling modern machine-learning
+practice and the classical bias-variance trade-off. *Proceedings of the National Academy
+of Sciences, 116*(32), 15849-15854. https://doi.org/10.1073/pnas.1903070116
+
+Burges, C. J. C. (1998). A tutorial on support vector machines for pattern recognition.
+*Data Mining and Knowledge Discovery, 2*(2), 121-167.
 https://doi.org/10.1023/A:1009715923555
 
 Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*(3),
@@ -633,6 +1573,10 @@ Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*
 Cybenko, G. (1989). Approximation by superpositions of a sigmoidal function.
 *Mathematics of Control, Signals and Systems, 2*(4), 303-314.
 https://doi.org/10.1007/BF02551274
+
+Ester, M., Kriegel, H.-P., Sander, J., & Xu, X. (1996). A density-based algorithm for
+discovering clusters in large spatial databases with noise. *Proceedings of the Second
+International Conference on Knowledge Discovery and Data Mining (KDD-96)*, 226-231.
 
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
 
@@ -649,24 +1593,42 @@ LeCun, Y., Bottou, L., Bengio, Y., & Haffner, P. (1998). Gradient-based learning
 to document recognition. *Proceedings of the IEEE, 86*(11), 2278-2324.
 https://doi.org/10.1109/5.726791
 
+van der Maaten, L. (2014). Accelerating t-SNE using tree-based algorithms. *Journal of
+Machine Learning Research, 15*, 3221-3245.
+
+van der Maaten, L., & Hinton, G. (2008). Visualizing data using t-SNE. *Journal of
+Machine Learning Research, 9*, 2579-2605.
+
 Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word
-representations in vector space. *Workshop track of the 1st International Conference
-on Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
+representations in vector space. *Workshop track of the 1st International Conference on
+Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 
 Ng, A. (s.f.). *Deep learning: Convolutional neural networks* [Material de cátedra].
 Universidad Austral, Data Mining Avanzado.
+
+Sarle, W. S. (1983). *Cubic clustering criterion* (SAS Technical Report A-108). SAS
+Institute.
+
+SAS Institute. (s.f.-a). *Preparation for clustering* [Capítulo 2 del curso de
+clustering]. Material de cátedra, Data Mining Avanzado, Universidad Austral.
+
+SAS Institute. (s.f.-b). *Assessing clustering results* [Capítulo 5 del curso de
+clustering]. Material de cátedra, Data Mining Avanzado, Universidad Austral.
 
 Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with
 neural networks. *Advances in Neural Information Processing Systems 27*, pp. 3104-3112.
 
 Vapnik, V. N. (1995). *The nature of statistical learning theory*. Springer.
 
-Volpacchio, M. (s.f.-b). *SVM Universidad Austral* [Presentación de clase].
-Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
+Volpacchio, M. (s.f.-b). *SVM Universidad Austral* [Presentación de clase]. Universidad
+Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
 
-Volpacchio, M. (s.f.-c). *SLT Universidad Austral1* [Presentación de clase].
-Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
+Volpacchio, M. (s.f.-c). *SLT Universidad Austral1* [Presentación de clase]. Universidad
+Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
 
-Volpacchio, M. (s.f.-e). *Data Mining Avanzado: redes neuronales* [Material de
-cátedra]. Universidad Austral, Maestría en Explotación de Datos y Gestión del
-Conocimiento.
+Volpacchio, M. (s.f.-d). *t-SNE, perplejidad y clustering no lineal: fundamentos
+matemáticos y algorítmicos* [Apunte de cátedra]. Universidad Austral, Maestría en
+Explotación de Datos y Gestión del Conocimiento.
+
+Volpacchio, M. (s.f.-e). *Data Mining Avanzado: redes neuronales* [Material de cátedra].
+Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
