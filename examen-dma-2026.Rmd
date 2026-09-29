@@ -1195,17 +1195,223 @@ Breiman (1996) y Wolberg et al. (1995).
 
 \newpage
 
+\newpage
+
+# Ejercicio 10 · Pipeline comparativo de cuatro modelos
+
+*Puede elegir cualquiera de las 2 opciones (si desea puede hacer las 2. A los fines de la
+evaluación uno es suficiente).*
+
+*Opción 1. Seleccione dos datasets públicos (uno de clasificación y uno de regresión) y
+construya un Pipeline completo en Python que compare el desempeño de cuatro modelos:
+Support Vector Machine, Random Forest, Gradient Boosting y Multi-Layer Perceptron. El
+pipeline debe incluir: (1) preprocesamiento adecuado de los datos, (2) definición explícita
+del espacio de búsqueda de hiperparámetros para cada modelo, (3) una estrategia de
+optimización (GridSearch o RandomSearch), y (4) validación mediante k-fold
+cross-validation. Finalmente, presente una comparación clara del rendimiento de cada modelo
+en cada tarea.*
+
+```{r e10-load, include=FALSE}
+e10dir <- "codigo/resultados/e10/"
+e10c   <- read.csv(paste0(e10dir, "clasificacion.csv"), stringsAsFactors = FALSE)
+e10r   <- read.csv(paste0(e10dir, "regresion.csv"), stringsAsFactors = FALSE)
+
+f10 <- function(x, d = 3) formatC(as.numeric(x), format = "f", digits = d,
+                                  decimal.mark = ",")
+# Mejores y peores por tarea, para que la lectura no dependa de tipear nombres.
+e10c_mejor <- e10c$Modelo[which.max(e10c$AUC_test)]
+e10c_rango <- max(e10c$AUC_test) - min(e10c$AUC_test)
+e10r_mejor <- e10r$Modelo[which.min(e10r$RMSE_test)]
+e10r_peor  <- e10r$Modelo[which.max(e10r$RMSE_test)]
+e10r_lento <- e10r$Modelo[which.max(e10r$Tiempo_seg)]
+e10r_gap   <- e10r$RMSE_test - e10r$RMSE_CV
+```
+
+Se resuelve la Opción 1. La Opción 2 exige TensorFlow o PyTorch, que no están instalados
+en el entorno donde se corrió el resto del trabajo, y la consigna aclara que una de las dos
+alcanza.
+
+**Los datos.** Para clasificación se usa Breast Cancer Wisconsin (Diagnostic), 569 casos,
+30 variables continuas y dos clases (Wolberg et al., 1995), que es el conjunto con el que
+la materia trabaja en la Clase 4. Para regresión, California Housing, 20.640 distritos y
+8 variables, con el valor mediano de la vivienda como target (Pace & Barry, 1997). Los dos
+son públicos y ninguno tiene faltantes. Los dos problemas son deliberadamente opuestos en
+forma: el primero tiene muchas variables para pocos casos y el segundo, muchos casos para
+pocas variables.
+
+**Una decisión sobre el tamaño.** California Housing se submuestreó a 5000 filas. El motivo
+es concreto: SVR resuelve un problema de programación cuadrática que escala entre el
+cuadrado y el cubo de la cantidad de observaciones, y con las 20.640 filas la búsqueda no
+terminaba en un tiempo razonable. El costo es que las métricas de regresión quedan algo más
+pesimistas y más variables de lo que serían con el conjunto entero. La comparación entre
+modelos no se ve afectada, porque las filas se sortean una sola vez con semilla fija y los
+cuatro modelos ven exactamente las mismas.
+
+```{r e10-esquema, out.width="97%", fig.cap="Estructura del pipeline y lugar del preprocesamiento."}
+knitr::include_graphics("codigo/resultados/e10/esquema_pipeline.png")
+```
+
+*Nota.* Elaboración propia. El recuadro inferior hace el zoom sobre un fold de la
+validación cruzada.
+
+**Preprocesamiento.** Como no hay faltantes, se reduce a la estandarización, que es
+imprescindible para SVM y para el MLP, porque los dos dependen de distancias o de la escala
+de los pesos, e indiferente para los métodos basados en árboles. Lo que importa no es qué
+se hace sino dónde: el `StandardScaler` va **dentro** del `Pipeline`, no antes de la
+partición. Si se estandariza sobre el conjunto completo, la media y el desvío se calculan
+con datos que después terminan en el fold de validación, y eso es fuga de información. Al
+estar dentro del pipeline, `scikit-learn` ajusta el escalador únicamente con el fold de
+ajuste de cada iteración. Es el punto que se trabaja en la práctica 2 de la Clase 1.
+
+El escalador se dejó también en Random Forest y Gradient Boosting, donde no hace falta.
+Cuesta milisegundos y evita mantener dos caminos de código distintos, que es donde se
+cuelan los errores.
+
+**Espacio de búsqueda, explícito por modelo.** Los rangos no son arbitrarios: cada uno
+recorre el parámetro que gobierna la capacidad del modelo, que es el mismo que se discutió
+en los ejercicios anteriores.
+
+```{r e10-tab-hiper, echo=FALSE}
+hp <- data.frame(
+  Modelo = c("SVM", "Random Forest", "Gradient Boosting", "MLP"),
+  Espacio = c(
+    "C entre 0,01 y 1000 en escala logarítmica; gamma entre 0,0001 y 1; kernel rbf, polinómico o lineal",
+    "n_estimators 200 a 800; max_features sqrt, log2, 0,3 y 0,5; min_samples_leaf 1 a 8; max_depth libre, 8 o 16",
+    "n_estimators 100 a 900; learning_rate 0,01 a 0,2; max_depth 2 a 5; subsample 0,6 a 1",
+    "capas (32), (64), (128), (64,32) y (128,64); alpha entre 1e-5 y 1; learning_rate_init 0,0005 a 0,01; relu o tanh"
+  ),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+names(hp) <- c("Modelo", "Rangos sorteados")
+kable(hp, booktabs = TRUE,
+      caption = "Espacio de búsqueda de hiperparámetros por modelo.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8.5) %>%
+  column_spec(1, width = "2.6cm") %>%
+  column_spec(2, width = "11.6cm")
+```
+
+*Nota.* Elaboración propia. En SVM, `C` y `gamma` se barren en escala logarítmica porque su
+efecto es multiplicativo, y son los parámetros externos del Ejercicio 2. En Random Forest,
+`max_features` es el $m$ del Ejercicio 9. En Gradient Boosting, `learning_rate` y
+`n_estimators` se sortean juntos porque están acoplados, según el compromiso del Ejercicio
+8. En el MLP, `alpha` es la regularización que controla la capacidad efectiva.
+
+**Estrategia de optimización y validación.** Se usó `RandomizedSearchCV` con 20 sorteos por
+modelo. La grilla completa era inviable: solo SVM tiene 360 combinaciones y Random Forest
+144, y el barrido exhaustivo de los cuatro modelos sobre las dos tareas excedía el
+presupuesto de cómputo. La validación es k-fold con $k = 5$, estratificada en clasificación
+para conservar la proporción de clases en cada fold. La métrica de selección fue el área
+bajo la curva ROC en clasificación y la raíz del error cuadrático medio en regresión.
+
+Además de la validación cruzada se reservó un hold-out del 25 % que no participa de ninguna
+etapa de la selección. La distinción importa y las tablas reportan las dos columnas para
+poder contrastarlas: el mejor score de validación cruzada está optimizado sobre 20
+configuraciones y por lo tanto es algo optimista, mientras que el hold-out da una lectura
+limpia.
+
+<!-- La tabla arrancaba cerca del pie y la fila del MLP quedaba huerfana en la
+     hoja siguiente, separada de su encabezado. Es el caso que la guia de
+     maquetacion resuelve con un salto antes del chunk. -->
+\clearpage
+
+```{r e10-tab-clf, echo=FALSE}
+tc <- e10c
+names(tc) <- c("Modelo", "AUC (CV)", "AUC (test)", "Accuracy (test)", "F1 (test)",
+               "Tiempo (s)")
+kable(tc, booktabs = TRUE, digits = 4,
+      caption = "Clasificación: Breast Cancer Wisconsin, hold-out de 143 casos.",
+      align = c("l", "r", "r", "r", "r", "r"),
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "3.2cm") %>%
+  column_spec(2:6, width = "2.0cm")
+```
+
+*Nota.* Elaboración propia. AUC: área bajo la curva ROC, que no depende del umbral de
+corte. F1: media armónica entre precisión y exhaustividad.
+
+```{r e10-tab-reg, echo=FALSE}
+tr <- e10r
+names(tr) <- c("Modelo", "RMSE (CV)", "RMSE (test)", "MAE (test)", "R2 (test)",
+               "Tiempo (s)")
+kable(tr, booktabs = TRUE, digits = 4,
+      caption = "Regresión: California Housing submuestreado, hold-out de 1250 casos.",
+      align = c("l", "r", "r", "r", "r", "r"),
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "3.2cm") %>%
+  column_spec(2:6, width = "2.0cm")
+```
+
+*Nota.* Elaboración propia. El target está en cientos de miles de dólares, así que un RMSE
+de 0,52 equivale a unos 52.000 dólares de error típico. RMSE: raíz del error cuadrático
+medio. MAE: error absoluto medio. La columna de tiempo es indicativa: mide segundos de
+reloj y depende de la carga de la máquina.
+
+**En clasificación los cuatro modelos empatan.** Las AUC de test se mueven en un rango de
+`r f10(e10c_rango, 4)`, y con 143 casos de test esa diferencia equivale a menos de una
+observación: no hay ganador estadístico, y afirmar que `r e10c_mejor` le gana a los demás
+sería leer el ruido de una sola partición. Lo que el resultado sí muestra es que Breast
+Cancer Wisconsin es un problema fácil y casi linealmente separable, algo consistente con que
+sea un conjunto clásico de demostración. La dispersión es algo mayor en accuracy que en AUC
+porque esa métrica depende del umbral y la AUC no.
+
+**En regresión el orden sí es informativo.** `r e10r_mejor` queda primero con un RMSE de
+`r f10(min(e10r$RMSE_test))` contra `r f10(max(e10r$RMSE_test))` de `r e10r_peor`. Que
+boosting le gane a Random Forest es coherente con lo discutido en los Ejercicios 8 y 9:
+California Housing tiene relaciones no lineales entre las variables geográficas y el precio,
+y el ajuste secuencial sobre los residuos captura esa estructura mejor que el promedio de
+árboles independientes.
+
+**El sobreajuste de la búsqueda es visible y es chico.** La brecha entre el RMSE de
+validación cruzada y el de test va de `r f10(min(e10r_gap))` a `r f10(max(e10r_gap))`. Que
+el test sea sistemáticamente peor es lo esperado, porque el mejor score de validación
+cruzada está optimizado sobre 20 sorteos; que la brecha sea de ese tamaño indica que 20
+sorteos no alcanzaron para sobreajustar el procedimiento de selección.
+
+**El costo separa a los modelos más que la precisión.** En regresión, `r e10r_lento` fue el
+más lento por un margen de dos órdenes de magnitud, y además quedó último en las tres
+métricas. La cifra exacta de la columna de tiempo no es comparable entre corridas, porque
+depende de la carga de la máquina: en una corrida previa del mismo script, con las mismas
+métricas hasta el último decimal, SVM había tardado 75 segundos en lugar de
+`r f10(max(e10r$Tiempo_seg), 0)`. Lo que sí se sostiene es el orden y su causa, el escalado
+cuadrático mencionado más arriba, que explica por qué SVM perdió terreno frente a los
+métodos de ensamble a medida que crecieron los volúmenes de datos.
+
+**Conclusión.** Para las dos tareas a la vez conviene Gradient Boosting: gana con claridad
+en regresión y empata en clasificación, a un costo intermedio. Random Forest es la mejor
+opción cuando pesa el tiempo de desarrollo, porque llega cerca del óptimo sin ajuste fino,
+tal como anticipa el documento de Breiman citado en el Ejercicio 9. SVM solo se justifica
+con pocas observaciones, que es donde su fundamento teórico rinde y su costo no molesta.
+
+**Fuentes del Ejercicio 10.** Material de cátedra: `DMA_Clase_5_3_de_3` y
+`DMA - Clase 6 - 3 de 3` (pipeline unificado de varios modelos, búsqueda sin fuga de
+información y comparación de desempeño contra tiempo); `DMA - Clase 1 - 2 de 2` (K-Fold
+estratificado, fuga de información y uso de `Pipeline`); `clase2/notebooks/ejemploVSMC.py`
+(el mismo conjunto de Breast Cancer con `StandardScaler`, `SVC` y búsqueda de
+hiperparámetros). Datos: Wolberg et al. (1995) y Pace y Barry (1997). Corrida propia:
+`codigo/e10_pipeline/pipeline.py`.
+
 # Apéndice · Código
 
-El código se desarrolló y ejecutó fuera del `.Rmd`. Se transcribe el del Ejercicio 1.VI,
-que es el que la consigna pide completo. Los scripts de los Ejercicios 7, 8 y 9, que
-producen todas las tablas y figuras de esas secciones, están en la carpeta `codigo/` del
-repositorio con sus resultados intermedios.
+El código se desarrolló y ejecutó fuera del `.Rmd`. Se transcriben los dos que la consigna
+pide de forma explícita: el ejemplo de LSTM del Ejercicio 1.VI y el pipeline del Ejercicio
+10. Los scripts de los Ejercicios 7, 8 y 9, que producen todas las tablas y figuras de esas
+secciones, están en la carpeta `codigo/` del repositorio con sus resultados intermedios.
 
 ## A.1 LSTM serie temporal (Ejercicio 1.VI)
 
 ```{r e1-lstm-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e1_lstm/lstm_serie.py"), sep = "\n")
+```
+
+
+\newpage
+
+## A.2 Pipeline comparativo (Ejercicio 10)
+
+```{r e10-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e10_pipeline/pipeline.py"), sep = "\n")
 ```
 
 \newpage

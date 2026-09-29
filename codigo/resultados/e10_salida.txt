@@ -1,0 +1,28 @@
+C:\Users\Andres\AppData\Local\Programs\Python\Python310\lib\site-packages\joblib\externals\loky\process_executor.py:782: UserWarning: A worker stopped while some jobs were given to the executor. This can be caused by a too short worker timeout or by a memory leak.
+  warnings.warn(
+======================================================================
+EJERCICIO 10 - OPCION 1
+======================================================================
+[clasif] SVM                AUC_cv=0.9957 AUC_test=0.9960 (5.6s)
+[clasif] Random Forest      AUC_cv=0.9904 AUC_test=0.9941 (10.2s)
+[clasif] Gradient Boosting  AUC_cv=0.9930 AUC_test=0.9945 (11.2s)
+[clasif] MLP                AUC_cv=0.9965 AUC_test=0.9969 (4.9s)
+
+[regres] SVM                RMSE_cv=0.5938 RMSE_test=0.6117 R2=0.7294 (2563.3s)
+[regres] Random Forest      RMSE_cv=0.5498 RMSE_test=0.5702 R2=0.7648 (62.4s)
+[regres] Gradient Boosting  RMSE_cv=0.5184 RMSE_test=0.5218 R2=0.8031 (59.3s)
+[regres] MLP                RMSE_cv=0.5632 RMSE_test=0.5687 R2=0.7661 (22.2s)
+
+--- CLASIFICACION (Breast Cancer, 569 x 30, test n=143) ---
+           Modelo   AUC_CV  AUC_test  Accuracy_test  F1_test  Tiempo_seg
+              SVM 0.995685  0.996017       0.986014 0.988889    5.596409
+    Random Forest 0.990357  0.994130       0.958042 0.967033   10.170938
+Gradient Boosting 0.993003  0.994549       0.972028 0.978022   11.230391
+              MLP 0.996510  0.996855       0.979021 0.983240    4.877381
+
+--- REGRESION (California Housing submuestreado, 5000 x 8, test n=1250) ---
+           Modelo  RMSE_CV  RMSE_test  MAE_test  R2_test  Tiempo_seg
+              SVM 0.593790   0.611658  0.418688 0.729391 2563.291080
+    Random Forest 0.549763   0.570226  0.385131 0.764810   62.397568
+Gradient Boosting 0.518360   0.521797  0.352477 0.803062   59.284003
+              MLP 0.563155   0.568713  0.395474 0.766056   22.204360
