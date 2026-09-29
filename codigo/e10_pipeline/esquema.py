@@ -48,6 +48,8 @@ def figura() -> None:
     ax.axis("off")
 
     # ---- flujo principal ---------------------------------------------------
+    # Una sola fila de izquierda a derecha: el lector sigue el dato sin volver
+    # atras. Lo que se ramifica (el hold-out y el zoom del fold) baja, no sube.
     y = 5.55
     _box(ax, 0.10, y, 2.45, 1.25, "Datos", "#e8e8e8")
     _box(ax, 3.05, y, 2.60, 1.25, "Corte\n75 / 25", "#d9e2ec")
@@ -61,6 +63,8 @@ def figura() -> None:
         _arrow(ax, x0 + w0 + 0.04, y + 0.62, x1 - 0.04, y + 0.62)
 
     # El 25 % no participa de la busqueda: baja por un costado y vuelve al final.
+    # Va en linea de guiones y no solida a proposito, para que se lea como un
+    # camino aparte y no como un paso mas de la secuencia.
     _box(ax, 3.05, 3.55, 2.60, 1.05, "El 25 % no\nse toca", "#f7d6d6", size=8.5)
     _arrow(ax, 4.35, y - 0.04, 4.35, 4.64, guion=True)
     ax.add_patch(FancyArrowPatch(
@@ -69,6 +73,9 @@ def figura() -> None:
         linestyle=(0, (4, 2))))
 
     # ---- zoom sobre un fold ------------------------------------------------
+    # El recuadro punteado que los contiene es lo que marca el cambio de escala:
+    # sin el, las tres cajas de abajo parecen una continuacion de la fila de
+    # arriba y se pierde que describen lo que pasa DENTRO de una sola iteracion.
     yz = 1.15
     _box(ax, 6.15, yz, 11.15, 1.85, "", "#fbfbfb", borde="#999999", guion=True)
     ax.text(6.40, yz + 1.58, "dentro de cada fold:", fontsize=8.5,

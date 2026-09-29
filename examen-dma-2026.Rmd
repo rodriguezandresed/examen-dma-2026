@@ -871,28 +871,33 @@ clasifican mejor que el azar, con probabilidad de error menor a 0,5. La diferenc
 está ahí; está en qué modifica cada iteración.
 
 AdaBoost (Freund & Schapire, 1997) trabaja sobre una distribución de pesos de las
-observaciones. El pseudocódigo del apunte arranca con $D_1(i) = 1/m$ para las $m$
-observaciones de entrenamiento y repite $T$ veces: entrena el clasificador base con la
-distribución $D_t$ y obtiene $h_t$; calcula su error ponderado
-$\varepsilon_t = \Pr_{i \sim D_t}[h_t(x_i) \ne y_i]$; fija el peso de voto de esa
-hipótesis en $\alpha_t = \tfrac{1}{2}\log\bigl((1-\varepsilon_t)/\varepsilon_t\bigr)$; y
-actualiza $D_{t+1}(i) = D_t(i)\,e^{-\alpha_t y_i h_t(x_i)} / Z_t$, con $Z_t$ el factor
-que renormaliza la distribución. La observación que $h_t$ erró multiplica su peso por
-$e^{\alpha_t}$ y la que acertó lo divide por lo mismo, con lo cual el clasificador base
-de la ronda siguiente se concentra sobre lo que quedó mal resuelto. La salida es el voto
-ponderado $H(x) = \mathrm{sign}\bigl(\sum_t \alpha_t h_t(x)\bigr)$.
+observaciones. Arranca con todas las observaciones al mismo peso y repite $T$ rondas. En cada una entrena
+el clasificador base con los pesos vigentes, mide su error ponderado $\varepsilon_t$ y le
+asigna un peso de voto
 
-En los dos casos lo que se pretende aprender es la misma función, la que asigna una clase o un valor a cada observación, y lo que se minimiza es el error sobre el conjunto de entrenamiento; lo que cambia es el camino.
+$$\alpha_t = \tfrac{1}{2}\log\bigl((1-\varepsilon_t)/\varepsilon_t\bigr),$$
 
-Gradient Boosting (Friedman, 2001) trabaja sobre el target, la variable de respuesta, y
-no sobre los pesos. El modelo se escribe $F_m(x) = F_{m-1}(x) + \beta_m\, h(x; a_m)$, y
-en cada iteración $h$ se ajusta por mínimos cuadrados a los pseudo-residuos, que son el
-negativo de la derivada de la función de pérdida $\psi$ respecto de la predicción
-actual:
-$\tilde{y}_{im} = -\bigl[\partial \psi(y_i, F(x_i)) / \partial F(x_i)\bigr]_{F = F_{m-1}}$.
-Con pérdida cuadrática ese pseudo-residuo es el residuo común $y_i - F_{m-1}(x_i)$. Todas
-las observaciones pesan siempre $1/N$: lo que cambia de una iteración a la otra es qué se
-le pide predecir al árbol.
+que es la única fórmula que hace falta retener: una hipótesis vota en proporción a cuánto
+acierta, y una que apenas supera al azar ($\varepsilon_t$ cerca de 0,5) vota casi nada.
+Después sube el peso de las observaciones que esa hipótesis erró y baja el de las que
+acertó, en la misma proporción $\alpha_t$, con lo cual el clasificador de la ronda
+siguiente se concentra sobre lo que quedó mal resuelto. La salida es el voto ponderado de
+las $T$ hipótesis.
+
+En los dos casos lo que se pretende aprender es la misma función, la que asigna una clase
+o un valor a cada observación, y lo que se minimiza es el error sobre el conjunto de
+entrenamiento; lo que cambia es el camino.
+
+Gradient Boosting (Friedman, 2001) trabaja sobre el target y no sobre los pesos. El modelo
+se construye por suma,
+
+$$F_m(x) = F_{m-1}(x) + \beta_m\, h_m(x),$$
+
+y en cada iteración el árbol $h_m$ se ajusta al **pseudo-residuo**, que es lo que le falta
+al modelo actual para llegar al valor verdadero. Con pérdida cuadrática ese pseudo-residuo
+es el residuo común $y_i - F_{m-1}(x_i)$; con otra pérdida cambia la forma, y esa
+generalidad es la ventaja del método. Todas las observaciones pesan siempre lo mismo: lo
+que cambia de una iteración a la otra es qué se le pide predecir al árbol.
 
 ```{r e8-esquema, out.width="92%", fig.cap="El ciclo de boosting en sus dos variantes."}
 knitr::include_graphics("codigo/resultados/e8/esquema_boosting.png")
@@ -1254,6 +1259,11 @@ knitr::include_graphics("codigo/resultados/e10/esquema_pipeline.png")
 *Nota.* Elaboración propia. El recuadro inferior hace el zoom sobre un fold de la
 validación cruzada.
 
+La entrada del pipeline es la tabla de variables con su target y la salida son dos cosas:
+la configuración ganadora de cada modelo y sus métricas sobre datos que no participaron de
+la selección. Lo que se busca aprender no es un modelo sino una respuesta comparativa, cuál
+de las cuatro familias rinde mejor en cada tipo de problema y a qué costo.
+
 **Preprocesamiento.** Como no hay faltantes, se reduce a la estandarización, que es
 imprescindible para SVM y para el MLP, porque los dos dependen de distancias o de la escala
 de los pesos, e indiferente para los métodos basados en árboles. Lo que importa no es qué
@@ -1401,18 +1411,28 @@ secciones, están en la carpeta `codigo/` del repositorio con sus resultados int
 
 ## A.1 LSTM serie temporal (Ejercicio 1.VI)
 
+ootnotesize
+
 ```{r e1-lstm-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e1_lstm/lstm_serie.py"), sep = "\n")
 ```
+
+
+ormalsize
 
 
 \newpage
 
 ## A.2 Pipeline comparativo (Ejercicio 10)
 
+ootnotesize
+
 ```{r e10-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e10_pipeline/pipeline.py"), sep = "\n")
 ```
+
+
+ormalsize
 
 \newpage
 
@@ -1430,6 +1450,15 @@ Belkin, M., Hsu, D., Ma, S., & Mandal, S. (2019). Reconciling modern machine-lea
 practice and the classical bias-variance trade-off. *Proceedings of the National Academy
 of Sciences, 116*(32), 15849-15854. https://doi.org/10.1073/pnas.1903070116
 
+Breiman, L. (1996). Bagging predictors. *Machine Learning, 24*(2), 123-140.
+https://doi.org/10.1007/BF00058655
+
+Breiman, L. (2001). Random forests. *Machine Learning, 45*(1), 5-32.
+https://doi.org/10.1023/A:1010933404324
+
+Breiman, L., & Cutler, A. (s.f.). *Random forests* [Documento traducido].
+Material distribuido en la asignatura Data Mining Avanzado, Universidad Austral.
+
 Burges, C. J. C. (1998). A tutorial on support vector machines for pattern recognition.
 *Data Mining and Knowledge Discovery, 2*(2), 121-167.
 https://doi.org/10.1023/A:1009715923555
@@ -1444,6 +1473,16 @@ https://doi.org/10.1007/BF02551274
 Ester, M., Kriegel, H.-P., Sander, J., & Xu, X. (1996). A density-based algorithm for
 discovering clusters in large spatial databases with noise. *Proceedings of the Second
 International Conference on Knowledge Discovery and Data Mining (KDD-96)*, 226-231.
+
+Freund, Y., & Schapire, R. E. (1997). A decision-theoretic generalization of on-line
+learning and an application to boosting. *Journal of Computer and System Sciences,
+55*(1), 119-139. https://doi.org/10.1006/jcss.1997.1504
+
+Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine. *The
+Annals of Statistics, 29*(5), 1189-1232. https://doi.org/10.1214/aos/1013203451
+
+Friedman, J. H. (2002). Stochastic gradient boosting. *Computational Statistics & Data
+Analysis, 38*(4), 367-378. https://doi.org/10.1016/S0167-9473(01)00065-2
 
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
 https://www.deeplearningbook.org/
@@ -1475,6 +1514,12 @@ Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 Ng, A. (s.f.). *Deep learning: convolutional neural networks* [Diapositivas].
 Material distribuido en la asignatura Data Mining Avanzado, Universidad Austral.
 
+Pace, R. K., & Barry, R. (1997). Sparse spatial autoregressions. *Statistics &
+Probability Letters, 33*(3), 291-297. https://doi.org/10.1016/S0167-7152(96)00140-X
+
+Parr, T., & Howard, J. (s.f.). *Gradient boosting explicado* [Documento traducido].
+Material distribuido en la asignatura Data Mining Avanzado, Universidad Austral.
+
 Sarle, W. S. (1983). *Cubic clustering criterion* (SAS Technical Report A-108). SAS
 Institute.
 
@@ -1502,3 +1547,7 @@ Explotación de Datos y Gestión del Conocimiento.
 
 Volpacchio, M. (s.f.-e). *Data Mining Avanzado: redes neuronales* [Material de cátedra].
 Universidad Austral, Maestría en Explotación de Datos y Gestión del Conocimiento.
+
+Wolberg, W. H., Street, W. N., & Mangasarian, O. L. (1995). *Breast Cancer Wisconsin
+(Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.
+https://doi.org/10.24432/C5DW2B
