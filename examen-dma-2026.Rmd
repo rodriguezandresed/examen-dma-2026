@@ -673,7 +673,7 @@ mismos datos y no del supuesto de normalidad.
 El procedimiento se aplicó a los diez grupos que devolvió k-means sobre el conjunto de
 dígitos manuscritos que se describe más abajo. Las variables de entrada son 64 píxeles, con
 lo cual una tabla de 10 por 64 resultaría ilegible, así que el perfilado va sobre las cinco
-primeras componentes principales (Tabla \@ref(tab:e7-perfiles)).
+primeras componentes principales.
 
 ```{r e7-perfiles}
 knitr::kable(
