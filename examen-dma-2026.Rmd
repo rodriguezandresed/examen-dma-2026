@@ -17,6 +17,8 @@ header-includes:
   - \usepackage{float}
   - \usepackage{graphicx}
   - \usepackage{grffile}
+  - \usepackage{fvextra}
+  - \DefineVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
   - \usepackage{titling}
   - \setlength{\droptitle}{1cm}
   - \pretitle{\begin{center}\includegraphics[width=5cm]{Austral logo.png}\\[1.5em]\LARGE\bfseries}
