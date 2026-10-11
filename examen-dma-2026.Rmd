@@ -611,14 +611,13 @@ e7anova <- read.csv("codigo/resultados/e7/anova_componentes.csv", stringsAsFacto
 e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FALSE)
 ```
 
-La guía de clustering de la cátedra está dividida en capítulos y acá intervienen dos: el
-capítulo 2, `Preparation for Clustering`, del que sale esta primera parte, y el capítulo 5,
-`Assessing Clustering Results`, que es el que indica la ayuda del enunciado y del que sale la
-segunda. El objetivo del preproceso que plantea el capítulo 2 es detectar estructura de
-grupos antes de agrupar, porque todo algoritmo de clustering devuelve una partición aunque
-los datos no tengan ninguna.
+Todo algoritmo de clustering devuelve una partición, tengan los datos grupos o no tengan
+ninguno. De ahí que antes de agrupar convenga averiguar si esa estructura existe, y como los
+datos casi siempre tienen más dimensiones de las que entran en un gráfico, averiguarlo pasa
+por proyectarlos a dos.
 
-Las técnicas que enumera son seis. Los gráficos de componentes principales (PRINCOMP)
+La guía de clustering de la cátedra enumera seis técnicas para eso. Los gráficos de
+componentes principales (PRINCOMP)
 proyectan sobre las dos primeras componentes. El escalado multidimensional (MDS) ubica los
 puntos en dos dimensiones conservando en lo posible las distancias originales. El
 discriminante canónico (CANDISC) busca las direcciones que maximizan la separación entre
@@ -632,7 +631,7 @@ respecto de los ejes.
 A esa lista hay que hacerle un reparo y un agregado. El reparo es que CANDISC exige grupos
 previamente definidos, con lo cual no sirve para detectar grupos potenciales, que es lo que
 pide la consigna; su lugar está en el otro extremo del proceso, y de hecho reaparece más
-abajo como tercer paso del perfilado. El agregado es que el capítulo proviene de un curso de
+abajo como tercer paso del perfilado. El agregado es que esa lista proviene de un curso de
 SAS y se detiene donde terminaba ese software: corresponde sumarle las técnicas no lineales
 del apunte de la clase 8, t-SNE y UMAP (McInnes et al., 2018), que en la práctica actual
 reemplazaron a MDS para este fin.
@@ -648,8 +647,8 @@ Ejercicio 5: al tratarse de una proyección lineal, no detecta grupos definidos 
 curvas, y un conjunto de anillos concéntricos aparece como una nube sin estructura. Ese es
 precisamente el problema que motiva a t-SNE.
 
-El capítulo 5 define el perfilado como la generación de descripciones de cada grupo a partir
-de las variables de entrada, y propone tres pasos. El primero es calcular los vectores de
+El perfilado es la generación de descripciones de cada grupo a partir de las variables de
+entrada, y la guía propone tres pasos. El primero es calcular los vectores de
 medias de cada grupo. El segundo es un MANOVA, que es un análisis de varianza con varias
 variables respuesta simultáneas: en lugar de preguntar si los grupos difieren en una
 variable, pregunta si difieren en el vector completo. Va primero porque de esa manera
@@ -947,8 +946,7 @@ los $\alpha_t$ es propia.
 *Random Forest. Describir el algoritmo y su diferencia con el resto de los algoritmos de
 ensamblaje. Describa los principales usos del algoritmo.*
 
-El documento de Breiman y Cutler que usa la cátedra describe el procedimiento en tres pasos
-por árbol. El primero es el bootstrap: de las $N$ filas de entrenamiento se muestrean $N$
+Random Forest construye cada árbol en tres pasos. El primero es el bootstrap: de las $N$ filas de entrenamiento se muestrean $N$
 casos al azar con reemplazo, y esa muestra entrena el árbol. El segundo es el subespacio
 aleatorio de variables: de las $M$ variables disponibles se fija un número $m \ll M$ tal que
 en cada nodo se sortean $m$ y se usa la mejor de ellas para dividir, con $m$ constante durante
