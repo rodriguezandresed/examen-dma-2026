@@ -27,6 +27,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import DBSCAN, KMeans
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 from scipy.stats import f_oneway
 
@@ -181,5 +182,35 @@ with open(os.path.join(SAL, "anova_componentes.csv"), "w", newline="", encoding=
         F, _ = f_oneway(*[X30[km == c, j] for c in range(10)])
         w.writerow(["PC%d" % (j + 1), "%.1f" % F])
 
+# Paso 3 del perfilado por la via alternativa. El capitulo propone MANOVA +
+# ANOVA, pero sus p quedan sesgados porque los grupos se construyeron para
+# maximizar la separacion. Un clasificador contra la etiqueta de grupo no tiene
+# ese problema: no asume nada sobre la distribucion, y su importancia de
+# variables dice lo mismo que buscaba el ANOVA sin pedir prestado un valor p.
+# oob_score da ademas una medida de cuan separables son los grupos.
+#
+# Se entrena sobre las MISMAS 5 componentes de la tabla de perfiles, no sobre
+# las 30, para que la importancia sea comparable con los F de arriba. Primero
+# lo probe sobre las 30 y la importancia se reparte entre tantas componentes
+# que no se puede contrastar con nada.
+rf = RandomForestClassifier(n_estimators=500, oob_score=True, random_state=0,
+                            n_jobs=-1)
+rf.fit(X30[:, :5], km)
+imp = rf.feature_importances_
+
+with open(os.path.join(SAL, "importancia_rf.csv"), "w", newline="",
+          encoding="utf-8") as f:
+    w = csv.writer(f); w.writerow(["componente", "importancia"])
+    for j in range(5):
+        w.writerow(["PC%d" % (j + 1), "%.3f" % imp[j]])
+
+M["rf_oob"] = "%.3f" % rf.oob_score_
+with open(os.path.join(SAL, "metricas.csv"), "w", newline="",
+          encoding="utf-8") as f:
+    w = csv.writer(f); w.writerow(["metrica", "valor"])
+    for k, v in M.items():
+        w.writerow([k, v])
+
 print("escritos en resultados/e7: metricas.csv, barrido_eps.csv, "
-      "perfiles_kmeans.csv, anova_componentes.csv, tsne_mapa.png")
+      "perfiles_kmeans.csv, anova_componentes.csv, importancia_rf.csv, "
+      "tsne_mapa.png")

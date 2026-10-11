@@ -13,3 +13,4 @@ ari_kmeans_pca,0.4763985075393763
 ari_kmeans_emb,0.8448846812475733
 ruido_eps_min,92
 ruido_eps_max,4
+rf_oob,0.915

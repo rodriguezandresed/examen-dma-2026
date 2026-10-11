@@ -609,6 +609,7 @@ fmt <- function(x, d = 3) formatC(x, format = "f", digits = d, decimal.mark = ",
 e7perf <- read.csv("codigo/resultados/e7/perfiles_kmeans.csv", stringsAsFactors = FALSE)
 e7anova <- read.csv("codigo/resultados/e7/anova_componentes.csv", stringsAsFactors = FALSE)
 e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FALSE)
+e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
 ```
 
 Todo algoritmo de clustering devuelve una partición, tengan los datos grupos o no tengan
@@ -708,9 +709,13 @@ varianza total y varianza entre grupos, que es la razón de ser de CANDISC y el 
 cual un eje de máxima varianza no es necesariamente un eje de máxima separación. Los valores
 *p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
 
-Queda una limitación del conjunto elegido, no del método: una componente principal de píxeles
-no tiene nombre de dominio, así que se puede afirmar que los grupos difieren y en qué
-dirección, pero no ponerles una etiqueta interpretable.
+Queda la vía elegida en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
+etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
+bolsa y las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
+párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
+y la importancia mide lo que agrega dado lo que ya aportan las otras: la quinta separa bien
+sola, pero casi todo eso ya está en las tres primeras. Ninguna de las cinco tiene nombre de
+dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
 El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una aclaración
 que el apunte de la clase 8 pone al inicio porque evita la mayor parte de los malentendidos:
@@ -750,25 +755,22 @@ El ejemplo de implementación está completo en el apéndice A.3 y aplica ese pi
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding. Corresponde una precisión de vocabulario: el apunte
-dice "sobre el espacio original" y acá son las 30 componentes, no los 64 píxeles. Lo que
-importa del consejo se respeta, que es no agrupar sobre el mapa de dos dimensiones, porque el
-PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
+componentes, nunca sobre el embedding. Una precisión: el apunte dice "sobre el
+espacio original" y acá son las 30 componentes, no los 64 píxeles. Lo que importa se respeta,
+que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
 siendo las de los datos y no las que fabricó t-SNE.
 
-Las 30 componentes retienen ese `r fmt(100 * val("var_pca30"), 1)` % de la varianza. Para
-medir la calidad del mapa se usa el coeficiente de silueta, que para cada punto compara su
-distancia media a los puntos de su propio grupo contra la distancia media al grupo vecino más
-cercano y luego promedia: va de -1 a 1, y cuanto más alto, más compactos y separados están
-los grupos. Calculado sobre las clases verdaderas dio `r fmt(val("sil_p5"))` con perplejidad
+Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
+su distancia media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y
+cuanto más alto, más compactos y separados están los grupos. Calculado sobre las clases verdaderas dio `r fmt(val("sil_p5"))` con perplejidad
 5, `r fmt(val("sil_p30"))` con 30 y `r fmt(val("sil_p50"))` con 50, es decir que mejora al
 pasar de 5 a 30 y después se estanca.
 
 El resultado que más enseña es un fracaso. DBSCAN sobre las 30 componentes no encontró
 estructura: devolvió un único grupo con `r val("db_ruido")` puntos de ruido y un índice de
 Rand ajustado de `r fmt(val("ari_dbscan"))`. Ese índice cuenta cuántos pares de observaciones
-quedan juntos o separados en las dos particiones a la vez, corregido por el acuerdo que se
-esperaría del azar, y vale 1 si las particiones coinciden y 0 si el acuerdo es el del azar.
+quedan juntos o separados en las dos particiones a la vez, corregido por azar: vale 1 si
+coinciden y 0 si el acuerdo es el que daría el azar.
 No fue por falta de búsqueda, porque se barrió el radio en ocho valores entre 5 y 20 y el
 resultado fue el mismo en todo el rango, con la sola diferencia de que los puntos etiquetados
 como ruido bajaron de `r val("ruido_eps_min")` a `r val("ruido_eps_max")`.
@@ -798,19 +800,19 @@ Entre las limitantes, la principal es que no es clustering, con lo cual los grup
 hay que confirmarlos con un algoritmo sobre el espacio original. Las distancias entre grupos,
 los ejes y los tamaños relativos no significan nada, por la asimetría de la divergencia. La
 función de costo no es convexa, así que cada corrida produce un mapa distinto y hay que fijar
-la semilla. Es sensible a la perplejidad, lo cual no contradice la estabilidad de la silueta
-reportada arriba, porque esa mide la separación de clases ya conocidas y lo que varía es
-cuántos grupos cree ver quien mira el mapa sin conocerlas. Tampoco es un modelo entrenado,
+la semilla. Es sensible a la perplejidad, lo cual no contradice la silueta
+estable de arriba, porque esa mide clases ya conocidas y lo que varía es cuántos grupos cree
+ver quien mira el mapa. Tampoco es un modelo entrenado,
 porque la implementación estándar no proyecta observaciones nuevas sin recalcular todo, que
 es una de las razones por las que UMAP lo reemplaza ahí. Y con perplejidad muy baja puede
 producir grupos nítidos a partir de datos sin estructura, que es el riesgo de
 sobreinterpretación.
 
 **Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.-d): capítulos
-`Preparation for Clustering` y `Assessing Clustering Results` de la guía de clustering, y el
-apunte de t-SNE de la clase 8. van der Maaten y Hinton (2008) y van der Maaten (2014) para
-el algoritmo; Ester et al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes
-et al. (2018) para UMAP. Los números salen de `codigo/e7_tsne/tsne_digits.py`.
+`Preparation for Clustering` y `Assessing Clustering Results`, y el apunte de t-SNE de la
+clase 8. van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
+al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP.
+Números de `codigo/e7_tsne/tsne_digits.py`.
 
 \newpage
 
