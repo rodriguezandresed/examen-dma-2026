@@ -623,6 +623,470 @@ Vapnik (1995) para la formulación general de la teoría y la cota de riesgo.
 
 \newpage
 
+# Ejercicio 4 · Algoritmos genéticos
+
+*Escriba el pseudocódigo de algoritmos genéticos. Explique brevemente las principales
+diferencias entre AG binarios y reales. De 3 casos de aplicación de AG y sus respectivas
+fuentes (paper, autor, fecha), con breve explicación. Cómo lo implementaría usando
+programas disponibles open-source (cita y breve explicación).*
+
+```{r e4-load, include=FALSE}
+# Resultados de codigo/e4_ag/ag_rastrigin.py: DEAP, 20 semillas desde la 42.
+e4m <- jsonlite::fromJSON("codigo/resultados/e4/meta.json")
+e4c <- read.csv("codigo/resultados/e4/ag_corridas.csv")
+f4 <- function(x, d = 2) formatC(x, format = "f", digits = d, decimal.mark = ",")
+# Corridas reales que entraron a la cuenca global sin bajar de f = 0,01.
+e4r <- e4c[e4c$codificacion == "real", ]
+e4_dist <- pmax(abs(e4r$x1), abs(e4r$x2))
+e4_fino <- e4_dist < 0.5 & e4r$mejor_f >= e4m$umbral
+```
+
+Un algoritmo genético (AG) es un procedimiento probabilístico de optimización que
+mantiene una población de soluciones candidatas y la hace evolucionar con mecanismos
+inspirados en la selección natural (Goldberg, 1989). Cada candidata se codifica en un
+cromosoma, una cadena de genes (posiciones con un valor) que representa una posible
+solución, y se evalúa con una función de aptitud o *fitness*, que mide qué tan buena es
+esa solución para el problema. En cada generación se seleccionan cromosomas, con mayor
+probabilidad los más aptos, y se los altera con dos operadores genéticos: el cruce, que
+intercambia segmentos entre dos padres, y la mutación, que altera genes individuales al
+azar. El interés del método está en que no requiere gradiente ni convexidad de la
+función objetivo, y en que combina la explotación de las mejores soluciones con la
+exploración del resto del espacio de búsqueda (Volpacchio, s.f.).
+
+El pseudocódigo sigue la estructura de *evolution program* del material de clase,
+tomada de Michalewicz (1996):
+
+```
+Inicio
+    t <- 0
+    Inicializar P(t)          # poblacion inicial aleatoria de pop_size cromosomas
+    Evaluar P(t)              # fitness de cada cromosoma
+    Mientras no se cumpla la condicion de terminacion:
+        t <- t + 1
+        Seleccionar P(t) a partir de P(t-1)  # ruleta proporcional al fitness o torneo
+        Alterar P(t)          # cruce con probabilidad p_c; mutacion con probabilidad p_m
+        Evaluar P(t)          # P(t) reemplaza por completo a P(t-1)
+        # elitismo opcional: copiar el mejor de P(t-1) hacia P(t)
+    Fin mientras
+    Devolver el mejor cromosoma encontrado
+Fin
+```
+
+La selección clásica es la ruleta: a cada cromosoma $v_i$ se le asigna una
+probabilidad $p_i = \mathrm{eval}(v_i)/F$, donde $F$ es el fitness total de la
+población, y la nueva generación se sortea con esa distribución. La alternativa del
+torneo toma al azar unos pocos cromosomas y se queda con el mejor. Los parámetros
+externos son el tamaño `pop_size`, la probabilidad de cruce $p_c$, la de mutación $p_m$
+y el criterio de corte: un número fijo de generaciones o el estancamiento del mejor
+fitness. El elitismo copia al mejor individuo de $P(t-1)$ hacia $P(t)$ para que el azar
+no lo elimine; las slides del ciclo básico no lo exigen.
+
+En el AG binario cada cromosoma es una cadena de bits. Para una variable continua en
+un dominio $[a, b]$, el dominio se discretiza: con $m$ bits se obtienen $2^m$ valores
+posibles y la decodificación es
+$x = a + \mathrm{decimal}(\text{cadena}_2) \cdot (b-a)/(2^m - 1)$. La precisión queda
+atada al largo de la cadena; en el ejemplo del material de clase, el intervalo
+$[-1, 2]$ con seis decimales exige 22 bits. Los operadores son combinatorios: cruce de
+un punto, que corta ambas cadenas en una posición aleatoria e intercambia las colas, y
+mutación bit a bit. El teorema del esquema de Holland (1975) queda anclado a esta
+representación. Un esquema es un molde de cadenas armado con $0$, $1$ y el símbolo $*$
+de indiferencia; los esquemas cortos, de pocas posiciones fijas y con fitness superior
+al promedio reciben un número exponencialmente creciente de representantes, porque el
+cruce y la mutación rara vez los rompen.
+
+En el AG real el cromosoma es directamente un vector de números reales, sin
+decodificación. El cruce pasa a ser una operación numérica sobre los padres: el cruce
+aritmético toma $\lambda p_1 + (1-\lambda) p_2$ con $\lambda \in [0, 1]$ (Michalewicz,
+1996), y el cruce de mezcla BLX-$\alpha$ sortea cada gen del hijo en el intervalo que
+forman los dos padres, ampliado en una fracción $\alpha$ de su ancho. La mutación suma
+una perturbación gaussiana al gen. La Tabla \ref{tab:e4-dif} resume las diferencias.
+
+```{r e4-dif}
+e4d <- data.frame(
+  Aspecto = c("Representación", "Decodificación", "Cruce", "Mutación", "Precisión",
+              "Uso natural"),
+  Binario = c("Cadena de bits", "Necesaria para variables continuas",
+              "De uno o varios puntos", "Cambio de bit (0 a 1 o 1 a 0)",
+              "Fijada por la cantidad de bits", "Problemas discretos, selección de variables"),
+  Real = c("Vector de reales", "No hace falta", "Aritmético, de mezcla (BLX-$\\alpha$)",
+           "Perturbación gaussiana", "La de la máquina", "Optimización continua"))
+kable(e4d, format = "latex", booktabs = TRUE, row.names = FALSE, escape = FALSE,
+      col.names = c("Aspecto", "AG binario", "AG real"),
+      caption = "Diferencias entre el AG binario y el AG real.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "2.6cm") %>% column_spec(2:3, width = "5.4cm")
+```
+
+*Nota.* Elaboración propia a partir de Volpacchio (s.f.) y Michalewicz (1996).
+
+Para problemas continuos se prefiere la codificación real, porque una precisión alta en
+binario exige cromosomas largos y porque valores vecinos del dominio pueden diferir en
+muchos bits, lo que entorpece el ajuste fino. La binaria se reserva para espacios
+discretos, donde es natural: en selección de variables cada bit indica si una variable
+entra al modelo, como en el notebook de la clase 7 (Volpacchio, s.f.). La programación
+genética, donde el individuo es un programa representado como árbol, es una derivación
+del mismo esquema y no se toma como el pseudocódigo pedido.
+
+Para ver la diferencia en un caso concreto se programaron los dos AG con DEAP sobre la
+función de Rastrigin en dos variables,
+$f(x) = 20 + \sum_{i=1}^{2} \left(x_i^2 - 10\cos 2\pi x_i\right)$ en
+$[-5{,}12;\, 5{,}12]^2$, cuyo mínimo global $f = 0$ está en el origen, rodeado de una
+grilla de mínimos locales cerca de los puntos enteros. Se descartó la esfera
+$x_1^2 + x_2^2$ del primer borrador, porque cualquier método de gradiente la resuelve y
+no distingue las codificaciones. Los dos AG comparten población de `r e4m$pop`,
+`r e4m$ngen` generaciones, torneo de tres, $p_c$ = `r f4(e4m$cxpb, 1)` y probabilidad
+de mutar un individuo de `r f4(e4m$mutpb, 1)`. El binario usa `r e4m$bits` bits por
+variable, cruce de un punto y mutación con probabilidad 1/`r 1 / e4m$p_mut_bit` por
+bit; el real usa BLX-0,5 y mutación gaussiana con desvío 0,3. Se corrieron
+`r e4m$n_semillas` semillas por codificación (Tabla \ref{tab:e4-tab}).
+
+```{r e4-tab}
+e4t <- data.frame(
+  Cod = c("Binaria", "Real"),
+  opt = c(e4m$binario$n_umbral, e4m$real$n_umbral),
+  cuenca = c(e4m$binario$n_cuenca, e4m$real$n_cuenca),
+  vecino = c(e4m$binario$n_vecino, e4m$real$n_vecino),
+  med = c(e4m$binario$mediana_final, e4m$real$mediana_final),
+  gen = c(e4m$binario$gen_umbral_mediana, e4m$real$gen_umbral_mediana))
+kable(e4t, format = "latex", booktabs = TRUE, row.names = FALSE,
+      digits = c(0, 0, 0, 0, 3, 0),
+      col.names = c("Codificación", "f < 0,01", "Cuenca global", "Valle vecino",
+                    "Mediana del mejor f", "Generación mediana a f < 0,01"),
+      caption = "AG binario y AG real sobre Rastrigin: estado final de las corridas.",
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "2.2cm") %>% column_spec(2:4, width = "1.8cm") %>%
+  column_spec(5:6, width = "2.8cm")
+```
+
+*Nota.* Elaboración propia. Conteos sobre `r e4m$n_semillas` corridas por
+codificación. Cuenca global: $|x_1|$ y $|x_2|$ menores que 0,5; valle vecino: alguna
+coordenada a menos de 0,1 de $\pm 1$. La generación mediana se calcula sobre las
+corridas que bajaron de 0,01.
+
+Ninguna codificación garantiza el óptimo: las dos llegan a $f < 0{,}01$ en cerca de la
+mitad de las corridas. La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
+binarias que no entran a la cuenca global quedan clavadas en un valle vecino, con
+alguna coordenada en $\pm 1$: el entero que codifica $x = 1$ difiere en
+`r e4m$hamming_1_0` bits de los que rodean a $x = 0$, y con probabilidad
+1/`r 1 / e4m$p_mut_bit` por bit una mutación que cambie esos bits a la vez es casi
+imposible. Es el fenómeno anticipado al comparar las codificaciones: valores vecinos
+del dominio con códigos lejanos. Las reales entran a la cuenca global en
+`r e4m$real$n_cuenca` de `r e4m$n_semillas` corridas; `r sum(e4_fino)` de ellas quedan
+a menos de `r f4(ceiling(100 * max(e4_dist[e4_fino])) / 100)` del origen sin terminar
+el ajuste fino, porque un desvío de 0,3 es grueso a esa escala. Se interpreta que, con
+el mismo presupuesto de `r formatC(e4m$n_evals, format = "d", big.mark = ".", decimal.mark = ",")` evaluaciones, la
+codificación real explora mejor la vecindad del óptimo; la binaria necesitaría una
+mutación más agresiva o un código Gray, en el que enteros consecutivos difieren en un
+solo bit (Goldberg, 1989).
+
+Tres casos de aplicación documentados, en dominios distintos:
+
+1. **Programación de tareas (*job shop scheduling*).** Davis (1985) aplicó AG a la
+   asignación de trabajos a máquinas en una planta: el cromosoma codifica preferencias
+   de orden entre tareas y el fitness es el tiempo total del cronograma. Es uno de los
+   primeros usos industriales del método.
+2. **Entrenamiento de redes neuronales.** Montana y Davis (1989) ajustaron los pesos de
+   una red hacia adelante (*feedforward*) con un AG de codificación real sobre datos de
+   sonar, como alternativa a la retropropagación cuando la superficie de error tiene
+   muchos mínimos locales.
+3. **Selección de variables en datos de alta dimensión.** Feng (2024) usa un AG en el
+   que cada individuo representa un subconjunto de variables y el fitness es el
+   desempeño del clasificador, sobre conjuntos de expresión génica de tumores (colon,
+   linfoma, entre otros); en uno de ellos informa una reducción de 724 a 372 variables
+   con una exactitud que sube de 0,935 a 0,982.
+
+Para una implementación con software libre se eligió DEAP (*Distributed Evolutionary
+Algorithms in Python*), presentado por Fortin et al. (2012): es la biblioteca de la
+clase 7 y deja explícitos los componentes del pseudocódigo. El módulo `creator` define
+el tipo de fitness (con `weights=(-1.0,)` para minimizar) y el de individuo; el
+`toolbox` registra los operadores: `selTournament` para la selección, `cxOnePoint` o
+`cxBlend` para el cruce, `mutFlipBit` o `mutGaussian` para la mutación y la función de
+evaluación del problema; `algorithms.eaSimple` ejecuta el bucle con `cxpb`, `mutpb` y
+`ngen`. El caso binario y el real comparten el esqueleto y solo cambian los atributos
+del individuo y los operadores; así está armada la comparación anterior (Apéndice A.3).
+
+En R, el paquete GA (Scrucca, 2013) resuelve el mismo problema con una sola llamada:
+`ga(type = "real-valued", fitness = function(x) -f(x), lower = c(-5.12, -5.12),
+upper = c(5.12, 5.12), popSize = 50, pcrossover = 0.8, pmutation = 0.1, maxiter = 100)`;
+con `type = "binary"` y el argumento `nBits` pasa a la codificación binaria. El paquete
+maximiza, por eso la aptitud es $-f$. Se prefirió DEAP para la corrida porque cada
+operador queda a la vista, mientras que GA los trae ya elegidos por defecto.
+
+**Fuentes del Ejercicio 4.** Material de cátedra (Volpacchio, s.f.): presentación
+`Algoritmos geneticos Universidad Austral.pdf` (ciclo básico, ruleta, representación de
+22 bits y teorema del esquema) y notebook de la clase 7, mitad evolutiva (DEAP y máscara
+binaria para variables). Goldberg (1989); Michalewicz (1996); Holland (1975); Davis
+(1985); Montana y Davis (1989); Feng (2024); Fortin et al. (2012); Scrucca (2013).
+Código propio: Apéndice A.3.
+
+\newpage
+
+# Ejercicio 5 · Componentes principales y kernels
+
+*Explique brevemente la utilización de Componente principal en Machine Learning.
+Investigue la implicancia de utilizar Kernel en Componentes principales (citar fuentes y
+explique con sus palabras).*
+
+*¿Qué significa el "Truco del Kernel"? De ejemplos de los kernel más utilizados.*
+
+*¿Investigue si existen métodos sencillos que se pueden utilizar para seleccionar el
+Kernel apropiado en un determinado data set? Mencione fuentes y conclusiones
+brevemente.*
+
+El análisis de componentes principales (PCA) es una técnica lineal de reducción de
+dimensionalidad. Busca combinaciones lineales de las variables originales, ortogonales
+entre sí, que concentran la mayor varianza posible: esas direcciones son los
+autovectores de la matriz de covarianzas, y la varianza que captura cada una es su
+autovalor. La primera componente captura la mayor varianza, la segunda la mayor
+varianza restante, y así sucesivamente; al retener las primeras $k$ se obtiene una
+representación de menor dimensión que conserva un porcentaje conocido de la varianza
+total.
+
+En Machine Learning el PCA cumple tres funciones. Reduce la cantidad de variables de
+entrada $p$, lo que baja el costo de entrenamiento y acota la capacidad del modelo (la
+riqueza de la familia de funciones que puede ajustar): para un clasificador lineal la
+dimensión VC es $d = p + 1$, el $d = k + 1$ del Ejercicio 3, y bajar $p$ relaja la
+regla $d/l < 0{,}05$. Decorrelaciona las variables y filtra ruido, porque las últimas
+componentes suelen capturar variación espuria y colinealidad. Y sirve para visualizar:
+la proyección sobre las dos o tres primeras componentes permite inspeccionar si hay
+grupos antes de un clustering, uso que aparece en `Preparation for Clustering.pdf`
+(Volpacchio, s.f.). El PCA no selecciona variables, construye otras nuevas como
+combinación de todas; por eso una componente es más difícil de interpretar que una
+variable original. Su limitación estructural es que solo captura relaciones lineales.
+
+Kernel PCA no figura en los apuntes ni en las presentaciones de la cátedra, y la
+selección de kernel aparece solo como prueba y error sobre datos de validación, con la
+herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
+con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
+`Transformación de clústeres no lineales` como si fuera Kernel PCA: ese material mapea
+clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
+
+Se presenta primero el truco del kernel, porque Kernel PCA se define a partir de él. Un
+kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
+en un espacio de características: un espacio de dimensión mayor que el original,
+alcanzado por una transformación $\phi$, en el cual un problema no lineal puede
+volverse lineal. El ejemplo de la clase de SVM es el problema XOR (dos clases ubicadas
+en esquinas opuestas de un cuadrado), que se vuelve linealmente separable al agregar la
+característica $x_1 x_2$. Calcular $\phi$ puede ser muy costoso, y el espacio puede ser
+de dimensión infinita. El truco consiste en notar que muchos algoritmos, SVM y PCA entre
+ellos, solo usan los datos a través de productos internos; basta entonces con
+reemplazar $\langle \phi(x), \phi(x') \rangle$ por $K(x, x')$, evaluada en el espacio
+original, sin construir nunca la transformación. Para que exista una $\phi$ compatible,
+$K$ debe cumplir la condición de Mercer definida en el Ejercicio 2.
+
+Los kernels más utilizados, con la notación del Ejercicio 2 y de la clase de SVM
+(Volpacchio, s.f.), son:
+
+- lineal, $K(x, x') = \langle x, x' \rangle$: equivale a no transformar y se usa cuando
+  la relación es aproximadamente lineal o hay muchas variables;
+- polinómico de grado $q$, $K(x, x') = \langle x, x' \rangle^q$: incorpora todas las
+  interacciones de hasta $q$ variables;
+- de base radial (RBF o gaussiano),
+  $K(x, x') = \exp(-\lVert x - x' \rVert^2 / (2\sigma^2))$: la similitud decae con la
+  distancia, y $\sigma$ fija qué tan rápido;
+- sigmoide, $K(x, x') = \tanh(\kappa \langle x, x' \rangle - \theta)$, que no cumple la
+  condición de Mercer para toda combinación de $\kappa$ y $\theta$; por eso no se lo
+  toma como opción por defecto.
+
+La suma, el producto y el escalado por una constante positiva de kernels válidos dan
+kernels válidos, lo que permite construir kernels a medida de un problema.
+
+Kernel PCA es la aplicación del truco del kernel al PCA, propuesta por Schölkopf et al.
+(1998). En lugar de diagonalizar la matriz de covarianzas, de dimensión $p \times p$, se
+diagonaliza la matriz de kernel de dimensión $n \times n$, cuyos elementos son
+$K(x_i, x_j)$, previamente centrada: a cada elemento se le restan las medias de su fila
+y de su columna y se le suma la media general, lo que equivale a centrar los datos en
+el espacio de características sin construirlo. Las proyecciones sobre las componentes
+también se calculan con evaluaciones del kernel. La implicancia central es que las
+componentes dejan de ser combinaciones lineales de las variables originales y pasan a
+capturar estructura no lineal: datos dispuestos sobre curvas o anillos concéntricos,
+que el PCA lineal no separa, pueden quedar ordenados a lo largo de las primeras
+componentes no lineales.
+
+De ahí salen tres consecuencias prácticas. El costo pasa a depender del número de
+observaciones $n$ y no de $p$, lo que encarece el método en conjuntos grandes. Se
+pueden extraer hasta $n$ componentes, más que las $p$ del caso lineal. Y se pierde la
+reconstrucción directa: un punto del espacio de características no siempre tiene
+pre-imagen exacta en el espacio original, y las componentes ya no tienen cargas sobre
+las variables que se puedan leer. Kernel PCA extiende al PCA; no lo reemplaza, y con el
+kernel lineal se recupera el PCA clásico.
+
+Sobre la selección del kernel, la conclusión de la bibliografía es que no existe un
+método universal, pero sí tres procedimientos sencillos que se complementan. El primero
+mira las dimensiones del conjunto: la guía de Hsu et al. (2003) recomienda el kernel
+lineal cuando la cantidad de variables es grande frente a la de observaciones, porque
+llevar los datos a un espacio mayor no agrega separabilidad, y también cuando las dos
+cantidades son grandes, por costo; si hay muchas más observaciones que variables, el
+candidato es el RBF.
+
+El segundo es la validación cruzada sobre una grilla de kernels y de sus
+hiperparámetros: para cada combinación se estima el error en los bloques de validación
+y se queda la mejor. Hsu et al. (2003) recomiendan empezar por el RBF, que con
+parámetros bien elegidos cubre al lineal como caso límite, y buscar $C$ y
+$\gamma = 1/(2\sigma^2)$ en una grilla exponencial, como se hizo en el Ejercicio 10.
+
+El tercero evita entrenar el modelo para cada candidato: el alineamiento
+kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002) mide el
+parecido entre la matriz de kernel $K$ y la matriz ideal $yy^\top$ construida desde las
+etiquetas $y_i \in \{-1, +1\}$,
+$A = \langle K, yy^\top \rangle_F / (\lVert K \rVert_F \, \lVert yy^\top \rVert_F)$, donde
+$\langle \cdot, \cdot \rangle_F$ suma los productos elemento a elemento. Un $A$ alto
+indica que el kernel ve parecidas a las observaciones de la misma clase y distintas a
+las de clases distintas; se elige el kernel de mayor alineamiento. Una variante más
+elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), que
+combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
+2011).
+
+Como conclusión, la regla de dimensiones sirve para armar la lista corta, el
+alineamiento para descartar candidatos sin entrenar y la validación cruzada para la
+decisión final. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
+contra las cuales validar: en la práctica el kernel se ajusta por el error de
+reconstrucción o por el desempeño de la tarea posterior que usa las componentes.
+
+**Fuentes del Ejercicio 5.** Material de cátedra (Volpacchio, s.f.):
+`Preparation for Clustering.pdf` (PCA como visualización previa al clustering) y
+presentación `SVM Universidad Austral.pdf` (espacio de características, truco del
+kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selección
+sistemática de kernel no tienen material de clase: Schölkopf et al. (1998); Hsu et al.
+(2003); Cristianini et al. (2002); Gönen y Alpaydın (2011).
+
+\newpage
+
+# Ejercicio 6 · Análisis de supervivencia
+
+*Análisis de supervivencia. Explique porque este enfoque es superior a los métodos de
+regresión para estimar días a un evento. Qué tipos existen y qué implementaciones en
+Python/R conoce.*
+
+```{r e6-load, include=FALSE}
+# Resultados de codigo/e6_supervivencia/supervivencia_rossi.py (lifelines, datos Rossi).
+e6m <- jsonlite::fromJSON("codigo/resultados/e6/meta.json")
+f6 <- function(x, d = 1) formatC(x, format = "f", digits = d, decimal.mark = ",")
+p6 <- function(x, d = 0) paste0(f6(x, d), "\\thinspace{}%")
+```
+
+En los problemas de tiempo hasta un evento, la variable de interés es el tiempo $T$
+hasta que ocurre algo definido: la falla de un equipo, la baja de un cliente, la
+reincidencia de un liberado, la recaída de un paciente. En la notación de la clase 7, el
+dato de cada individuo no es un número sino la pareja $(T_i, \delta_i)$: $T_i$ es el
+tiempo observado y $\delta_i$ el indicador de evento, con $\delta_i = 1$ si el evento
+ocurrió y $\delta_i = 0$ si la observación está censurada (Volpacchio, s.f.; Kleinbaum & Klein, 2012). La
+censura por derecha, la más frecuente, se produce cuando el seguimiento termina antes
+del evento. Un cliente seguido 100 días que sigue activo aporta $T_i = 100$ y
+$\delta_i = 0$: solo se sabe que su baja, si ocurre, será posterior al día 100. También
+existen la censura por izquierda y por intervalo; la clase trabaja con la de derecha.
+
+Una regresión sobre los días hasta el evento no tiene forma correcta de tratar esos
+casos. Si se los descarta, se pierde información y la muestra queda sesgada hacia los
+eventos tempranos, porque los individuos de mayor duración son justamente los que más
+se censuran. Si se los conserva con $T_i$ como si fuera el tiempo del evento, los
+tiempos se subestiman. El análisis de supervivencia resuelve el problema en la
+verosimilitud, la función que mide qué tan compatibles son los datos con los
+parámetros del modelo: un caso con evento aporta la densidad en $T_i$ y un caso
+censurado aporta la probabilidad $P(T > T_i)$, y la información parcial se aprovecha
+en lugar de descartarse o falsearse.
+
+A esa ventaja se suma el objeto que se estima. La cantidad central es la función de
+supervivencia $S(t) = P(T > t)$, la probabilidad de que el evento no haya ocurrido
+hasta el tiempo $t$, junto con la tasa de riesgo instantánea o *hazard* $h(t \mid X)$,
+la probabilidad por unidad de tiempo de que el evento ocurra en $t$ entre quienes
+llegaron a $t$ sin él. Una regresión devuelve un único valor esperado; la curva $S(t)$
+responde preguntas a cualquier horizonte, por ejemplo qué fracción de clientes sigue
+activa a los 90 días.
+
+Los tipos de análisis se ordenan por la cantidad de supuestos. El estimador no
+paramétrico de Kaplan-Meier (Kaplan & Meier, 1958) construye la supervivencia como
+producto de supervivencias condicionales en cada tiempo de evento,
+$\hat{S}(t) = \prod_{t_i \le t} (1 - d_i/n_i)$, donde $d_i$ cuenta los eventos en
+$t_i$ y $n_i$ es el conjunto en riesgo justo antes de $t_i$. No admite covariables
+continuas: los grupos se comparan por estratificación, y el test de log-rank decide si
+dos curvas difieren más de lo esperable por azar.
+
+El enfoque semiparamétrico es el modelo de riesgos proporcionales de Cox (1972),
+$h(t \mid X) = h_0(t)\, e^{\beta^\top X}$, donde el riesgo basal $h_0(t)$ no se estima
+paramétricamente y los coeficientes $\beta$ salen de la verosimilitud parcial: en cada
+tiempo de evento se toma la probabilidad de que sea justamente ese individuo, y no otro
+del conjunto en riesgo, el que tenga el evento, un cociente en el que $h_0(t)$ se
+cancela. El exponencial de cada coeficiente es un *hazard ratio*: cuánto multiplica esa
+covariable el riesgo instantáneo. El supuesto de riesgos proporcionales se verifica con
+la prueba de Grambsch y Therneau (1994) sobre los residuos de Schoenfeld (la diferencia
+entre la covariable de quien tuvo el evento y su promedio en el conjunto en riesgo); el
+desempeño se mide con el índice de concordancia (C-index), la probabilidad de que el
+modelo ordene bien los tiempos de un par de individuos.
+
+El enfoque paramétrico son los modelos de tiempo de falla acelerado (AFT), que modelan
+$\log T = \beta^\top X + \sigma \varepsilon$, con $\sigma$ un parámetro de escala y
+$\varepsilon$ un error cuya distribución define el modelo (valor extremo si $T$ es
+Weibull, logística si $T$ es log-logístico). La lectura se invierte respecto de Cox: un
+coeficiente positivo alarga el tiempo hasta el evento. Se los prefiere cuando el
+supuesto de riesgos proporcionales no se cumple o cuando se necesitan tiempos absolutos;
+entre modelos paramétricos se comparan con el criterio de Akaike (AIC), que penaliza la
+verosimilitud por la cantidad de parámetros. Por último, hay extensiones de aprendizaje
+automático, como los *Random Survival Forests* (Ishwaran et al., 2008), que no están en
+la clase 7 y se evalúan también por C-index.
+
+La ventaja se midió sobre los datos Rossi de la clase 7 (Rossi et al., 1980):
+`r e6m$n` liberados seguidos `r e6m$horizonte` semanas, de los cuales `r e6m$eventos`
+fueron re-arrestados y `r e6m$censurados` (`r p6(e6m$pct_censura)`) quedaron
+censurados en la semana `r e6m$horizonte`, el fin del estudio. Los dos atajos de
+regresión dan respuestas incompatibles: promediar solo a los re-arrestados da
+`r f6(e6m$atajo_descarta)` semanas, y tratar la semana `r e6m$horizonte` como si fuera
+el re-arresto da `r f6(e6m$atajo_imputa)`. El primero mira solo al
+`r p6(100 * e6m$eventos / e6m$n)` que tuvo el evento; el segundo no es un tiempo hasta el evento sino una media truncada en
+`r e6m$horizonte` semanas, que coincide con el área bajo la curva de Kaplan-Meier hasta
+ese horizonte (`r f6(e6m$rmst)`) porque toda la censura cae en la misma semana.
+Kaplan-Meier da la respuesta que la regresión no puede expresar:
+$\hat S(`r e6m$horizonte`)$ = `r f6(e6m$s_horizonte, 3)`, la mediana no se alcanza dentro
+del seguimiento, y lo correcto es informar que más de la mitad no reincide en
+`r e6m$horizonte` semanas, no inventar una cantidad de días.
+
+El efecto de una covariable muestra lo mismo. Una regresión lineal de las semanas sobre
+las siete covariables, ajustada solo con los re-arrestados, asigna a la ayuda
+financiera (`fin`) un coeficiente de `r sub("^-", "$-$", f6(e6m$coef_ols_fin, 2))` semanas, un efecto
+casi nulo y, en todo caso, hacia un re-arresto más temprano. Cox, con los `r e6m$n` individuos, estima un *hazard ratio* de
+`r f6(e6m$hr_fin, 2)` (IC 95 %: `r f6(e6m$hr_fin_lo, 2)` a `r f6(e6m$hr_fin_hi, 2)`;
+$p$ = `r f6(e6m$p_fin, 3)`): la ayuda reduce el riesgo instantáneo en un
+`r p6(100 * (1 - e6m$hr_fin))`. Se interpreta que la regresión no lo ve porque la ayuda
+actúa sobre quiénes llegan a la semana `r e6m$horizonte` sin re-arresto, que son los
+casos que descarta. El C-index del modelo de Cox es `r f6(e6m$c_index, 2)`.
+
+```{r e6-tab}
+e6t <- data.frame(
+  Tipo = c("No paramétrico", "Semiparamétrico", "Paramétrico (AFT)",
+           "Aprendizaje automático"),
+  Sup = c("Ninguno sobre la distribución de T", "Riesgos proporcionales",
+          "Distribución de T (Weibull, log-logística)", "Ninguno; ensamble de árboles"),
+  Py = c("lifelines: KaplanMeierFitter, logrank_test",
+         "lifelines: CoxPHFitter; statsmodels: PHReg",
+         "lifelines: WeibullAFTFitter, LogLogisticAFTFitter",
+         "scikit-survival: RandomSurvivalForest"),
+  R = c("survival: survfit, survdiff; survminer para gráficos", "survival: coxph",
+        "survival: survreg; flexsurv", "randomForestSRC"))
+kable(e6t, format = "latex", booktabs = TRUE, row.names = FALSE,
+      col.names = c("Tipo", "Supuesto", "Python", "R"),
+      caption = "Tipos de análisis de supervivencia e implementaciones.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  column_spec(1, width = "2.5cm") %>% column_spec(2, width = "3.6cm") %>%
+  column_spec(3, width = "4.6cm") %>% column_spec(4, width = "3.9cm")
+```
+
+*Nota.* Elaboración propia; funciones de lifelines tomadas del notebook de la clase 7.
+
+En Python, lifelines (Davidson-Pilon, 2019) es la biblioteca de la clase y la de la
+corrida anterior; scikit-survival (Pölsterl, 2020) adapta modelos de aprendizaje
+automático al dato censurado con la interfaz de scikit-learn. En R, el objeto
+`Surv(tiempo, evento)` del paquete survival (Therneau & Grambsch, 2000) alimenta las
+funciones de la Tabla \ref{tab:e6-tab}.
+
+**Fuentes del Ejercicio 6.** Material de cátedra (Volpacchio, s.f.): notebook de la
+clase 7, parte de supervivencia (Kaplan-Meier, log-rank, Cox y AFT sobre los datos
+Rossi). Kleinbaum y Klein (2012); Kaplan y Meier (1958); Cox (1972); Grambsch y
+Therneau (1994); Ishwaran et al. (2008); Rossi et al. (1980); Davidson-Pilon (2019);
+Pölsterl (2020); Therneau y Grambsch (2000). Código propio: Apéndice A.4.
+
+\newpage
+
 # Ejercicio 7 · Clustering y t-SNE
 
 *Mencione las técnicas de pre-proceso que existen en clustering para visualizar la
@@ -790,7 +1254,7 @@ un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o 
 jerárquica HDBSCAN (Campello et al., 2013), y validar superponiendo las etiquetas obtenidas
 sobre la proyección.
 
-El ejemplo de implementación está completo en el apéndice A.3 y aplica ese pipeline sobre los
+El ejemplo de implementación está completo en el apéndice A.5 y aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
@@ -1459,14 +1923,14 @@ la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
 **Fuentes del Ejercicio 10.** Presentaciones de SVM y de ensambles y apunte de redes
 (Volpacchio, s.f.). Datos: Wolberg et al. (1993); Pace y Barry (1997). Método: Bergstra
 y Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001), Grinsztajn
-et al. (2022). Código propio: Apéndice A.4.
+et al. (2022). Código propio: Apéndice A.6.
 
 \newpage
 
 # Apéndice · Código
 
 El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts de los
-Ejercicios 1 (LSTM y figuras), 7 y 10, completos y en letra chica; no forman parte del
+Ejercicios 1 (LSTM y figuras), 4, 6, 7 y 10, completos y en letra chica; no forman parte del
 desarrollo de cada ejercicio.
 
 \footnotesize
@@ -1486,7 +1950,19 @@ generó `codigo/e1_lstm/figuras.py`.
 cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
 ```
 
-## A.3 t-SNE y clustering sobre dígitos (Ejercicio 7)
+## A.3 AG binario y AG real sobre Rastrigin (Ejercicio 4)
+
+```{r e4-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e4_ag/ag_rastrigin.py"), sep = "\n")
+```
+
+## A.4 Atajos de regresión contra Kaplan-Meier y Cox en Rossi (Ejercicio 6)
+
+```{r e6-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e6_supervivencia/supervivencia_rossi.py"), sep = "\n")
+```
+
+## A.5 t-SNE y clustering sobre dígitos (Ejercicio 7)
 
 Produce `codigo/resultados/e7/`: las métricas, el barrido del radio de DBSCAN, los
 perfiles de los grupos, el ANOVA por componente y el mapa.
@@ -1495,7 +1971,7 @@ perfiles de los grupos, el ANOVA por componente y el mapa.
 cat(readLines("codigo/e7_tsne/tsne_digits.py"), sep = "\n")
 ```
 
-## A.4 Pipeline Opción 1 (Ejercicio 10)
+## A.6 Pipeline Opción 1 (Ejercicio 10)
 
 ```{r e10-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e10_pipeline/pipeline_opcion1.py"), sep = "\n")
@@ -1549,13 +2025,35 @@ and Data Mining*, 785-794. https://doi.org/10.1145/2939672.2939785
 Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*(3),
 273-297. https://doi.org/10.1007/BF00994018
 
+Cox, D. R. (1972). Regression models and life-tables. *Journal of the Royal
+Statistical Society: Series B (Methodological), 34*(2), 187-202.
+https://doi.org/10.1111/j.2517-6161.1972.tb00899.x
+
+Cristianini, N., Shawe-Taylor, J., Elisseeff, A., & Kandola, J. (2002). On
+kernel-target alignment. *Advances in Neural Information Processing Systems, 14*,
+367-373.
+
 Cybenko, G. (1989). Approximation by superpositions of a sigmoidal function.
 *Mathematics of Control, Signals and Systems, 2*(4), 303-314.
 https://doi.org/10.1007/BF02551274
 
+Davidson-Pilon, C. (2019). lifelines: Survival analysis in Python. *Journal of Open
+Source Software, 4*(40), 1317. https://doi.org/10.21105/joss.01317
+
+Davis, L. (1985). Job shop scheduling with genetic algorithms. *Proceedings of the
+First International Conference on Genetic Algorithms and their Applications*, 136-140.
+
 Ester, M., Kriegel, H.-P., Sander, J., & Xu, X. (1996). A density-based algorithm for
 discovering clusters in large spatial databases with noise. *Proceedings of the Second
 International Conference on Knowledge Discovery and Data Mining (KDD-96)*, 226-231.
+
+Feng, G. (2024). Feature selection algorithm based on optimized genetic algorithm and
+the application in high-dimensional data processing. *PLOS ONE, 19*(5), e0303088.
+https://doi.org/10.1371/journal.pone.0303088
+
+Fortin, F.-A., De Rainville, F.-M., Gardner, M.-A., Parizeau, M., & Gagné, C. (2012).
+DEAP: Evolutionary algorithms made easy. *Journal of Machine Learning Research, 13*,
+2171-2175. http://jmlr.org/papers/v13/fortin12a.html
 
 Freund, Y., & Schapire, R. E. (1997). A decision-theoretic generalization of on-line
 learning and an application to boosting. *Journal of Computer and System Sciences,
@@ -1571,7 +2069,17 @@ https://doi.org/10.1162/089976600300015015
 Geurts, P., Ernst, D., & Wehenkel, L. (2006). Extremely randomized trees. *Machine
 Learning, 63*(1), 3-42. https://doi.org/10.1007/s10994-006-6226-1
 
+Goldberg, D. E. (1989). *Genetic algorithms in search, optimization, and machine
+learning*. Addison-Wesley.
+
+Gönen, M., & Alpaydın, E. (2011). Multiple kernel learning algorithms. *Journal of
+Machine Learning Research, 12*, 2211-2268. http://jmlr.org/papers/v12/gonen11a.html
+
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
+
+Grambsch, P. M., & Therneau, T. M. (1994). Proportional hazards tests and diagnostics
+based on weighted residuals. *Biometrika, 81*(3), 515-526.
+https://doi.org/10.1093/biomet/81.3.515
 
 Grinsztajn, L., Oyallon, E., & Varoquaux, G. (2022). Why do tree-based models still
 outperform deep learning on typical tabular data? *Advances in Neural Information
@@ -1591,6 +2099,9 @@ https://doi.org/10.1109/ICDAR.1995.598994
 Hochreiter, S., & Schmidhuber, J. (1997). Long short-term memory. *Neural Computation,
 9*(8), 1735-1780. https://doi.org/10.1162/neco.1997.9.8.1735
 
+Holland, J. H. (1975). *Adaptation in natural and artificial systems*. University of
+Michigan Press.
+
 Hsu, C.-W., Chang, C.-C., & Lin, C.-J. (2003). *A practical guide to support vector
 classification* [Informe técnico]. Department of Computer Science, National Taiwan
 University. https://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf
@@ -1599,9 +2110,20 @@ Hsu, C.-W., & Lin, C.-J. (2002). A comparison of methods for multiclass support 
 machines. *IEEE Transactions on Neural Networks, 13*(2), 415-425.
 https://doi.org/10.1109/72.991427
 
+Ishwaran, H., Kogalur, U. B., Blackstone, E. H., & Lauer, M. S. (2008). Random survival
+forests. *The Annals of Applied Statistics, 2*(3), 841-860.
+https://doi.org/10.1214/08-AOAS169
+
 Janitza, S., & Hornung, R. (2018). On the overestimation of random forest’s
 out-of-bag error. *PLOS ONE, 13*(8), e0201904.
 https://doi.org/10.1371/journal.pone.0201904
+
+Kaplan, E. L., & Meier, P. (1958). Nonparametric estimation from incomplete
+observations. *Journal of the American Statistical Association, 53*(282), 457-481.
+https://doi.org/10.1080/01621459.1958.10501452
+
+Kleinbaum, D. G., & Klein, M. (2012). *Survival analysis: A self-learning text*
+(3.ª ed.). Springer. https://doi.org/10.1007/978-1-4419-6646-9
 
 Kohonen, T. (1990). The self-organizing map. *Proceedings of the IEEE, 78*(9),
 1464-1480. https://doi.org/10.1109/5.58325
@@ -1613,20 +2135,41 @@ https://doi.org/10.1109/5.726791
 McInnes, L., Healy, J., & Melville, J. (2018). UMAP: Uniform manifold approximation
 and projection for dimension reduction. *arXiv*. https://arxiv.org/abs/1802.03426
 
+Michalewicz, Z. (1996). *Genetic algorithms + data structures = evolution programs*
+(3.ª ed.). Springer. https://doi.org/10.1007/978-3-662-03315-9
+
 Mikolov, T., Chen, K., Corrado, G., & Dean, J. (2013). Efficient estimation of word
 representations in vector space. *Workshop track of the 1st International Conference
 on Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 
+Montana, D. J., & Davis, L. (1989). Training feedforward neural networks using
+genetic algorithms. *Proceedings of the Eleventh International Joint Conference on
+Artificial Intelligence*, 762-767.
+
 Pace, R. K., & Barry, R. (1997). Sparse spatial autoregressions. *Statistics &
 Probability Letters, 33*(3), 291-297. https://doi.org/10.1016/S0167-7152(96)00140-X
+
+Pölsterl, S. (2020). scikit-survival: A library for time-to-event analysis built on
+top of scikit-learn. *Journal of Machine Learning Research, 21*(212), 1-6.
+http://jmlr.org/papers/v21/20-729.html
+
+Rossi, P. H., Berk, R. A., & Lenihan, K. J. (1980). *Money, work, and crime:
+Experimental evidence*. Academic Press.
 
 Schölkopf, B., Platt, J. C., Shawe-Taylor, J., Smola, A. J., & Williamson, R. C. (2001).
 Estimating the support of a high-dimensional distribution. *Neural Computation, 13*(7),
 1443-1471. https://doi.org/10.1162/089976601750264965
 
+Schölkopf, B., Smola, A., & Müller, K.-R. (1998). Nonlinear component analysis as a
+kernel eigenvalue problem. *Neural Computation, 10*(5), 1299-1319.
+https://doi.org/10.1162/089976698300017467
+
 Schölkopf, B., Smola, A. J., Williamson, R. C., & Bartlett, P. L. (2000). New support
 vector algorithms. *Neural Computation, 12*(5), 1207-1245.
 https://doi.org/10.1162/089976600300015565
+
+Scrucca, L. (2013). GA: A package for genetic algorithms in R. *Journal of
+Statistical Software, 53*(4), 1-37. https://doi.org/10.18637/jss.v053.i04
 
 Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., & Salakhutdinov, R.
 (2014). Dropout: A simple way to prevent neural networks from overfitting. *Journal
@@ -1639,6 +2182,9 @@ forest variable importance measures: Illustrations, sources and a solution.
 
 Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with
 neural networks. *Advances in Neural Information Processing Systems, 27*, 3104-3112.
+
+Therneau, T. M., & Grambsch, P. M. (2000). *Modeling survival data: Extending the Cox
+model*. Springer. https://doi.org/10.1007/978-1-4757-3294-8
 
 van der Maaten, L. (2014). Accelerating t-SNE using tree-based algorithms. *Journal of
 Machine Learning Research, 15*, 3221-3245.
