@@ -661,11 +661,11 @@ discriminante canónico, que identifica qué variables concretas producen las di
 la dirección inversa es igual de útil, porque las variables que no difieren entre grupos
 probablemente puedan podarse del conjunto de entrada.
 
-El propio capítulo advierte que los resultados de MANOVA y ANOVA deben interpretarse con
+La propia guía advierte que los resultados de MANOVA y ANOVA deben interpretarse con
 cautela, porque el proceso de clustering viola supuestos clave de esas pruebas: los grupos no
 se definieron de forma independiente de los datos sino para maximizar la separación, así que
 los valores *p* quedan sesgados hacia la significación. Valen como medida descriptiva del
-tamaño de las diferencias, no como prueba de hipótesis. El capítulo deja ahí el problema y no
+tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no
 ofrece salida, de manera que hay que elegir una: la que se adopta acá es entrenar un
 clasificador contra la etiqueta de grupo tratada como si fuera una clase dada y leer su
 importancia de variables, porque no hay supuesto distribucional que violar, la salida ya es
@@ -703,7 +703,7 @@ quinta, que es el perfil de un grupo de atípicos, mientras que otros dos se opo
 primera componente con -4,67 contra 3,82.
 
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
-`r e7anova$F[1]`, `r e7anova$F[2]`, `r e7anova$F[3]`, `r e7anova$F[4]` y `r e7anova$F[5]`
+`r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
 para las cinco componentes. Hay un detalle que vale más que las magnitudes: el orden de los
 *F* no coincide con el orden de las componentes, porque la quinta separa mejor los grupos que
 la cuarta pese a explicar menos varianza total. Esa es exactamente la diferencia entre
@@ -717,13 +717,13 @@ bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$import
 párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
 y la importancia mide lo que cada una agrega dado lo que aportan las otras: la quinta separa bien
 sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en las
-`r est("semillas")` semillas, con el OOB entre `r sub("[.]", ",", est("oob_min"))` y `r sub("[.]", ",", est("oob_max"))`. Ninguna de las cinco tiene nombre de
+`r est("semillas")` semillas, con el OOB entre `r fmt(as.numeric(est("oob_min")), 4)` y `r fmt(as.numeric(est("oob_max")), 4)`. Ninguna de las cinco tiene nombre de
 dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
 El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una aclaración
 que el apunte de la clase 8 pone al inicio porque evita la mayor parte de los malentendidos:
 no es un algoritmo de clustering. Transforma el espacio de características para que las
-estructuras latentes se vuelvan visibles, con el agrupamiento después y sobre el espacio
+estructuras latentes se vuelvan visibles; el agrupamiento viene después, y sobre el espacio
 original. Tiene cuatro piezas. En alta dimensión las distancias euclídeas se convierten en probabilidades mediante un kernel gaussiano centrado en cada punto,
 $p_{j|i} \propto \exp(-d_{ij}/2\sigma_i^2)$, simetrizadas como
 $p_{ij} = (p_{j|i}+p_{i|j})/2n$. En baja dimensión, y ahí está lo que da el nombre al método,
@@ -746,7 +746,7 @@ lejanos y los trata como una masa única, con lo cual la complejidad baja de $O(
 $O(N \log N)$ y el método se vuelve utilizable más allá de unos pocos miles de puntos (van
 der Maaten, 2014).
 
-Se utiliza para visualización exploratoria de alta dimensión: inspección de embeddings,
+Se utiliza para la visualización exploratoria de datos de alta dimensión: inspección de embeddings,
 exploración previa a un clustering, control visual de una partición y detección de
 subpoblaciones. El apunte propone un pipeline de tres pasos que consiste en
 explorar con t-SNE o UMAP sobre datos estandarizados, modelar sobre el espacio original con
@@ -759,8 +759,8 @@ dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxel
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
 componentes, nunca sobre el embedding. El apunte contempla el caso: propone agrupar sobre el
-espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Lo que
-importa se respeta, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
+espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Se
+respeta lo esencial, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
 siendo las de los datos y no las que fabricó t-SNE.
 
 Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
@@ -772,7 +772,7 @@ pasar de 5 a 30 y después se estanca.
 El resultado que más enseña es un fracaso. DBSCAN sobre las 30 componentes no encontró
 estructura: devolvió un único grupo con `r val("db_ruido")` puntos de ruido y un índice de
 Rand ajustado de `r fmt(val("ari_dbscan"))`. Ese índice cuenta cuántos pares de observaciones
-quedan juntos o separados en las dos particiones a la vez, corregido por azar: vale 1 si
+quedan juntos o separados en las dos particiones a la vez, corregido por el azar: vale 1 si
 coinciden y 0 si el acuerdo es el que daría el azar.
 No fue por falta de búsqueda: se barrió el radio en ocho valores entre 5 y 20 con el mismo
 resultado, salvo que el ruido bajó de `r val("ruido_eps_min")` a `r val("ruido_eps_max")` puntos.
@@ -849,7 +849,7 @@ Boosting obtiene su coeficiente por minimización; y AdaBoost es más sensible a
 atípicos, porque un atípico mal clasificado gana peso ronda tras ronda, mientras que en
 Gradient Boosting esa sensibilidad se regula con la elección de la pérdida.
 
-Dos términos conviene dejarlos fijados antes de seguir. El pseudo-residuo es el objetivo
+Conviene fijar dos términos antes de seguir. El pseudo-residuo es el objetivo
 nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
 cambiado y evaluado en el modelo acumulado hasta esa ronda,
 $\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática se
@@ -916,7 +916,7 @@ generalidad del método: si la pérdida es el error absoluto medio, su gradiente
 vector de residuos sino el vector de signos, $\pm 1$ según si la predicción quedó por debajo
 o por encima, y optimizar esa pérdida implica arrancar con la mediana en lugar de la media.
 Cambiar la función de pérdida cambia qué se le pide ajustar al modelo débil, y nada más. Ahí
-está también por qué la desviación absoluta conviene con atípicos: con pérdida cuadrática el
+está también por qué la desviación absoluta conviene cuando hay atípicos: con pérdida cuadrática el
 modelo débil se entrena sobre la magnitud del residuo y persigue los valores extremos, porque
 un residuo enorme domina el ajuste, mientras que con el vector de signos un atípico aporta un
 $+1$ como cualquier otro punto mal predicho.
@@ -1043,9 +1043,9 @@ hipótesis verdadera puede no pertenecer al espacio de un modelo único y la com
 interpola entre las halladas. El mismo deck remarca lo que delimita cuándo conviene: el factor
 clave es la inestabilidad del clasificador base, de manera que los árboles sin podar mejoran
 mucho al ser perturbados y combinados, mientras que k vecinos más cercanos es estable y no
-mejora con bagging. Quedan dos vecinos afuera de esa comparación. Los extra-trees (Geurts et
+mejora con bagging. Quedan dos parientes cercanos fuera de esa comparación. Los extra-trees (Geurts et
 al., 2006) sortean además el punto de corte en lugar de buscar el mejor, con lo cual bajan
-todavía más la correlación al precio de árboles más débiles, que en la cota de arriba es mover
+todavía más la correlación al precio de árboles más débiles, lo cual, en la cota de arriba, es mover
 $\bar{\rho}$ y $s$ en el mismo sentido otra vez. Y el stacking pertenece a otra rama, porque
 no perturba nada: entrena modelos de familias distintas y después un meta-modelo que aprende a
 combinarlos con pesos ajustados, mientras que acá se combinan copias del mismo tipo de modelo.
@@ -1063,11 +1063,12 @@ variables, sale la selección de variables, con el procedimiento concreto que pr
 documento de correr el bosque una vez con todas, quedarse con las más importantes y volver a
 correrlo solo con esas, útil justamente cuando hay miles de variables y ningún criterio previo
 para descartarlas. Del tercero, la matriz de proximidad, cuelgan cuatro usos que en la lista
-original aparecían sueltos: la imputación de faltantes ponderando por proximidad, la detección
-de atípicos por proximidad baja respecto del resto de la clase, el clustering no supervisado y
-las vistas en baja dimensión por escalado de la matriz, que es una respuesta alternativa a la
-del Ejercicio 7, y los prototipos, que describen la relación entre variables y clase mediante
-la mediana y los cuartiles de los vecinos más cercanos de cada clase. Queda fuera del esquema
+original aparecían sueltos. El primero es la imputación de faltantes, con pesos dados por la
+proximidad. El segundo, la detección de atípicos, por proximidad baja respecto del resto de su
+clase. El tercero, el clustering no supervisado junto con las vistas en baja dimensión que se
+obtienen al escalar la matriz, que es la respuesta alternativa a la del Ejercicio 7. El cuarto,
+los prototipos, que describen la relación entre variables y clase mediante la mediana y los
+cuartiles de los vecinos más cercanos de cada clase. Queda fuera del esquema
 el manejo de clases desbalanceadas, que no es un subproducto sino un agregado posterior por
 ponderación del error.
 
