@@ -1,0 +1,29 @@
+{
+  "seed": 42,
+  "n_semillas": 20,
+  "pop": 50,
+  "ngen": 100,
+  "cxpb": 0.8,
+  "mutpb": 0.2,
+  "bits": 16,
+  "lim": 5.12,
+  "umbral": 0.01,
+  "paso_binario": 0.00015625238422217137,
+  "n_evals": 5050,
+  "binario": {
+    "mediana_final": 0.5869600960307935,
+    "n_umbral": 9,
+    "gen_umbral_mediana": 19.0,
+    "n_cuenca": 10,
+    "n_vecino": 10
+  },
+  "real": {
+    "mediana_final": 0.021016482270418635,
+    "n_umbral": 10,
+    "gen_umbral_mediana": 13.0,
+    "n_cuenca": 15,
+    "n_vecino": 5
+  },
+  "hamming_1_0": 6,
+  "p_mut_bit": 0.03125
+}

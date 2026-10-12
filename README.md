@@ -11,6 +11,9 @@ Conocimiento, Universidad Austral), desarrollado en R Markdown y compilado a PDF
 - `codigo/`: scripts Python que producen los resultados que el informe lee.
   - `e1_lstm/lstm_serie.py`: LSTM del Ejercicio 1.VI (TensorFlow).
   - `e1_lstm/figuras.py`: diagramas de CNN y celda LSTM del Ejercicio 1.
+  - `e4_ag/ag_rastrigin.py`: AG binario contra AG real con DEAP (Ejercicio 4).
+  - `e6_supervivencia/supervivencia_rossi.py`: atajos de regresión contra Kaplan-Meier
+    y Cox sobre los datos Rossi (Ejercicio 6).
   - `e10_pipeline/pipeline_opcion1.py`: pipeline comparativo del Ejercicio 10.
   - `resultados/`: CSV, JSON y PNG generados por esos scripts.
 - `Austral logo.png`: logo de la portada. Tiene que quedar en la misma carpeta que el
@@ -25,6 +28,10 @@ Desde la raíz del repo:
 # Ejercicio 1 (requiere TensorFlow; Python 3.12)
 .venv-tf/bin/python codigo/e1_lstm/lstm_serie.py
 .venv-tf/bin/python codigo/e1_lstm/figuras.py
+
+# Ejercicios 4 y 6 (deap, lifelines)
+.venv/bin/python codigo/e4_ag/ag_rastrigin.py
+.venv/bin/python codigo/e6_supervivencia/supervivencia_rossi.py
 
 # Ejercicio 10 (scikit-learn, pandas, matplotlib)
 .venv/bin/python codigo/e10_pipeline/pipeline_opcion1.py
