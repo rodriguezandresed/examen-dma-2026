@@ -610,6 +610,8 @@ e7perf <- read.csv("codigo/resultados/e7/perfiles_kmeans.csv", stringsAsFactors 
 e7anova <- read.csv("codigo/resultados/e7/anova_componentes.csv", stringsAsFactors = FALSE)
 e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FALSE)
 e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
+e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
+est <- function(k) e7est$valor[e7est$metrica == k]
 ```
 
 Todo algoritmo de clustering devuelve una partición, tengan los datos grupos o no tengan
@@ -714,7 +716,8 @@ etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * 
 bolsa y las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
 párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
 y la importancia mide lo que agrega dado lo que ya aportan las otras: la quinta separa bien
-sola, pero casi todo eso ya está en las tres primeras. Ninguna de las cinco tiene nombre de
+sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en
+`r est("semillas")` semillas, con el OOB entre `r sub("[.]", ",", est("oob_min"))` y `r sub("[.]", ",", est("oob_max"))`. Ninguna de las cinco tiene nombre de
 dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
 El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una aclaración
@@ -755,9 +758,9 @@ El ejemplo de implementación está completo en el apéndice A.3 y aplica ese pi
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding. Una precisión: el apunte dice "sobre el
-espacio original" y acá son las 30 componentes, no los 64 píxeles. Lo que importa se respeta,
-que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
+componentes, nunca sobre el embedding. El apunte contempla el caso: dice agrupar sobre el
+espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Lo que
+importa se respeta, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
 siendo las de los datos y no las que fabricó t-SNE.
 
 Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
@@ -771,9 +774,8 @@ estructura: devolvió un único grupo con `r val("db_ruido")` puntos de ruido y 
 Rand ajustado de `r fmt(val("ari_dbscan"))`. Ese índice cuenta cuántos pares de observaciones
 quedan juntos o separados en las dos particiones a la vez, corregido por azar: vale 1 si
 coinciden y 0 si el acuerdo es el que daría el azar.
-No fue por falta de búsqueda, porque se barrió el radio en ocho valores entre 5 y 20 y el
-resultado fue el mismo en todo el rango, con la sola diferencia de que los puntos etiquetados
-como ruido bajaron de `r val("ruido_eps_min")` a `r val("ruido_eps_max")`.
+No fue por falta de búsqueda: se barrió el radio en ocho valores entre 5 y 20 con el mismo
+resultado, salvo que el ruido bajó de `r val("ruido_eps_min")` a `r val("ruido_eps_max")` puntos.
 
 El apunte atribuye esa limitante a la concentración de distancias en alta dimensión, y acá
 corresponde tomarla con reparos, porque 30 dimensiones ya son el resultado de una reducción.
@@ -809,10 +811,10 @@ producir grupos nítidos a partir de datos sin estructura, que es el riesgo de
 sobreinterpretación.
 
 **Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.-d): capítulos
-`Preparation for Clustering` y `Assessing Clustering Results`, y el apunte de t-SNE de la
+*Preparation for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la
 clase 8. van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
 al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP.
-Números de `codigo/e7_tsne/tsne_digits.py`.
+Números de `tsne_digits.py`.
 
 \newpage
 
@@ -964,7 +966,9 @@ nodos hijos. El documento trata las dos variantes en conjunto, pero la distinci�
 El resultado teórico central es que la tasa de error del bosque queda acotada por
 $PE^* \le \bar{\rho}(1 - s^2)/s^2$, donde $\bar{\rho}$ es la correlación media entre árboles y
 $s$ la fuerza de cada árbol individual, entendida como su capacidad de clasificar bien
-(Breiman, 2001). La cota no se usa para calcular nada; sirve para leer de dónde viene el
+(Breiman, 2001). Es el análogo de la cota por vectores soporte del Ejercicio 2: una cota de
+generalización que se lee de la propia solución, acá desde la correlación y la fuerza en lugar
+de la cantidad de vectores soporte. No se usa para calcular nada; sirve para leer de dónde viene el
 error, porque depende de dos cosas y de nada más: más correlación implica más error, y más
 fuerza implica menos. El detalle que convierte al segundo paso en el corazón del método es que
 reducir $m$ reduce tanto la correlación como la fuerza, y aumentarlo aumenta las dos, con lo
@@ -983,8 +987,9 @@ vieron, y la proporción de veces que la clase más votada no coincide con la ve
 estimación del error OOB. La consecuencia práctica es que no hace falta un conjunto de prueba
 separado, con lo cual toda la muestra se usa para entrenar. El documento va más lejos y llama
 insesgada a esa estimación, y ahí corresponde frenar: una serie de pruebas empíricas no
-demuestra insesgadez, y la bibliografía posterior mostró que el error OOB tiene sesgo, en
-general pesimista, que empeora con pocos árboles o con clases muy desbalanceadas.
+demuestra insesgadez. Janitza y Hornung (2018) encuentran que el error OOB puede sobrestimar
+el error real, y que la sobrestimación es mayor justo donde no se la esperaría: con clases
+balanceadas, pocas observaciones y muchas variables.
 
 De la construcción se desprenden otras dos herramientas. La importancia de variables se mide
 de dos maneras. Por permutación, se cuentan los votos a la clase correcta sobre las filas
@@ -996,8 +1001,9 @@ una clase al azar según la distribución del propio nodo, se acumula la caída 
 corte; esa caída corresponde al promedio ponderado por el tamaño de los nodos hijos, lo cual
 no es un detalle, porque un hijo individual puede quedar más impuro que el padre y lo que
 nunca sube es el promedio. El documento considera las dos medidas muy consistentes entre sí,
-aunque la bibliografía posterior le encontró a la de Gini un sesgo a favor de variables con
-muchos niveles, de manera que cuando discrepan conviene la de permutación. La otra herramienta
+aunque Strobl et al. (2007) le encontraron a la de Gini un sesgo a favor de las variables con
+más categorías, con dos fuentes: la selección sesgada dentro de cada árbol y el muestreo con
+reemplazo. Cuando las dos medidas discrepan conviene la de permutación. La otra herramienta
 es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
 aumenta cada vez que caen en el mismo nodo terminal; como $1 - \mathrm{prox}$ son distancias
 al cuadrado en un espacio euclídeo, de ella cuelgan varios de los usos que se describen más
@@ -1080,7 +1086,9 @@ matriz de proximidad, prototipos e imputación), y presentación
 combinar, inestabilidad del clasificador base y k vecinos más cercanos como caso que no
 mejora), ambos de la clase 6. Breiman (1996) para bagging y Breiman (2001) para la cota de
 correlación y fuerza. Ho (1995) para el método de subespacio aleatorio y Geurts et al. (2006)
-para los extra-trees.
+para los extra-trees. Janitza y Hornung (2018) para la sobrestimación del error
+*out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia de Gini, que son
+los dos reparos que el documento de cátedra no hace.
 
 \newpage
 
@@ -1177,6 +1185,10 @@ https://doi.org/10.1109/ICDAR.1995.598994
 Hochreiter, S., & Schmidhuber, J. (1997). Long short-term memory. *Neural Computation,
 9*(8), 1735-1780. https://doi.org/10.1162/neco.1997.9.8.1735
 
+Janitza, S., & Hornung, R. (2018). On the overestimation of random forest’s
+out-of-bag error. *PLOS ONE, 13*(8), e0201904.
+https://doi.org/10.1371/journal.pone.0201904
+
 Kohonen, T. (1990). The self-organizing map. *Proceedings of the IEEE, 78*(9),
 1464-1480. https://doi.org/10.1109/5.58325
 
@@ -1193,6 +1205,10 @@ on Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 
 Ng, A. (s.f.). *Deep learning: Convolutional neural networks* [Material de cátedra].
 Universidad Austral, Data Mining Avanzado.
+
+Strobl, C., Boulesteix, A.-L., Zeileis, A., & Hothorn, T. (2007). Bias in random
+forest variable importance measures: Illustrations, sources and a solution.
+*BMC Bioinformatics, 8*, 25. https://doi.org/10.1186/1471-2105-8-25
 
 Sutskever, I., Vinyals, O., & Le, Q. V. (2014). Sequence to sequence learning with
 neural networks. *Advances in Neural Information Processing Systems 27*, pp. 3104-3112.

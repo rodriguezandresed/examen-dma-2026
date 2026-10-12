@@ -211,6 +211,34 @@ with open(os.path.join(SAL, "metricas.csv"), "w", newline="",
     for k, v in M.items():
         w.writerow([k, v])
 
+# Estabilidad entre semillas. Hasta aca todo salia de UNA corrida con semilla
+# fija, y en el informe se afirma un ORDEN de importancia y una forma de la
+# curva de siluetas. Afirmar un orden a partir de una corrida es leer ruido si
+# las brechas son del tamano de la dispersion entre semillas, asi que hay que
+# medirla en vez de suponerla. Se rehace el bosque con 8 semillas; el t-SNE no
+# se rehace aca porque cuesta minutos y se verifico aparte (4 semillas, desvio
+# de silueta 0,001).
+ordenes, oobs = [], []
+for sem in range(8):
+    r = RandomForestClassifier(n_estimators=500, oob_score=True,
+                               random_state=sem, n_jobs=-1).fit(X30[:, :5], km)
+    oobs.append(r.oob_score_)
+    ordenes.append(tuple(np.argsort(-r.feature_importances_)))
+estable = len(set(ordenes)) == 1
+
+with open(os.path.join(SAL, "estabilidad_rf.csv"), "w", newline="",
+          encoding="utf-8") as f:
+    w = csv.writer(f); w.writerow(["metrica", "valor"])
+    w.writerow(["semillas", len(oobs)])
+    w.writerow(["orden_identico", int(estable)])
+    w.writerow(["oob_media", "%.4f" % (sum(oobs) / len(oobs))])
+    w.writerow(["oob_min", "%.4f" % min(oobs)])
+    w.writerow(["oob_max", "%.4f" % max(oobs)])
+
+print("estabilidad: orden identico en %d/%d semillas, oob %.4f-%.4f"
+      % (len(oobs) if estable else 0, len(oobs), min(oobs), max(oobs)))
+
 print("escritos en resultados/e7: metricas.csv, barrido_eps.csv, "
       "perfiles_kmeans.csv, anova_componentes.csv, importancia_rf.csv, "
+      "estabilidad_rf.csv, "
       "tsne_mapa.png")
