@@ -614,10 +614,10 @@ e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = 
 est <- function(k) e7est$valor[e7est$metrica == k]
 ```
 
-Todo algoritmo de clustering devuelve una partición, tengan los datos grupos o no tengan
-ninguno. De ahí que antes de agrupar convenga averiguar si esa estructura existe, y como los
-datos casi siempre tienen más dimensiones de las que entran en un gráfico, averiguarlo pasa
-por proyectarlos a dos.
+Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no los haya.
+Por eso conviene mirar antes si esa estructura existe. Y como los datos suelen tener más
+dimensiones de las que entran en un gráfico, mirar quiere decir proyectarlos a dos
+dimensiones.
 
 La guía de clustering de la cátedra enumera seis técnicas para eso. Los gráficos de
 componentes principales (PRINCOMP)
@@ -711,12 +711,12 @@ varianza total y varianza entre grupos, que es la razón de ser de CANDISC y el 
 cual un eje de máxima varianza no es necesariamente un eje de máxima separación. Los valores
 *p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
 
-Queda la vía elegida en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
+Queda la vía que se eligió en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
 etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
-bolsa y las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
+bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
 párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
-y la importancia mide lo que agrega dado lo que ya aportan las otras: la quinta separa bien
-sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en
+y la importancia mide lo que cada una agrega dado lo que aportan las otras: la quinta separa bien
+sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en las
 `r est("semillas")` semillas, con el OOB entre `r sub("[.]", ",", est("oob_min"))` y `r sub("[.]", ",", est("oob_max"))`. Ninguna de las cinco tiene nombre de
 dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
@@ -758,7 +758,7 @@ El ejemplo de implementación está completo en el apéndice A.3 y aplica ese pi
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding. El apunte contempla el caso: dice agrupar sobre el
+componentes, nunca sobre el embedding. El apunte contempla el caso: propone agrupar sobre el
 espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Lo que
 importa se respeta, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
 siendo las de los datos y no las que fabricó t-SNE.
