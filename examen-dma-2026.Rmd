@@ -841,9 +841,9 @@ es una de las razones por las que UMAP lo reemplaza ahí. Y con perplejidad muy 
 producir grupos nítidos a partir de datos sin estructura, que es el riesgo de
 sobreinterpretación.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.-d): capítulos
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos
 *Preparation for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la
-clase 8. van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
+clase 8. Van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
 al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP.
 Números de `tsne_digits.py`.
 
@@ -964,7 +964,7 @@ práctica es que AdaBoost queda atado a su pérdida exponencial mientras que Gra
 acepta cualquier pérdida diferenciable, y por eso las implementaciones que hoy se usan en la
 práctica, como XGBoost, son variantes del segundo y no del primero (Chen & Guestrin, 2016).
 
-**Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.-f): presentación
+**Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.): presentación
 `Ensemble Methods Universidad Austral.pdf` (esquema de boosting, taxonomía de perturbar y
 combinar, arcing, ponderación $\alpha_t$ y ejemplo numérico de las tres rondas) y documentos
 `Gradient boosting explicado` 1 a 3 (clase 6: modelado aditivo, analogía del golfista, ejemplo
@@ -1110,7 +1110,7 @@ cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay qu
 decisión una por una, un árbol podado o una regresión logística siguen siendo mejores
 respuestas.
 
-**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.-f): documento
+**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.): documento
 `randon forest explicado.pdf`, traducción del texto de Breiman y Cutler (crecimiento del
 árbol, correlación y fuerza, rol de $m$, error *out-of-bag*, las dos medidas de importancia,
 matriz de proximidad, prototipos e imputación), y presentación
@@ -1645,18 +1645,6 @@ Information Processing Systems, 30*, 5998-6008.
 Volpacchio, M. (s.f.). *Data Mining Avanzado: presentaciones, apuntes y notebooks de
 clase* [Material de cátedra]. Universidad Austral, Maestría en Explotación de Datos y
 Gestión del Conocimiento.
-
-Volpacchio, M. (s.f.-f). *Ensemble Methods Universidad Austral* [Presentación de
-clase]. Universidad Austral, Maestría en Explotación de Datos y Gestión del
-Conocimiento.
-
-Volpacchio, M. (s.f.-d). *Guía de clustering: Preparation for Clustering y
-Assessing Clustering Results* [Material de cátedra]. Universidad Austral,
-Maestría en Explotación de Datos y Gestión del Conocimiento.
-
-Volpacchio, M. (s.f.-e). *Data Mining Avanzado: redes neuronales* [Material de
-cátedra]. Universidad Austral, Maestría en Explotación de Datos y Gestión del
-Conocimiento.
 
 Wolberg, W., Mangasarian, O., Street, N., & Street, W. (1993). *Breast Cancer
 Wisconsin (Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.
