@@ -113,7 +113,8 @@ def figura_lstm() -> None:
         fc="#fff6cc",
         size=9,
     )
-    _box(ax, 10.15, 0.72, 2.45, 0.88, r"$h_t = o_t \odot \tanh(c_t)$", fc="#e8e8e8", size=8.2)
+    _box(ax, 10.15, 0.72, 2.45, 0.88, r"$h_t = o_t \odot \tanh(c_t)$",
+         fc="#e8e8e8", size=8.2)
 
     # De cada puerta a la caja de abajo. Terminan en el borde superior.
     _arrow(ax, 3.07, 2.58, 3.07, 1.62)
