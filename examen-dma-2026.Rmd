@@ -1179,28 +1179,22 @@ Por eso conviene mirar antes si esa estructura existe. Y como los datos suelen t
 dimensiones de las que entran en un gráfico, mirar quiere decir proyectarlos a dos
 dimensiones.
 
-La sección de ayudas gráficas de la guía de clustering enumera tres: PRINCOMP, MDS y
-CANDISC. El capítulo agrega otras tres que no son de visualización pero condicionan lo
-que los gráficos muestran, y por eso se listan acá. Los gráficos de componentes
-principales (PRINCOMP)
-proyectan sobre las dos primeras componentes. El escalado multidimensional (MDS) ubica los
-puntos en dos dimensiones con la mayor conservación posible de las distancias originales. El
-discriminante canónico (CANDISC) busca las direcciones que maximizan la separación entre
-grupos. Las otras tres son las que agrega el capítulo: VARCLUS selecciona variables y
-elimina colinealidad. STDIZE estandariza, con énfasis
-en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS estima
-la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos para que
-la distancia euclídea en el espacio transformado se comporte como una distancia de
+La guía de clustering de la cátedra trae tres ayudas gráficas. Los gráficos de componentes
+principales (PRINCOMP) proyectan sobre las dos primeras componentes. El escalado
+multidimensional (MDS) ubica los puntos en dos dimensiones con la mayor conservación posible
+de las distancias originales. El discriminante canónico (CANDISC) busca las direcciones que
+maximizan la separación entre grupos, pero las necesita ya definidas: sirve para mirar una
+partición que ya se tiene, no para descubrirla, y por eso reaparece más abajo como tercer
+paso del perfilado. A esas tres hoy se les suman t-SNE y UMAP (McInnes et al., 2018), que
+para este fin desplazaron a MDS.
+
+El capítulo trata además tres pasos que no son de visualización pero deciden qué muestran los
+gráficos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con
+énfasis en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS
+estima la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos
+para que la distancia euclídea en el espacio transformado se comporte como una distancia de
 Mahalanobis en el original, lo cual sirve cuando los grupos son elipsoidales y están rotados
 respecto de los ejes.
-
-CANDISC no pertenece a esa lista: exige grupos previamente definidos, con lo cual no sirve
-para detectar grupos potenciales. Su lugar está en el otro
-extremo del proceso, y de hecho reaparece más abajo como tercer paso del perfilado. Falta, en
-cambio, lo que el capítulo no podía tener: la lista proviene de un curso de SAS y se detiene
-donde terminaba ese software, así que corresponde sumarle las técnicas no lineales del apunte
-de la clase 8, t-SNE y UMAP (McInnes et al., 2018), que en la práctica actual reemplazaron a
-MDS para este fin.
 
 La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
 estandarizan las variables, se calculan los autovectores de la matriz de correlación y se
