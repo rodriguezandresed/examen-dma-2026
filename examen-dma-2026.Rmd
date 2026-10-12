@@ -17,6 +17,9 @@ header-includes:
   - \usepackage{float}
   - \usepackage{graphicx}
   - \usepackage{grffile}
+  - \usepackage{titlesec}
+  - \titlespacing*{\section}{0pt}{10pt plus 2pt minus 2pt}{5pt}
+  - \titlespacing*{\subsection}{0pt}{7pt plus 1pt minus 1pt}{3pt}
   - \usepackage{fvextra}
   - \DefineVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
   - \usepackage{titling}
@@ -1323,21 +1326,14 @@ El ejemplo de implementación está completo en el apéndice A.5 y aplica ese pi
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding. El apunte contempla el caso: propone agrupar sobre el
-espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Se
-respeta lo esencial, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias son
-todavía las de los datos y no las que fabricó t-SNE.
+componentes, nunca sobre el embedding, que es lo que el apunte admite al hablar de agrupar
+sobre el espacio original "o sobre una reducción PCA previa si la dimensionalidad es
+extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen siendo las
+de los datos.
 
 ## Resultados sobre los dígitos manuscritos
 
-```{r e7-mapa, out.width="100%", fig.cap="Proyección t-SNE de los 1797 dígitos. A la izquierda el color es el dígito real; a la derecha, el grupo que asignó k-means sobre las 30 componentes."}
-knitr::include_graphics("codigo/resultados/e7/tsne_mapa.png")
-```
-
-*Nota.* Elaboración propia. Es el tercer paso del pipeline: las etiquetas del modelo
-superpuestas sobre la proyección. El índice de Rand de k-means se lee en el panel
-derecho, donde un grupo cubre dos nubes que a la izquierda son dígitos distintos y otras
-nubes aparecen partidas.
+El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5.
 
 Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
 su distancia media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y
@@ -1367,37 +1363,31 @@ radio global frente a una densidad que varía entre dígitos, más que la concen
 distancias del apunte. K-means con $k = 10$ da un ARI de
 `r fmt(val("ari_kmeans_pca"))`.
 
-El último resultado justifica la advertencia metodológica. K-means sobre las dos coordenadas
-del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima del
-`r fmt(val("ari_kmeans_pca"))` obtenido sobre las componentes. La tentación de quedarse con
-ese número es la trampa: el `r fmt(val("ari_kmeans_emb"))` no mide la capacidad de k-means
-para descubrir estructura sino el trabajo que ya hizo t-SNE al separarla. Sirve como
-validación visual, que es el tercer paso del pipeline, y no como modelo.
+K-means sobre las dos coordenadas del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima del `r fmt(val("ari_kmeans_pca"))`
+obtenido sobre las componentes. La tentación de quedarse con ese número es la trampa: no mide
+la capacidad de k-means para descubrir estructura sino el trabajo que ya hizo t-SNE al
+separarla. Sirve como validación visual, no como modelo.
 
 ## Ventajas y limitantes
 
 Entre las ventajas, t-SNE captura estructura no lineal a diferencia de PCA y desenreda
-variedades que MDS superpone; preserva muy bien la vecindad local, que es lo que hace que los
-grupos se vean separados; las colas pesadas de la t resuelven el problema de aglomeración; y
-tiene un solo hiperparámetro relevante.
+variedades que MDS superpone; preserva la vecindad local, que es lo que separa visualmente
+los grupos; las colas pesadas de la t resuelven la aglomeración; y tiene un solo
+hiperparámetro relevante.
 
-Entre las limitantes, la principal es que no es clustering, con lo cual los grupos visuales
-hay que confirmarlos con un algoritmo sobre el espacio original. Las distancias entre grupos,
-los ejes y los tamaños relativos no significan nada, por la asimetría de la divergencia. La
-función de costo no es convexa, así que cada corrida produce un mapa distinto y hay que fijar
-la semilla. Es sensible a la perplejidad, lo cual no contradice la silueta
-estable de arriba, porque esa mide clases ya conocidas y lo que varía es cuántos grupos cree
-ver quien mira el mapa. Tampoco es un modelo entrenado,
-porque la implementación estándar no proyecta observaciones nuevas sin recalcular todo, que
-es una de las razones por las que UMAP lo reemplaza ahí. Y con perplejidad muy baja puede
-producir grupos nítidos a partir de datos sin estructura, que es el riesgo de
-sobreinterpretación.
+Entre las limitantes, la principal es que no es clustering: los grupos visuales hay que
+confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y los tamaños
+relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
+convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
+la perplejidad, lo cual no contradice la silueta estable de arriba, porque esa mide clases ya
+conocidas. Tampoco es un modelo entrenado: la implementación estándar no proyecta
+observaciones nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y con perplejidad
+muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos
-*Preparation for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la
-clase 8. Van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
-al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP.
-Números de `tsne_digits.py`.
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
+for Clustering* y *Assessing Clustering Results* y el apunte de t-SNE de la clase 8. van der
+Maaten y Hinton (2008), van der Maaten (2014), Ester et al. (1996), Campello et al. (2013) y
+McInnes et al. (2018). Números de `tsne_digits.py`.
 
 \newpage
 
@@ -2007,7 +1997,7 @@ Boosting eligió árboles de profundidad
 `r sel10("clasificacion", "Gradient Boosting", "max_depth")`: cada árbol usa una sola
 variable, por lo que el modelo es una suma de efectos por variable, sin interacciones.
 
-```{r e10-fig, out.width="74%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
+```{r e10-fig, out.width="52%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
 knitr::include_graphics("codigo/resultados/e10/comparacion_modelos.png")
 ```
 
@@ -2051,9 +2041,9 @@ la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
 `r round(e10_m$segundos_total)` s) y su costo crece con las etapas.
 
 **Fuentes del Ejercicio 10.** Presentaciones de SVM y de ensambles y apunte de redes
-(Volpacchio, s.f.). Datos: Wolberg et al. (1993); Pace y Barry (1997). Método: Bergstra
-y Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001), Grinsztajn
-et al. (2022). Código propio: Apéndice A.6.
+(Volpacchio, s.f.). Datos: Wolberg et al. (1993) y Pace y Barry (1997). Método: Bergstra y
+Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001) y Grinsztajn et
+al. (2022). Código: Apéndice A.6.
 
 \newpage
 
@@ -2096,6 +2086,13 @@ cat(readLines("codigo/e6_supervivencia/supervivencia_rossi.py"), sep = "\n")
 
 Produce `codigo/resultados/e7/`: las métricas, el barrido del radio de DBSCAN, los
 perfiles de los grupos, el ANOVA por componente y el mapa.
+
+```{r e7-mapa-ap, out.width="100%", fig.cap="Proyección t-SNE de los 1797 dígitos. A la izquierda el color es el dígito real; a la derecha, el grupo que asignó k-means sobre las 30 componentes."}
+knitr::include_graphics("codigo/resultados/e7/tsne_mapa.png")
+```
+
+*Nota.* Elaboración propia. En el panel derecho se lee el índice de Rand de k-means: un grupo
+cubre dos nubes que a la izquierda son dígitos distintos y otras nubes aparecen partidas.
 
 ```{r e7-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e7_tsne/tsne_digits.py"), sep = "\n")
