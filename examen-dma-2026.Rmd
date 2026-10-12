@@ -1170,6 +1170,9 @@ e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = 
 e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
 est <- function(k) e7est$valor[e7est$metrica == k]
 epsf <- function(x) format(round(x, 2), decimal.mark = ",")
+# Grupo de atípicos: el que más se aleja en la quinta componente.
+e7_at <- which.max(e7perf$PC5)
+e7_resto <- e7perf[-e7_at, ]
 # Primer radio, por encima del mejor, desde el cual DBSCAN devuelve un solo grupo.
 e7_funde <- min(e7eps$eps[e7eps$clusters == 1 & e7eps$eps > val("db_eps")])
 ```
@@ -1258,9 +1261,10 @@ cada uno, un grupo de `r e7perf$n[which.max(e7perf$n)]` casos fusiona al menos d
 clases y otro de `r min(e7perf$n)` es un fragmento, no una clase. Antes de mirar una sola
 media ya se sabe que la partición no reproduce las diez clases, lo cual es coherente con el
 índice de Rand ajustado de `r fmt(val("ari_kmeans_pca"))` que se reporta más abajo. Después
-están los apartamientos: un grupo se aleja hasta 5,98 en la segunda componente y 7,07 en la
-quinta, que es el perfil de un grupo de atípicos, mientras que otros dos se oponen sobre la
-primera componente con -4,67 contra 3,82.
+están los apartamientos: un grupo se aleja hasta `r fmt(e7perf$PC2[e7_at], 2)` en la segunda componente y
+`r fmt(e7perf$PC5[e7_at], 2)` en la quinta, que es el perfil de un grupo de atípicos,
+mientras que otros dos se oponen sobre la primera componente con
+`r fmt(min(e7_resto$PC1), 2)` contra `r fmt(max(e7_resto$PC1), 2)`.
 
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
 `r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
@@ -2084,7 +2088,7 @@ cat(readLines("codigo/e6_supervivencia/supervivencia_rossi.py"), sep = "\n")
 Produce `codigo/resultados/e7/`: las métricas, el barrido del radio de DBSCAN, los
 perfiles de los grupos, el ANOVA por componente y el mapa.
 
-```{r e7-mapa-ap, out.width="100%", fig.cap="Proyección t-SNE de los 1797 dígitos. A la izquierda el color es el dígito real; a la derecha, el grupo que asignó k-means sobre las 30 componentes."}
+```{r e7-mapa-ap, out.width="100%", fig.cap=paste0("Proyección t-SNE de los ", val("n"), " dígitos. A la izquierda el color es el dígito real; a la derecha, el grupo que asignó k-means sobre las 30 componentes.")}
 knitr::include_graphics("codigo/resultados/e7/tsne_mapa.png")
 ```
 
