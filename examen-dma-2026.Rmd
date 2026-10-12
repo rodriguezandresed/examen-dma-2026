@@ -910,7 +910,7 @@ variable original. Su limitación estructural es que solo captura relaciones lin
 
 La cátedra nombra a Kernel PCA pero no lo desarrolla: el apunte de taxonomía de la clase 4
 lo lista como variante no lineal del PCA y como uno de los métodos de kernel junto con SVM,
-y el apunte de t-SNE de la clase 7 lo menciona entre las alternativas no lineales. La
+y `t_sne.pdf` de la clase 7 lo menciona entre las alternativas no lineales. La
 selección de kernel, por su parte, aparece solo como prueba y error sobre datos de
 validación, con la herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
 con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
@@ -1396,7 +1396,8 @@ observaciones nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y co
 muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
 **Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
-for Clustering* y *Assessing Clustering Results* y el apunte de t-SNE de la clase 8. van der
+for Clustering* y *Assessing Clustering Results* y el apunte de t-SNE de la clase 8,
+`TSNE_Perplejidad_Clustering_NoLineal`. van der
 Maaten y Hinton (2008) para la formulación original y van der Maaten (2014) para Barnes-Hut;
 Ester et al. (1996) para DBSCAN, Campello et al. (2013) para HDBSCAN y McInnes et al. (2018)
 para UMAP. Código propio: Apéndice A.5.
