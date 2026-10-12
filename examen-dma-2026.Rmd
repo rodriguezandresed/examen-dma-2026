@@ -1120,7 +1120,7 @@ dimensiones.
 La guía de clustering de la cátedra enumera seis técnicas para eso. Los gráficos de
 componentes principales (PRINCOMP)
 proyectan sobre las dos primeras componentes. El escalado multidimensional (MDS) ubica los
-puntos en dos dimensiones conservando en lo posible las distancias originales. El
+puntos en dos dimensiones con la mayor conservación posible de las distancias originales. El
 discriminante canónico (CANDISC) busca las direcciones que maximizan la separación entre
 grupos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con énfasis
 en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS estima
@@ -1192,7 +1192,7 @@ knitr::kable(
 *Nota.* Elaboración propia a partir de `codigo/resultados/e7/perfiles_kmeans.csv`.
 
 Lo que más dice de la tabla son los tamaños. Con diez dígitos que aparecen unas 180 veces
-cada uno, un grupo de `r e7perf$n[which.max(e7perf$n)]` casos está fusionando al menos dos
+cada uno, un grupo de `r e7perf$n[which.max(e7perf$n)]` casos fusiona al menos dos
 clases y otro de `r min(e7perf$n)` es un fragmento, no una clase. Antes de mirar una sola
 media ya se sabe que la partición no reproduce las diez clases, lo cual es coherente con el
 índice de Rand ajustado de `r fmt(val("ari_kmeans_pca"))` que se reporta más abajo. Después
@@ -1251,8 +1251,8 @@ exploración previa a un clustering, control visual de una partición y detecci�
 subpoblaciones. El apunte propone un pipeline de tres pasos que consiste en
 explorar con t-SNE o UMAP sobre datos estandarizados, modelar sobre el espacio original con
 un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o su variante
-jerárquica HDBSCAN (Campello et al., 2013), y validar superponiendo las etiquetas obtenidas
-sobre la proyección.
+jerárquica HDBSCAN (Campello et al., 2013), y validar mediante la superposición de las
+etiquetas obtenidas sobre la proyección.
 
 El ejemplo de implementación está completo en el apéndice A.5 y aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
@@ -1260,8 +1260,8 @@ estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proye
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
 componentes, nunca sobre el embedding. El apunte contempla el caso: propone agrupar sobre el
 espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Se
-respeta lo esencial, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen
-siendo las de los datos y no las que fabricó t-SNE.
+respeta lo esencial, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias son
+todavía las de los datos y no las que fabricó t-SNE.
 
 Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
 su distancia media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y
@@ -1381,7 +1381,7 @@ el resultado es $0{,}4236$, que redondea al 0,42 publicado, pero con $\varepsilo
 da $0{,}6625$, que redondea a 0,66 y no al 0,65 de la diapositiva. El error que produce
 exactamente 0,65 es 0,2142, de manera que lo más probable es que la cuenta original se haya
 hecho con el valor sin redondear. La diferencia es de un centésimo y no cambia nada, pero
-queda constancia de que se verificó. Invirtiendo la fórmula, el $\alpha_3 = 0{,}92$ de la
+queda constancia de que se verificó. Con la fórmula invertida, el $\alpha_3 = 0{,}92$ de la
 tercera ronda corresponde a un error de 0,137, es decir un clasificador débil que acierta el
 86 % de las veces sobre la distribución ya reponderada. Ese clasificador base, un único corte
 paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
@@ -1528,8 +1528,8 @@ que los árboles de un bosque son independientes y se construyen en paralelo. La
 qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
 parte de modelos débiles, de alto sesgo y baja varianza, y reduce el sesgo de forma aditiva.
-Hay acá una tensión con el deck de la clase 6, que agrupa a bagging y a arcing diciendo que
-los dos reducen principalmente la varianza, siendo que arcing es boosting; las dos
+Hay acá una tensión con el deck de la clase 6, que agrupa a bagging y a arcing con el
+argumento de que los dos reducen principalmente la varianza, aunque arcing es boosting; las dos
 afirmaciones se concilian si se lee que el deck clasifica por el mecanismo de perturbación y
 no por la componente del error, porque boosting también recorta varianza al agregar, pero lo
 que lo distingue es que baja el sesgo. La tercera es el comportamiento frente al sobreajuste:
@@ -1581,7 +1581,7 @@ Hay algo que el documento no menciona y que conviene decir. Frente a un árbol �
 en varianza es grande, pero se pierde la lectura del modelo: un bosque de quinientos árboles
 no se lee como una lista de reglas, y lo que queda es la importancia de variables, que indica
 cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay que justificar cada
-decisión una por una, un árbol podado o una regresión logística siguen siendo mejores
+decisión una por una, un árbol podado o una regresión logística son todavía mejores
 respuestas.
 
 **Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.): documento
