@@ -643,6 +643,9 @@ e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FAL
 e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
 e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
 est <- function(k) e7est$valor[e7est$metrica == k]
+epsf <- function(x) format(round(x, 2), decimal.mark = ",")
+# Primer radio, por encima del mejor, desde el cual DBSCAN devuelve un solo grupo.
+e7_funde <- min(e7eps$eps[e7eps$clusters == 1 & e7eps$eps > val("db_eps")])
 ```
 
 Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no los haya.
@@ -800,21 +803,26 @@ cuanto más alto, más compactos y separados están los grupos. Calculado sobre 
 5, `r fmt(val("sil_p30"))` con 30 y `r fmt(val("sil_p50"))` con 50, es decir que mejora al
 pasar de 5 a 30 y después se estanca.
 
-El resultado que más enseña es un fracaso. DBSCAN sobre las 30 componentes no encontró
-estructura: devolvió un único grupo con `r val("db_ruido")` puntos de ruido y un índice de
-Rand ajustado de `r fmt(val("ari_dbscan"))`. Ese índice cuenta cuántos pares de observaciones
-quedan juntos o separados en las dos particiones a la vez, corregido por el azar: vale 1 si
-coinciden y 0 si el acuerdo es el que daría el azar.
-No fue por falta de búsqueda: se barrió el radio en ocho valores entre 5 y 20 con el mismo
-resultado, salvo que el ruido bajó de `r val("ruido_eps_min")` a `r val("ruido_eps_max")` puntos.
+DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos a distancia menor
+que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
+ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
+de pares que ambas particiones dejan juntos o separados, corregida por el azar: 1 si
+coinciden, 0 si el acuerdo es el del azar. El radio se ubicó con la distancia al octavo
+vecino (gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))`
+y cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`;
+una primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
+`r nrow(e7eps)` valores barridos, de `r epsf(min(e7eps$eps))` a
+`r epsf(max(e7eps$eps))`, el mejor ARI sale con $\varepsilon$ = `r epsf(val("db_eps"))`:
+`r val("db_clusters")` grupos, `r val("db_ruido")` puntos de ruido
+(`r fmt(100 * val("db_ruido") / val("n"), 1)` %) y ARI de `r fmt(val("ari_dbscan"))`
+(`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido).
 
-El apunte atribuye esa limitante a la concentración de distancias en alta dimensión, y acá
-corresponde tomarla con reparos, porque 30 dimensiones ya son el resultado de una reducción.
-Lo que sí se sostiene con estos datos es la otra mitad del diagnóstico: el radio $\varepsilon$
-de DBSCAN es global y la densidad de los dígitos no lo es, de manera que no existe un valor
-único que separe los grupos densos sin fundir los dispersos. Se ve en el propio barrido, donde
-bajar el radio no parte el grupo sino que convierte puntos en ruido. K-means con $k = 10$
-sobre el mismo espacio sí funcionó, con un índice de Rand ajustado de
+Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los
+`r val("n")` puntos como ruido, y desde $\varepsilon$ = `r epsf(e7_funde)` todo se funde en
+un grupo (ARI de `r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero
+manda puntos al ruido, y subirlo los recupera pero funde dígitos. La causa probable es un
+radio global frente a una densidad que varía entre dígitos, más que la concentración de
+distancias del apunte. K-means con $k = 10$ da un ARI de
 `r fmt(val("ari_kmeans_pca"))`.
 
 El último resultado justifica la advertencia metodológica. K-means sobre las dos coordenadas

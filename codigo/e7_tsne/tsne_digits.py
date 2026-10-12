@@ -29,6 +29,7 @@ from sklearn.manifold import TSNE
 from sklearn.cluster import DBSCAN, KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import adjusted_rand_score, silhouette_score
+from sklearn.neighbors import NearestNeighbors
 from scipy.stats import f_oneway
 
 RANDOM_STATE = 42
@@ -64,33 +65,45 @@ for perp in [5, 30, 50]:
           % (perp, sil))
 
 # --- Clustering sobre el espacio original (no sobre el embedding) ----------
-# Primer intento con DBSCAN. No funciono, y el barrido de eps de abajo esta
-# para dejar constancia de que no fue por no haber buscado: en TODO el rango
-# devuelve un unico cluster mas unos pocos puntos de ruido, con ARI = 0. Es
-# exactamente la limitante que anticipa el apunte de la Clase 8: en alta
-# dimension las distancias se concentran, todos los puntos quedan a distancia
-# parecida y un eps global unico no separa nada. Se deja el fracaso en el
-# informe en lugar de esconderlo, porque el fracaso es el que prueba la
-# limitante.
+# Primer intento con DBSCAN. La primera grilla de eps arrancaba en 5 y en todo
+# ese rango devolvia un unico cluster con ARI = 0; se lo leyo como prueba de que
+# DBSCAN no separaba nada. Estaba mal ubicada: la distancia de cada punto a su
+# 8.o vecino (el grafico de distancia k de Ester et al.) tiene la mediana cerca
+# de 3,8, asi que con eps >= 5 casi todo queda conectado con todo. Se la extiende
+# hacia abajo, con paso fino entre 2 y 4, que es donde DBSCAN encuentra grupos.
+vecinos = NearestNeighbors(n_neighbors=8).fit(X30)
+dist_k = vecinos.kneighbors(X30)[0][:, -1]  # incluye al propio punto, como min_samples
+for q in [10, 50, 90]:
+    M["kdist_q%d" % q] = float(np.percentile(dist_k, q))
+print("distancia al 8.o vecino, cuantiles 10/50/90: %.2f %.2f %.2f"
+      % (M["kdist_q10"], M["kdist_q50"], M["kdist_q90"]))
+
 barrido = []
-print("eps  clusters  ruido   ARI")
-for eps in [5, 7, 9, 11, 12, 14, 16, 20]:
+print("eps  clusters  ruido   ARI  ARI_sin_ruido")
+for eps in [2.0, 2.25, 2.5, 2.75, 3.0, 3.25, 3.5, 3.75, 4.0, 4.5, 5, 7, 9, 12,
+            16, 20]:
     lab = DBSCAN(eps=eps, min_samples=8).fit_predict(X30)
     n = len(set(lab)) - (1 if -1 in lab else 0)
-    barrido.append((eps, n, int((lab == -1).sum()), adjusted_rand_score(y, lab)))
-    print("%4.1f %6d %8d  %.3f"
-          % (eps, n, int((lab == -1).sum()), adjusted_rand_score(y, lab)))
+    nr = lab != -1
+    # ARI sobre todos los puntos (el ruido cuenta como un grupo mas) y aparte
+    # sobre los que no son ruido: con eps chico el segundo sale alto solo porque
+    # DBSCAN se queda con los nucleos faciles y tira el resto.
+    a_nr = adjusted_rand_score(y[nr], lab[nr]) if nr.sum() > 0 else float("nan")
+    barrido.append((eps, n, int((~nr).sum()), adjusted_rand_score(y, lab), a_nr))
+    print("%4.2f %6d %8d  %.3f  %.3f" % barrido[-1])
 
-# Se fija eps=12 como caso representativo para el informe, que es el valor del medio
-# del barrido. Se imprime aparte para que el numero que cita el texto salga de un print
-# y no de la lectura de la tabla de arriba.
-db = DBSCAN(eps=12.0, min_samples=8).fit_predict(X30)
+# El eps que se informa es el de mayor ARI sobre todos los puntos. Se recalcula
+# aparte para que el numero que cita el texto salga de un print y no de la tabla.
+eps_mejor = max(barrido, key=lambda f: f[3])[0]
+db = DBSCAN(eps=eps_mejor, min_samples=8).fit_predict(X30)
 n_db = len(set(db)) - (1 if -1 in db else 0)
+M["db_eps"] = eps_mejor
 M["db_clusters"] = n_db
 M["db_ruido"] = int((db == -1).sum())
 M["ari_dbscan"] = float(adjusted_rand_score(y, db))
-print("DBSCAN sobre PCA30 (eps=12): %d clusters, %d puntos de ruido, ARI=%.3f"
-      % (n_db, M["db_ruido"], M["ari_dbscan"]))
+M["ari_dbscan_sin_ruido"] = float(adjusted_rand_score(y[db != -1], db[db != -1]))
+print("DBSCAN sobre PCA30 (eps=%.2f): %d clusters, %d puntos de ruido, ARI=%.3f"
+      % (eps_mejor, n_db, M["db_ruido"], M["ari_dbscan"]))
 
 km = KMeans(n_clusters=10, n_init=10, random_state=RANDOM_STATE).fit_predict(X30)
 M["ari_kmeans_pca"] = float(adjusted_rand_score(y, km))
@@ -165,9 +178,10 @@ with open(os.path.join(SAL, "metricas.csv"), "w", newline="", encoding="utf-8") 
         w.writerow([k, v])
 
 with open(os.path.join(SAL, "barrido_eps.csv"), "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f); w.writerow(["eps", "clusters", "ruido", "ari"])
+    w = csv.writer(f); w.writerow(["eps", "clusters", "ruido", "ari", "ari_sin_ruido"])
     for fila in barrido:
-        w.writerow(["%.1f" % fila[0], fila[1], fila[2], "%.3f" % fila[3]])
+        w.writerow(["%.2f" % fila[0], fila[1], fila[2], "%.3f" % fila[3],
+                    "%.3f" % fila[4]])
 
 with open(os.path.join(SAL, "perfiles_kmeans.csv"), "w", newline="", encoding="utf-8") as f:
     w = csv.writer(f)
