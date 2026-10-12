@@ -758,13 +758,15 @@ El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una 
 que el apunte de la clase 8 pone al inicio porque evita la mayor parte de los malentendidos:
 no es un algoritmo de clustering. Transforma el espacio de características para que las
 estructuras latentes se vuelvan visibles; el agrupamiento viene después, y sobre el espacio
-original. Tiene cuatro piezas. En alta dimensión las distancias euclídeas se convierten en probabilidades mediante un kernel gaussiano centrado en cada punto,
-$p_{j|i} \propto \exp(-d_{ij}/2\sigma_i^2)$, simetrizadas como
+original. Tiene cuatro piezas. En alta dimensión las distancias euclídeas al cuadrado se
+convierten en probabilidades mediante un kernel gaussiano centrado en cada punto $x_i$,
+$p_{j|i} \propto \exp(-\lVert x_i - x_j \rVert^2 / 2\sigma_i^2)$, simetrizadas como
 $p_{ij} = (p_{j|i}+p_{i|j})/2n$. En baja dimensión, y ahí está lo que da el nombre al método,
-se usa una distribución t de Student con un grado de libertad,
-$q_{ij} \propto (1 + d^y_{ij})^{-1}$, cuyas colas pesadas resuelven el problema de
-aglomeración, la tendencia de los puntos moderadamente distantes a amontonarse al
-proyectar. La función de costo es la divergencia de Kullback-Leibler $KL(P \Vert Q)$, cuya
+se usa una distribución t de Student con un grado de libertad sobre las posiciones $y_i$ del
+mapa, $q_{ij} \propto (1 + \lVert y_i - y_j \rVert^2)^{-1}$, cuyas colas pesadas resuelven el
+problema de aglomeración, la tendencia de los puntos moderadamente distantes a amontonarse al
+proyectar. La función de costo es la divergencia de Kullback-Leibler,
+$KL(P \Vert Q) = \sum_{i \ne j} p_{ij} \log(p_{ij}/q_{ij})$, cuya
 asimetría es constitutiva: penaliza con fuerza separar en el
 mapa a vecinos que estaban cerca y tolera que puntos lejanos queden próximos, de donde se
 sigue que preserve la estructura local y no la global. La optimización es un descenso de
