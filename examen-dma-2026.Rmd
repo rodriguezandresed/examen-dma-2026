@@ -108,8 +108,8 @@ más que una regresión lineal. Con activación sigmoidal, una capa oculta con s
 neuronas aproxima cuanto se quiera cualquier función continua sobre una región cerrada
 y acotada (Cybenko, 1989).
 
-El apunte cubre cuatro activaciones y se agrega ReLU, $\max(0, z)$, la más usada en
-redes profundas (Goodfellow et al., 2016). El escalón da salida binaria, pero su
+Las activaciones más comunes son el escalón, la sigmoide, tanh, softmax y ReLU,
+$\max(0, z)$, la más usada en redes profundas (Goodfellow et al., 2016). El escalón da salida binaria, pero su
 derivada es nula (salvo en 0, donde no existe) y no sirve para entrenar por gradiente.
 La sigmoidal, con rango $(0, 1)$, se lee como probabilidad; tanh, con rango $(-1, 1)$,
 está centrada en cero. Ambas saturan: lejos del origen la derivada es casi nula y su
@@ -138,7 +138,7 @@ La calidad depende de los datos frente a la cantidad de pesos, de $\eta$ (chica 
 avanza, grande oscila), de los mínimos locales y del criterio de corte. Contra el
 sobreajuste, el apunte de taxonomía de la clase 4 agrupa early stopping (cortar cuando
 sube el error de validación), weight decay y dropout como formas de la misma idea,
-restringir la familia de funciones. Sus redes son superficiales (shallow), con una capa
+restringir la familia de funciones. Una red superficial (shallow) tiene una sola capa
 oculta. Una profunda (deep) apila capas que arman rasgos sobre rasgos (bordes, formas,
 objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanece más,
 lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
@@ -149,8 +149,8 @@ lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
 De ejemplos de uso.*
 
 Los dos están en el material de la clase 4: `autoencoders.pdf` desarrolla el
-autoencoder completo, con el cuello de botella y los tipos denoising, sparse y
-convolucional, y el apunte de taxonomía marca los autoencoders como vistos en clase y
+autoencoder completo, con el cuello de botella y los tipos convolucional, sparse,
+profundo y contractivo, y el apunte de taxonomía marca los autoencoders como vistos en clase y
 dedica una subsección a los word embeddings. Un embedding es un
 vector denso y corto que representa un objeto discreto (palabra, producto, cliente) y
 que la red aprende como un peso más: word2vec lo aprende para cada palabra a partir de
@@ -811,7 +811,7 @@ mitad de las corridas.
 La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
 binarias que no entran a la cuenca global quedan clavadas en un valle vecino, con
 alguna coordenada en $\pm 1$: el entero que codifica $x = 1$ difiere en
-`r e4m$hamming_1_0` bits de los que rodean a $x = 0$, y con probabilidad
+`r e4m$hamming_1_0` bits del más cercano de los dos enteros que rodean a $x = 0$, y con probabilidad
 1/`r 1 / e4m$p_mut_bit` por bit una mutación que cambie esos bits a la vez es casi
 imposible. Es el fenómeno anticipado al comparar las codificaciones: valores vecinos
 del dominio con códigos lejanos. Las reales entran a la cuenca global en
@@ -892,7 +892,7 @@ varianza restante, y así sucesivamente; al retener las primeras $k$ se obtiene 
 representación de menor dimensión que conserva un porcentaje conocido de la varianza
 total.
 
-En Machine Learning el PCA cumple tres funciones. Reduce la cantidad de variables de
+En Machine Learning el PCA reduce la cantidad de variables de
 entrada $p$, lo que baja el costo de entrenamiento y acota la capacidad del modelo (la
 riqueza de la familia de funciones que puede ajustar): para un clasificador lineal la
 dimensión VC es $d = p + 1$, el $d = k + 1$ del Ejercicio 3, y bajar $p$ relaja la
@@ -915,8 +915,7 @@ clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
 
 ## El truco del kernel
 
-Se presenta primero el truco del kernel, porque Kernel PCA se define a partir de él. Un
-kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
+Un kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
 en un espacio de características: un espacio de dimensión mayor que el original,
 alcanzado por una transformación $\phi$, en el cual un problema no lineal puede
 volverse lineal. El ejemplo de la clase de SVM es el problema XOR (dos clases ubicadas
@@ -959,7 +958,7 @@ capturar estructura no lineal: datos dispuestos sobre curvas o anillos concéntr
 que el PCA lineal no separa, pueden quedar ordenados a lo largo de las primeras
 componentes no lineales.
 
-De ahí salen tres consecuencias prácticas. El costo pasa a depender del número de
+De ahí salen consecuencias prácticas. El costo pasa a depender del número de
 observaciones $n$ y no de $p$, lo que encarece el método en conjuntos grandes. Se
 pueden extraer hasta $n$ componentes, más que las $p$ del caso lineal. Y se pierde la
 reconstrucción directa: un punto del espacio de características no siempre tiene
@@ -970,20 +969,20 @@ kernel lineal se recupera el PCA clásico.
 ## Cómo elegir el kernel
 
 Sobre la selección del kernel, la conclusión de la bibliografía es que no existe un
-método universal, pero sí tres procedimientos sencillos que se complementan. El primero
+método universal, pero sí tres procedimientos sencillos que se complementan. Uno
 mira las dimensiones del conjunto: la guía de Hsu et al. (2003) recomienda el kernel
 lineal cuando la cantidad de variables es grande frente a la de observaciones, porque
 llevar los datos a un espacio mayor no agrega separabilidad, y también cuando las dos
 cantidades son grandes, por costo; si hay muchas más observaciones que variables, el
 candidato es el RBF.
 
-El segundo es la validación cruzada sobre una grilla de kernels y de sus
+Otro es la validación cruzada sobre una grilla de kernels y de sus
 hiperparámetros: para cada combinación se estima el error en los bloques de validación
 y se queda la mejor. Hsu et al. (2003) recomiendan empezar por el RBF, que con
 parámetros bien elegidos cubre al lineal como caso límite, y buscar $C$ y
 $\gamma = 1/(2\sigma^2)$ en una grilla exponencial, como se hizo en el Ejercicio 10.
 
-El tercero evita entrenar el modelo para cada candidato: el alineamiento
+Un tercer camino evita entrenar el modelo para cada candidato: el alineamiento
 kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002) mide el
 parecido entre la matriz de kernel $K$ y la matriz ideal $yy^\top$ construida desde las
 etiquetas $y_i \in \{-1, +1\}$,
@@ -995,7 +994,7 @@ elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), 
 combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
 2011).
 
-Como conclusión, la regla de dimensiones sirve para armar la lista corta, el
+La regla de dimensiones sirve para armar la lista corta, el
 alineamiento para descartar candidatos sin entrenar y la validación cruzada para la
 decisión final. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
 contra las cuales validar: en la práctica el kernel se ajusta por el error de
@@ -1106,7 +1105,7 @@ El efecto de una covariable muestra lo mismo. Una regresión lineal de las seman
 las siete covariables, ajustada solo con los re-arrestados, asigna a la ayuda
 financiera (`fin`) un coeficiente de `r f6(e6m$coef_ols_fin, 2)` semanas, un efecto
 casi nulo y, en todo caso, hacia un re-arresto más temprano. Cox, con los `r e6m$n` individuos, estima un *hazard ratio* de
-`r f6(e6m$hr_fin, 2)` (IC 95 %: `r f6(e6m$hr_fin_lo, 2)` a `r f6(e6m$hr_fin_hi, 2)`;
+`r f6(e6m$hr_fin, 3)` (IC 95 %: `r f6(e6m$hr_fin_lo, 3)` a `r f6(e6m$hr_fin_hi, 3)`;
 $p$ = `r f6(e6m$p_fin, 3)`): la ayuda reduce el riesgo instantáneo en un
 `r p6(100 * (1 - e6m$hr_fin))`. Se interpreta que la regresión no lo ve porque la ayuda
 actúa sobre quiénes llegan a la semana `r e6m$horizonte` sin re-arresto, que son los
@@ -1213,13 +1212,13 @@ precisamente el problema que motiva a t-SNE.
 ## Perfilado de los grupos obtenidos
 
 El perfilado es la generación de descripciones de cada grupo a partir de las variables de
-entrada, y la guía propone tres pasos. El primero es calcular los vectores de
-medias de cada grupo. El segundo es un MANOVA, que es un análisis de varianza con varias
-variables respuesta simultáneas: en lugar de preguntar si los grupos difieren en una
-variable, pregunta si difieren en el vector completo. Va primero porque de esa manera
-controla el error de tipo I a nivel del experimento, en lugar de inflarlo con una prueba
-separada por variable. El tercero es el ANOVA por variable junto con el análisis
-discriminante canónico, que identifica qué variables concretas producen las diferencias; en
+entrada, y la guía lo ordena en tres pasos: los vectores de
+medias de cada grupo, el MANOVA y, recién después, el ANOVA por variable. El MANOVA es un
+análisis de varianza con varias variables respuesta simultáneas: en lugar de preguntar si
+los grupos difieren en una variable, pregunta si difieren en el vector completo. Va primero
+porque de esa manera controla el error de tipo I a nivel del experimento, en lugar de
+inflarlo con una prueba separada por variable. El ANOVA por variable va acompañado del
+análisis discriminante canónico, que identifica qué variables concretas producen las diferencias; en
 la dirección inversa es igual de útil, porque las variables que no difieren entre grupos
 probablemente puedan podarse del conjunto de entrada.
 
@@ -1227,14 +1226,13 @@ La propia guía advierte que los resultados de MANOVA y ANOVA deben interpretars
 cautela, porque el proceso de clustering viola supuestos clave de esas pruebas: los grupos no
 se definieron de forma independiente de los datos sino para maximizar la separación, así que
 los valores *p* quedan sesgados hacia la significación. Valen como medida descriptiva del
-tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no
-ofrece salida, de manera que hay que elegir una: la que se adopta acá es entrenar un
-clasificador contra la etiqueta de grupo tratada como si fuera una clase dada y leer su
-importancia de variables, porque no hay supuesto distribucional que violar, la salida ya es
-la descripción del grupo y la exactitud mide de paso cuán separables son. Es la vía que
-reaparece en el Ejercicio 9. Se descarta en cambio la alternativa de pruebas no paramétricas
-variable por variable, porque el sesgo proviene de que los grupos se construyeron con estos
-mismos datos y no del supuesto de normalidad.
+tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no ofrece
+salida, así que acá se entrena un clasificador contra la etiqueta de grupo, tratada como si
+fuera una clase dada, y se lee su importancia de variables: no hay supuesto distribucional
+que violar, la salida ya es la descripción del grupo y la exactitud mide de paso cuán
+separables son. Es la vía que reaparece en el Ejercicio 9. Se descarta la alternativa de
+pruebas no paramétricas variable por variable, porque el sesgo viene de que los grupos se
+construyeron con estos mismos datos y no del supuesto de normalidad.
 
 El procedimiento se aplicó a los diez grupos que devolvió k-means sobre el conjunto de
 dígitos manuscritos que se describe más abajo. Las variables de entrada son 64 píxeles, con
@@ -1290,7 +1288,7 @@ no es un algoritmo de clustering. Transforma el espacio de características para
 estructuras latentes se vuelvan visibles; el agrupamiento viene después, y sobre el espacio
 original.
 
-Tiene cuatro piezas. En alta dimensión las distancias euclídeas al cuadrado se
+En alta dimensión las distancias euclídeas al cuadrado se
 convierten en probabilidades mediante un kernel gaussiano centrado en cada punto $x_i$,
 $p_{j|i} \propto \exp(-\lVert x_i - x_j \rVert^2 / 2\sigma_i^2)$, simetrizadas como
 $p_{ij} = (p_{j|i}+p_{i|j})/2n$. En baja dimensión, y ahí está lo que da el nombre al método,
@@ -1302,8 +1300,9 @@ $KL(P \Vert Q) = \sum_{i \ne j} p_{ij} \log(p_{ij}/q_{ij})$, cuya
 asimetría es constitutiva: penaliza con fuerza separar en el
 mapa a vecinos que estaban cerca y tolera que puntos lejanos queden próximos, de donde se
 sigue que preserve la estructura local y no la global. La optimización es un descenso de
-gradiente sobre las coordenadas del mapa, inicializado con componentes principales (van der
-Maaten & Hinton, 2008).
+gradiente sobre las coordenadas del mapa (van der Maaten & Hinton, 2008), que el apunte de
+la clase 8 inicializa con los componentes principales de un PCA previo para acelerar la
+convergencia.
 
 El único hiperparámetro relevante es la perplejidad, que funciona como ancho de banda del
 kernel. Se define como $2^{H(P_i)}$, con $H$ la entropía de Shannon de la vecindad del punto, de
@@ -1371,7 +1370,7 @@ separarla. Sirve como validación visual, no como modelo.
 ## Ventajas y limitantes
 
 Entre las ventajas, t-SNE captura estructura no lineal a diferencia de PCA y desenreda
-variedades que MDS superpone; preserva la vecindad local, que es lo que separa visualmente
+superficies curvas (variedades) que MDS superpone; preserva la vecindad local, que es lo que separa visualmente
 los grupos; las colas pesadas de la t resuelven la aglomeración; y tiene un solo
 hiperparámetro relevante.
 
@@ -1379,8 +1378,8 @@ Entre las limitantes, la principal es que no es clustering: los grupos visuales 
 confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y los tamaños
 relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
 convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
-la perplejidad, lo cual no contradice la silueta estable de arriba, porque esa mide clases ya
-conocidas. Tampoco es un modelo entrenado: la implementación estándar no proyecta
+la perplejidad, y que la silueta de arriba apenas se mueva entre 30 y 50 no lo desmiente,
+porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: la implementación estándar no proyecta
 observaciones nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y con perplejidad
 muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
@@ -1448,12 +1447,12 @@ Las tres rondas se rehicieron con la fórmula.
 ```{r e8-rondas, echo=FALSE}
 e8 <- data.frame(
   Ronda = c("1", "2", "3"),
-  err   = c("0,30", "0,21", "(0,137)"),
-  adeck = c("0,42", "0,65", "0,92"),
-  acalc = c("0,4236", "0,6625", "--"),
+  err   = c("0,30", "0,21", "0,14"),
+  apub  = c("0,42", "0,65", "0,92"),
+  acalc = c("0,4236", "0,6625", "0,9076"),
   obs   = c("coincide al redondear",
             "redondea a 0,66, no a 0,65",
-            "error implícito: acierta 86 %"),
+            "redondea a 0,91, no a 0,92"),
   stringsAsFactors = FALSE)
 names(e8) <- c("Ronda", "Error", "Ponderación publicada",
                "Ponderación recalculada", "Observación")
@@ -1464,11 +1463,12 @@ kable(e8, booktabs = TRUE, align = c("l", "r", "r", "r", "l"),
 
 *Nota.* Elaboración propia. El error es el $\varepsilon_t$ ponderado de la ronda y la
 ponderación, el $\alpha_t = \tfrac{1}{2}\log((1-\varepsilon_t)/\varepsilon_t)$ con el que
-la hipótesis entra al voto. El $\varepsilon_3$ no lo publica la presentación; sale de invertir la
-fórmula sobre $\alpha_3$.
+la hipótesis entra al voto. Los seis valores publicados se leen de las diapositivas del
+ejemplo.
 
-La segunda ronda no cierra: el error que produce exactamente 0,65 es 0,2142, de manera que lo
-más probable es que la cuenta original se haya hecho con el valor sin redondear. La diferencia
+Dos de las tres rondas no cierran: el error que produce exactamente 0,65 es 0,2142 y el que
+produce 0,92 es 0,137, de manera que lo más probable es que las cuentas originales se hayan
+hecho con los errores sin redondear. La diferencia
 es de un centésimo y no cambia nada, pero queda constancia de que se verificó. El clasificador
 base, un único corte paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
 
@@ -1547,12 +1547,13 @@ ensamblaje. Describa los principales usos del algoritmo.*
 
 ## El algoritmo
 
-Random Forest construye cada árbol en tres pasos. El primero es el bootstrap: de las $N$ filas de entrenamiento se muestrean $N$
-casos al azar con reemplazo, y esa muestra entrena el árbol. El segundo es el subespacio
-aleatorio de variables: de las $M$ variables disponibles se fija un número $m \ll M$ tal que
-en cada nodo se sortean $m$ y se usa la mejor de ellas para dividir, con $m$ constante durante
-todo el crecimiento del bosque. El tercero es el crecimiento sin poda: cada árbol crece lo más
-posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio nodo final.
+Cada árbol de un Random Forest se entrena sobre una muestra bootstrap: de las $N$ filas de
+entrenamiento se sortean $N$ casos al azar con reemplazo. Sobre esa muestra el árbol crece con
+subespacio aleatorio de variables, es decir que de las $M$ disponibles se fija un número
+$m \ll M$ tal que en cada nodo se sortean $m$ y se divide por la mejor de ellas, con $m$
+constante durante todo el crecimiento del bosque. Y crece sin poda: cada árbol se desarrolla
+lo más posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio
+nodo final.
 
 Para predecir se evalúa la observación en cada árbol y se agregan las salidas, pero la forma
 de agregar depende de la tarea. En clasificación cada árbol vota y gana la clase más votada;
@@ -1622,10 +1623,10 @@ existe una variable muy predictiva, todos los árboles la eligen para la primera
 terminan pareciéndose mucho entre sí, y como el beneficio de promediar depende de que los
 componentes estén poco correlacionados, esa similitud limita la mejora.
 
-Frente a boosting, que se desarrolla en el Ejercicio 8, hay tres diferencias. La primera es
-que boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
-que los árboles de un bosque son independientes y se construyen en paralelo. La segunda es
-qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
+Frente a boosting, que se desarrolla en el Ejercicio 8, hay tres diferencias. Boosting es
+intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
+que los árboles de un bosque son independientes y se construyen en paralelo. También difieren
+en qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
 parte de modelos débiles, de alto sesgo y baja varianza, y reduce el sesgo de forma aditiva.
 Hay acá una tensión con la presentación de la clase 6, que agrupa a bagging y a arcing con el
@@ -1634,7 +1635,7 @@ afirmaciones se concilian si se lee que la presentación clasifica por el mecani
 no por la componente del error, porque boosting también recorta varianza al agregar, pero lo
 que lo distingue es que baja el sesgo.
 
-La tercera es el comportamiento frente al sobreajuste:
+Y difieren en el comportamiento frente al sobreajuste:
 Breiman afirma que los Random Forest no se sobreajustan y que se pueden correr tantos árboles
 como se desee, lo cual vale para el número de árboles pero no para la capacidad del modelo,
 porque con etiquetas ruidosas o con hojas de un solo caso un bosque sobreajusta como cualquier
@@ -1678,12 +1679,12 @@ correrlo solo con esas, útil justamente cuando hay miles de variables y ningún
 para descartarlas.
 
 Del tercero, la matriz de proximidad, cuelgan cuatro usos que en la lista
-original aparecían sueltos. El primero es la imputación de faltantes, con pesos dados por la
-proximidad. El segundo, la detección de atípicos, por proximidad baja respecto del resto de su
-clase. El tercero, el clustering no supervisado junto con las vistas en baja dimensión que se
-obtienen al escalar la matriz, que es la respuesta alternativa a la del Ejercicio 7. El cuarto,
-los prototipos, que describen la relación entre variables y clase mediante la mediana y los
-cuartiles de los vecinos más cercanos de cada clase.
+original aparecían sueltos: la imputación de faltantes, con pesos dados por la proximidad; la
+detección de atípicos, por proximidad baja respecto del resto de su clase; el clustering no
+supervisado junto con las vistas en baja dimensión que se obtienen al escalar la matriz, que
+es la respuesta alternativa a la del Ejercicio 7; y los prototipos, que describen la relación
+entre variables y clase mediante la mediana y los cuartiles de los vecinos más cercanos de
+cada clase.
 
 Queda fuera del esquema
 el manejo de clases desbalanceadas, que no es un subproducto sino un agregado posterior por
@@ -1809,8 +1810,6 @@ algoritmos (Cawley & Talbot, 2010). Por eso se informan la media y el desvío es
 
 ### Preprocesamiento y métricas
 
-## Preprocesamiento
-
 Preproceso y modelo se encadenan en un `Pipeline` de scikit-learn, que la validación
 cruzada reajusta completo en cada bloque. Así se evita la fuga de información: si el
 `StandardScaler` (media 0 y desvío 1 por variable) se ajustara con todos los datos, los
@@ -1846,9 +1845,7 @@ bajo la curva ROC: la probabilidad de que un maligno al azar reciba un puntaje m
 un benigno al azar. En regresión se elige por RMSE, la raíz del error cuadrático medio,
 en unidades de la respuesta, y se informa el $R^2$, la fracción de varianza explicada.
 
-### Espacio de búsqueda y optimización
-
-## Estrategia de optimización y validación cruzada
+### Estrategia de optimización y validación cruzada
 
 La búsqueda es `RandomizedSearchCV`, que evalúa una muestra aleatoria de la grilla en
 lugar de todas sus combinaciones (lo que hace `GridSearchCV`): con el mismo presupuesto
@@ -1857,7 +1854,7 @@ evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
 `r e10_m$n_iter` o menos, la búsqueda la recorrió completa, como un `GridSearchCV`
 (`r paste(cubre$modelo, ifelse(cubre$tarea == "clasificacion", "en clasificación", "en regresión"), collapse = ", ")`).
 
-## Espacio de búsqueda de hiperparámetros
+### Espacio de búsqueda de hiperparámetros
 
 La Tabla \ref{tab:e10-grilla} muestra el espacio de cada modelo en cada tarea. Las
 grillas son logarítmicas en los parámetros de escala, como recomiendan Hsu et al. (2003)
@@ -1978,7 +1975,7 @@ kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
 *Nota.* Elaboración propia con datos de Pace y Barry (1997), submuestra de
 `r n10(ch$n_submuestra)` filas; RMSE en 100.000 USD.
 
-## Comparación de rendimiento
+### Comparación de rendimiento
 
 En clasificación la media más alta de validación cruzada es la de `r c_ord$modelo[1]`
 (`r pm10(e10_c, c_ord$modelo[1])`), y la distancia entre el primero y el último,
