@@ -368,7 +368,8 @@ clase 4, `autoencoders.pdf` (Punto III), `Apunte - Dimensiones y Arquitectura LS
 para la celda y el conteo de parámetros (Punto VI), `resumen_redes_recurrentes_2024_` y
 `atencion_mecanismo` para encoder-decoder y atención (Punto VII), y el apunte de
 taxonomía para embeddings, regularización y la relación entre parámetros y capacidad
-(Puntos III y VIII). Fuentes externas citadas en cada punto; código en `codigo/e1_lstm/`.
+(Puntos III y VIII). Fuentes externas citadas en cada punto. Código propio: Apéndices A.1
+y A.2.
 
 \newpage
 
@@ -837,9 +838,10 @@ Tres casos de aplicación documentados, en dominios distintos:
    muchos mínimos locales.
 3. **Selección de variables en datos de alta dimensión.** Feng (2024) usa un AG en el
    que cada individuo representa un subconjunto de variables y el fitness es el
-   desempeño del clasificador, y lo evalúa sobre conjuntos de expresión génica de tumores
-   (colon, linfoma, SRBCT, sistema nervioso central y ovario). Entre los resultados que
-   informa, un filtrado baja de 724 a 372 variables y la exactitud sube de 0,935 a 0,982.
+   desempeño del clasificador, y lo evalúa sobre Fashion-MNIST y sobre ocho conjuntos de
+   expresión génica (colon, leucemia, linfoma, SRBCT, sistema nervioso central, ovario y
+   dos más). Sobre Fashion-MNIST el filtrado baja de 724 a 372 variables y la exactitud
+   sube de 0,935 a 0,982.
 
 ## Implementación con software libre
 
@@ -863,9 +865,11 @@ operador queda a la vista, mientras que GA los trae ya elegidos por defecto.
 **Fuentes del Ejercicio 4.** Material de cátedra (Volpacchio, s.f.): presentación
 `Algoritmos geneticos Universidad Austral.pdf` (ciclo básico, ruleta, representación de
 22 bits y teorema del esquema) y notebook de la clase 7, mitad evolutiva (DEAP y máscara
-binaria para variables). Goldberg (1989); Michalewicz (1996); Holland (1975); Davis
-(1985); Montana y Davis (1989); Feng (2024); Fortin et al. (2012); Scrucca (2013).
-Código propio: Apéndice A.3.
+binaria para variables). Holland (1975) para el esquema original y Goldberg (1989) para la
+codificación binaria y el efecto de los operadores; Michalewicz (1996) para los AG reales y
+la estructura del pseudocódigo; Davis (1985), Montana y Davis (1989) y Feng (2024) para los
+tres casos de aplicación; Fortin et al. (2012) para DEAP y Scrucca (2013) para el paquete
+GA de R. Código propio: Apéndice A.3.
 
 \newpage
 
@@ -1004,8 +1008,10 @@ reconstrucción o por el desempeño de la tarea posterior que usa las componente
 `Preparation for Clustering.pdf` (PCA como visualización previa al clustering) y
 presentación `SVM Universidad Austral.pdf` (espacio de características, truco del
 kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selección
-sistemática de kernel no tienen material de clase: Schölkopf et al. (1998); Hsu et al.
-(2003); Cristianini et al. (2002); Gönen y Alpaydın (2011).
+sistemática de kernel no tienen material de clase: Schölkopf et al. (1998) para Kernel PCA;
+Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
+(2002) para el alineamiento kernel-objetivo; Gönen y Alpaydın (2011) para el aprendizaje de
+múltiples kernels.
 
 \newpage
 
@@ -1143,9 +1149,12 @@ funciones de la Tabla \ref{tab:e6-tab}.
 
 **Fuentes del Ejercicio 6.** Material de cátedra (Volpacchio, s.f.): notebook de la
 clase 7, parte de supervivencia (Kaplan-Meier, log-rank, Cox y AFT sobre los datos
-Rossi). Kleinbaum y Klein (2012); Kaplan y Meier (1958); Cox (1972); Grambsch y
-Therneau (1994); Ishwaran et al. (2008); Rossi et al. (1980); Davidson-Pilon (2019);
-Pölsterl (2020); Therneau y Grambsch (2000). Código propio: Apéndice A.4.
+Rossi). Kleinbaum y Klein (2012) para la censura y los tipos de análisis; Kaplan y Meier
+(1958) para el estimador no paramétrico y Cox (1972) para el modelo de riesgos
+proporcionales; Grambsch y Therneau (1994) para el diagnóstico de ese supuesto; Ishwaran et
+al. (2008) para los bosques de supervivencia; Rossi et al. (1980) para los datos;
+Davidson-Pilon (2019), Pölsterl (2020) y Therneau y Grambsch (2000) para las
+implementaciones. Código propio: Apéndice A.4.
 
 \newpage
 
@@ -1336,13 +1345,12 @@ de los datos.
 
 ## Resultados sobre los dígitos manuscritos
 
-El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5.
-
-Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
-su distancia media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y
-cuanto más alto, más compactos y separados están los grupos. Calculado sobre las clases verdaderas dio `r fmt(val("sil_p5"))` con perplejidad
-5, `r fmt(val("sil_p30"))` con 30 y `r fmt(val("sil_p50"))` con 50, es decir que mejora al
-pasar de 5 a 30 y después se estanca.
+El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para
+medir su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia
+media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1 y cuanto más
+alto, más compactos y separados están los grupos. Sobre las clases verdaderas dio
+`r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
+`r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
 
 DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos a distancia menor
 que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
@@ -1389,8 +1397,9 @@ muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
 **Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
 for Clustering* y *Assessing Clustering Results* y el apunte de t-SNE de la clase 8. van der
-Maaten y Hinton (2008), van der Maaten (2014), Ester et al. (1996), Campello et al. (2013) y
-McInnes et al. (2018). Números de `tsne_digits.py`.
+Maaten y Hinton (2008) para la formulación original y van der Maaten (2014) para Barnes-Hut;
+Ester et al. (1996) para DBSCAN, Campello et al. (2013) para HDBSCAN y McInnes et al. (2018)
+para UMAP. Código propio: Apéndice A.5.
 
 \newpage
 
@@ -1435,7 +1444,8 @@ la pérdida es la cuadrática y un sustituto del residuo cuando no lo es. El *sh
 factor $v$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
 para que cada corrección sea parcial.
 
-En AdaBoost la primera ronda reparte peso uniforme sobre las $N$ observaciones. En cada ronda
+En AdaBoost (Freund & Schapire, 1997) la primera ronda reparte peso uniforme sobre las $N$
+observaciones. En cada ronda
 se entrena el clasificador débil sobre esa distribución de pesos, se mide su error ponderado
 $\varepsilon_t$ y se le asigna la ponderación
 $\alpha_t = \tfrac{1}{2}\log((1 - \varepsilon_t)/\varepsilon_t)$, con la que entra al voto
@@ -1539,8 +1549,8 @@ combinar, arcing, ponderación $\alpha_t$ y ejemplo numérico de las tres rondas
 de los alquileres, vector de signos y la demostración de que el gradiente de la pérdida
 cuadrática es el vector residual). Freund y Schapire (1997) para la formulación original de
 AdaBoost, Friedman (2001) para Gradient Boosting y la recomendación sobre la tasa de
-aprendizaje, y Chen y Guestrin (2016) para las implementaciones actuales. La verificación de
-los $\alpha_t$ es propia.
+aprendizaje, y Chen y Guestrin (2016) para las implementaciones actuales. El recálculo de
+los $\alpha_t$ es propio.
 
 \newpage
 
@@ -1553,7 +1563,7 @@ ensamblaje. Describa los principales usos del algoritmo.*
 
 Cada árbol de un Random Forest se entrena sobre una muestra bootstrap: de las $N$ filas de
 entrenamiento se sortean $N$ casos al azar con reemplazo. Sobre esa muestra el árbol crece con
-subespacio aleatorio de variables, es decir que de las $M$ disponibles se fija un número
+subespacio aleatorio de variables (Ho, 1995), es decir que de las $M$ disponibles se fija un número
 $m \ll M$ tal que en cada nodo se sortean $m$ y se divide por la mejor de ellas, con $m$
 constante durante todo el crecimiento del bosque. Y crece sin poda: cada árbol se desarrolla
 lo más posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio
@@ -1619,7 +1629,8 @@ abajo.
 
 ## Diferencias con el resto de los algoritmos de ensamblaje
 
-Frente a bagging, que también promedia árboles construidos sobre muestras bootstrap pero usa
+Frente a bagging (Breiman, 1996), que también promedia árboles construidos sobre muestras
+bootstrap pero usa
 todas las variables en cada división, la diferencia esencial es el subespacio aleatorio,
 aunque no la única: bagging está definido para cualquier aprendiz base y Random Forest solo
 para árboles, que además crecen sin poda. La razón del sorteo es concreta: en bagging, si
@@ -1677,10 +1688,9 @@ fecha puesta.
 
 Del primer subproducto, la muestra *out-of-bag*, sale la estimación del error
 sin reservar datos, que es lo que vuelve barato buscar $m$. Del segundo, la importancia de
-variables, sale la selección de variables, con el procedimiento concreto que propone el
-documento de correr el bosque una vez con todas, quedarse con las más importantes y volver a
-correrlo solo con esas, útil justamente cuando hay miles de variables y ningún criterio previo
-para descartarlas.
+variables, sale la selección de variables, con el procedimiento que propone el documento:
+correr el bosque con todas, quedarse con las más importantes y volver a correrlo solo con
+esas, útil cuando hay miles de variables y ningún criterio previo para descartarlas.
 
 Del tercero, la matriz de proximidad, cuelgan cuatro usos que en la lista
 original aparecían sueltos: la imputación de faltantes, con pesos dados por la proximidad; la
@@ -1688,11 +1698,8 @@ detección de atípicos, por proximidad baja respecto del resto de su clase; el 
 supervisado junto con las vistas en baja dimensión que se obtienen al escalar la matriz, que
 es la respuesta alternativa a la del Ejercicio 7; y los prototipos, que describen la relación
 entre variables y clase mediante la mediana y los cuartiles de los vecinos más cercanos de
-cada clase.
-
-Queda fuera del esquema
-el manejo de clases desbalanceadas, que no es un subproducto sino un agregado posterior por
-ponderación del error.
+cada clase. Queda fuera del esquema el manejo de clases desbalanceadas, que no es un
+subproducto sino un agregado posterior por ponderación del error.
 
 Hay algo que el documento no menciona y que conviene decir. Frente a un árbol único la mejora
 en varianza es grande, pero se pierde la lectura del modelo: un bosque de quinientos árboles
@@ -1701,17 +1708,17 @@ cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay qu
 decisión una por una, un árbol podado o una regresión logística son todavía mejores
 respuestas.
 
-**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.): documento
-`randon forest explicado.pdf`, traducción del texto de Breiman y Cutler (crecimiento del
-árbol, correlación y fuerza, rol de $m$, error *out-of-bag*, las dos medidas de importancia,
-matriz de proximidad, prototipos e imputación), y presentación
-`Ensemble Methods Universidad Austral.pdf` (las tres razones para ensamblar, perturbar y
-combinar, inestabilidad del clasificador base y k vecinos más cercanos como caso que no
-mejora), ambos de la clase 6. Breiman (1996) para bagging y Breiman (2001) para la cota de
-correlación y fuerza. Ho (1995) para el método de subespacio aleatorio y Geurts et al. (2006)
-para los extra-trees. Janitza y Hornung (2018) para la sobrestimación del error
-*out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia de Gini, que son
-los dos reparos que el documento de cátedra no hace.
+\enlargethispage{3\baselineskip}
+
+**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.), clase 6: documento
+`randon forest explicado.pdf`, traducción de Breiman y Cutler (crecimiento del árbol,
+correlación y fuerza, rol de $m$, error *out-of-bag*, importancia, proximidad y prototipos),
+y presentación `Ensemble Methods Universidad Austral.pdf` (razones para
+ensamblar, perturbar y combinar, e inestabilidad del clasificador base). Breiman (1996) para
+bagging y Breiman (2001) para la cota de correlación y fuerza; Ho (1995) para el subespacio
+aleatorio y Geurts et al. (2006) para los extra-trees; Janitza y Hornung (2018) para la
+sobrestimación del error *out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia
+de Gini, los dos reparos que el documento de cátedra no hace.
 
 \newpage
 
@@ -2041,10 +2048,12 @@ chica hacen falta más etapas); más etapas podrían bajar algo el RMSE, pero es
 la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
 `r round(e10_m$segundos_total)` s) y su costo crece con las etapas.
 
-**Fuentes del Ejercicio 10.** Presentaciones de SVM y de ensambles y apunte de redes
-(Volpacchio, s.f.). Datos: Wolberg et al. (1993) y Pace y Barry (1997). Método: Bergstra y
-Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001) y Grinsztajn et
-al. (2022). Código: Apéndice A.6.
+**Fuentes del Ejercicio 10.** Material de cátedra (Volpacchio, s.f.): presentaciones de SVM
+y de ensambles y apunte de redes. Wolberg et al. (1993) y Pace y Barry (1997) para los
+datos; Bergstra y Bengio (2012) para la búsqueda aleatoria; Hsu et al. (2003) para las
+grillas logarítmicas; Cawley y Talbot (2010) para el sesgo de selección; Breiman (2001)
+para el número de árboles; Grinsztajn et al. (2022) para la comparación entre árboles y
+redes. Código propio: Apéndice A.6.
 
 \newpage
 
