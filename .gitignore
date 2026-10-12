@@ -23,3 +23,6 @@ docs/
 
 # caché de Python
 __pycache__/
+
+# revisión interna del PR #3
+REVISION-EJ1-3.md

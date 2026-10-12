@@ -1,0 +1,16 @@
+metrica,valor
+n,1797
+p,64
+clases,10
+var_pca30,0.8932084382449571
+sil_p5,0.39565038681030273
+sil_p30,0.48646974563598633
+sil_p50,0.4785059690475464
+db_clusters,1
+db_ruido,13
+ari_dbscan,4.61021256410453e-05
+ari_kmeans_pca,0.4763985075393763
+ari_kmeans_emb,0.8448846812475733
+ruido_eps_min,92
+ruido_eps_max,4
+rf_oob,0.915
