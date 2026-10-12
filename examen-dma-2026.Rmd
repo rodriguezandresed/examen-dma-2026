@@ -284,12 +284,19 @@ estimación.
 
 *Describa el algoritmo encoder-decoder. Usos habituales.*
 
-No aparece con este detalle en los PDF. Son dos redes acopladas: el encoder resume la
-secuencia de entrada en un vector de contexto y el decoder genera la salida de a un
-elemento, realimentado con lo ya generado (Sutskever et al., 2014). Para no comprimir
-una oración larga en un vector fijo, la atención deja al decoder consultar todos los
-estados del encoder (Bahdanau et al., 2015), base del Transformer (Vaswani et al.,
-2017). Usos: traducción, resumen, voz, descripción de imágenes y el autoencoder (III).
+La arquitectura existe porque una red recurrente sola exige que la entrada y la salida
+tengan el mismo largo, y traducir no funciona así. Son dos redes acopladas: el encoder
+resume la secuencia de entrada en un vector de contexto y el decoder genera la salida de a
+un elemento, realimentado con lo ya generado, hasta emitir el símbolo de fin
+(Sutskever et al., 2014). El cuello de botella está en ese vector de contexto, que tiene
+tamaño fijo y carga con la oración entera, de manera que el rendimiento se degrada cuanto
+más larga es. La atención lo resuelve: deja al decoder consultar en cada paso todos los
+estados del encoder en lugar de un único resumen (Bahdanau et al., 2015), y de ahí sale el
+Transformer, que descarta la recurrencia y se queda solo con la atención (Vaswani et al.,
+2017). Usos habituales: traducción automática, resumen de textos, reconocimiento de voz y
+descripción automática de imágenes, donde el encoder es una red convolucional y el decoder
+una recurrente. El autoencoder del Punto III es el caso particular en que la salida que se
+pide es la propia entrada.
 
 ## Punto VIII
 
@@ -362,6 +369,8 @@ resto de los algoritmos de Machine Learning?*
 
 <!-- El PDF original escribe "VSM"; es un error de tipeo por SVM. -->
 
+## Qué es y tipos de SVM
+
 Una máquina de vectores soporte (SVM, por Support Vector Machine) es un algoritmo de
 clasificación que busca un hiperplano separador entre dos clases (Volpacchio, s.f.). En
 las diapositivas de la materia el título es Vector Support Machines (VSM); se unifica a
@@ -419,6 +428,8 @@ espacio para detectar anomalías (Schölkopf et al., 2001); y con más de dos cl
 combinan clasificadores binarios, uno contra uno o uno contra el resto (Hsu & Lin,
 2002).
 
+## Parámetros externos
+
 La consigna pregunta por la versión no lineal separable: los datos, una vez llevados
 al Feature Space, se separan sin error. Los parámetros externos (los valores que el
 usuario fija antes del entrenamiento y que el algoritmo no aprende de los datos) son
@@ -448,6 +459,8 @@ valores de $C$, con kernel RBF y polinómicos de varios grados, y con distintos 
 de conjunto de entrenamiento, con la eficacia de clasificación como criterio de
 comparación (Volpacchio, s.f.).
 
+## La característica que lo distingue
+
 La característica que distingue a SVM es que el control de la capacidad está dentro
 del propio criterio que optimiza y tiene respaldo en la teoría del Ejercicio 3. En
 otros algoritmos de la materia la regularización se agrega aparte y se ajusta por
@@ -470,6 +483,8 @@ Otros algoritmos estiman el error sin hold-out, como el error out-of-bag de Rand
 Forest, pero no dan una cota leída de la propia solución. El problema de optimización,
 además, es convexo (mínimo global), a diferencia de las redes neuronales, que pueden
 quedar atrapadas en mínimos locales.
+
+## De clasificación a regresión
 
 Para usar SVM como regresión se cambia el criterio de ajuste: en lugar del margen entre
 clases se mide el error de aproximación entre la predicción $f(x) = w \cdot x - b$ y el
@@ -530,6 +545,8 @@ e3l <- e3m$particion$clasificacion$train
 f3 <- function(x, d = 3) formatC(x, format = "f", digits = d, decimal.mark = ",")
 ```
 
+## De qué trata el campo
+
 La Statistical Learning Theory (SLT, teoría del aprendizaje estadístico) es el marco
 teórico del aprendizaje automático: estudia cómo inducir, a partir de la información
 empírica de una muestra, el comportamiento de una población, con un riesgo de error
@@ -550,12 +567,16 @@ del riesgo empírico es consistente, es decir, converge al mejor clasificador de
 espacio de funciones del algoritmo a medida que crece la muestra: la condición es que
 la capacidad de ese espacio esté restringida. De este marco surgió el desarrollo de SVM.
 
+## El indicador de complejidad con SVM
+
 Con el algoritmo SVM, el indicador de la complejidad de un conjunto de datos es la
 cantidad de vectores soporte de la solución, los puntos definidos en el Ejercicio 2 que
 determinan el hiperplano. Clases bien separadas se resuelven con pocos vectores
 soporte; una frontera con clases superpuestas obliga a retener muchos puntos. Por la
 cota del Ejercicio 2, una proporción alta de vectores soporte anticipa un error de
 generalización alto: el problema es complejo para ese algoritmo.
+
+## Capacidad y dimensión VC
 
 La capacidad de un algoritmo es la aptitud de su familia de funciones para adaptarse a
 los datos: cuanto más grande es el espacio de funciones entre las que el algoritmo
@@ -586,6 +607,8 @@ aparece como $h$ dentro de la cota y como $d$ en la regla $d/l$; aquí se unific
 $d$. La lectura operativa es la minimización del riesgo estructural: no alcanza un
 $R_{\mathrm{emp}}$ bajo; hay que elegir la familia cuya suma de riesgo empírico e
 intervalo de confianza VC sea la menor (Vapnik, 1995; Volpacchio, s.f.).
+
+## La estimación heurística
 
 Fuera del caso de SVM, la dimensión VC en general no se calcula en forma exacta. La
 manera heurística que propone la teoría, según el apunte, es una regla sobre la
@@ -641,6 +664,8 @@ e4_dist <- pmax(abs(e4r$x1), abs(e4r$x2))
 e4_fino <- e4_dist < 0.5 & e4r$mejor_f >= e4m$umbral
 ```
 
+## Pseudocódigo
+
 Un algoritmo genético (AG) es un procedimiento probabilístico de optimización que
 mantiene una población de soluciones candidatas y la hace evolucionar con mecanismos
 inspirados en la selección natural (Goldberg, 1989). Cada candidata se codifica en un
@@ -680,6 +705,8 @@ externos son el tamaño `pop_size`, la probabilidad de cruce $p_c$, la de mutaci
 y el criterio de corte: un número fijo de generaciones o el estancamiento del mejor
 fitness. El elitismo copia al mejor individuo de $P(t-1)$ hacia $P(t)$ para que el azar
 no lo elimine; las slides del ciclo básico no lo exigen.
+
+## AG binarios y AG reales
 
 En el AG binario cada cromosoma es una cadena de bits. Para una variable continua en
 un dominio $[a, b]$, el dominio se discretiza: con $m$ bits se obtienen $2^m$ valores
@@ -796,6 +823,8 @@ Tres casos de aplicación documentados, en dominios distintos:
    linfoma, entre otros); en uno de ellos informa una reducción de 724 a 372 variables
    con una exactitud que sube de 0,935 a 0,982.
 
+## Implementación con software libre
+
 Para una implementación con software libre se eligió DEAP (*Distributed Evolutionary
 Algorithms in Python*), presentado por Fortin et al. (2012): es la biblioteca de la
 clase 7 y deja explícitos los componentes del pseudocódigo. El módulo `creator` define
@@ -834,6 +863,8 @@ explique con sus palabras).*
 Kernel apropiado en un determinado data set? Mencione fuentes y conclusiones
 brevemente.*
 
+## PCA en Machine Learning
+
 El análisis de componentes principales (PCA) es una técnica lineal de reducción de
 dimensionalidad. Busca combinaciones lineales de las variables originales, ortogonales
 entre sí, que concentran la mayor varianza posible: esas direcciones son los
@@ -861,6 +892,8 @@ herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se resp
 con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
 `Transformación de clústeres no lineales` como si fuera Kernel PCA: ese material mapea
 clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
+
+## El truco del kernel
 
 Se presenta primero el truco del kernel, porque Kernel PCA se define a partir de él. Un
 kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
@@ -892,6 +925,8 @@ Los kernels más utilizados, con la notación del Ejercicio 2 y de la clase de S
 La suma, el producto y el escalado por una constante positiva de kernels válidos dan
 kernels válidos, lo que permite construir kernels a medida de un problema.
 
+## Kernel PCA
+
 Kernel PCA es la aplicación del truco del kernel al PCA, propuesta por Schölkopf et al.
 (1998). En lugar de diagonalizar la matriz de covarianzas, de dimensión $p \times p$, se
 diagonaliza la matriz de kernel de dimensión $n \times n$, cuyos elementos son
@@ -911,6 +946,8 @@ reconstrucción directa: un punto del espacio de características no siempre tie
 pre-imagen exacta en el espacio original, y las componentes ya no tienen cargas sobre
 las variables que se puedan leer. Kernel PCA extiende al PCA; no lo reemplaza, y con el
 kernel lineal se recupera el PCA clásico.
+
+## Cómo elegir el kernel
 
 Sobre la selección del kernel, la conclusión de la bibliografía es que no existe un
 método universal, pero sí tres procedimientos sencillos que se complementan. El primero
@@ -966,6 +1003,8 @@ f6 <- function(x, d = 1) formatC(x, format = "f", digits = d, decimal.mark = ","
 p6 <- function(x, d = 0) paste0(f6(x, d), "\\thinspace{}%")
 ```
 
+## Por qué supera a la regresión
+
 En los problemas de tiempo hasta un evento, la variable de interés es el tiempo $T$
 hasta que ocurre algo definido: la falla de un equipo, la baja de un cliente, la
 reincidencia de un liberado, la recaída de un paciente. En la notación de la clase 7, el
@@ -994,6 +1033,8 @@ la probabilidad por unidad de tiempo de que el evento ocurra en $t$ entre quiene
 llegaron a $t$ sin él. Una regresión devuelve un único valor esperado; la curva $S(t)$
 responde preguntas a cualquier horizonte, por ejemplo qué fracción de clientes sigue
 activa a los 90 días.
+
+## Tipos
 
 Los tipos de análisis se ordenan por la cantidad de supuestos. El estimador no
 paramétrico de Kaplan-Meier (Kaplan & Meier, 1958) construye la supervivencia como
@@ -1072,6 +1113,8 @@ kable(e6t, format = "latex", booktabs = TRUE, row.names = FALSE,
 ```
 
 *Nota.* Elaboración propia; funciones de lifelines tomadas del notebook de la clase 7.
+
+## Implementaciones en Python y R
 
 En Python, lifelines (Davidson-Pilon, 2019) es la biblioteca de la clase y la de la
 corrida anterior; scikit-survival (Pölsterl, 2020) adapta modelos de aprendizaje
