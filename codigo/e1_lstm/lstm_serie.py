@@ -21,11 +21,13 @@ import pandas as pd
 from matplotlib.ticker import FuncFormatter
 
 SEED = 42
-# Con una sola semilla, lstm_32 y lstm_64 quedaban a menos de 0,001 de MAE y el
-# orden podía ser azar de la inicialización. Tres semillas dan al menos una
-# idea de esa variación sin multiplicar demasiado el tiempo de corrida.
+# Con una sola semilla, el orden entre configuraciones podía ser azar de la
+# inicialización (lstm_32 y lstm_64 quedaban a pocas milésimas de MAE). Tres
+# semillas dan una idea de esa variación sin multiplicar el tiempo de corrida.
 SEEDS = [42, 43, 44]
-LOOKBACK = 20  # una ventana de 20 cubre casi un ciclo del seno rápido (2*pi/0,12 ≈ 52)
+# La ventana de 20 cubre cerca del 40 % de un ciclo del seno rápido (período
+# 2*pi/0,12 ≈ 52): suficiente para estimar pendiente y curvatura locales.
+LOOKBACK = 20
 EPOCHS = 20
 BATCH = 32
 NOISE_SD = 0.1

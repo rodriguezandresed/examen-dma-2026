@@ -175,8 +175,8 @@ def specs_clasificacion(p: int) -> list[dict]:
             # Prueba de convergencia (función prueba_parada_temprana, 5 folds,
             # una capa de 64, sin búsqueda): con early_stopping el F1 medio cae
             # fuerte con lr 0,0003; sin early_stopping sube y no hay avisos de
-            # no convergencia con max_iter = 1000. Con 364 filas por bloque, el 10 %
-            # interno de validación son unas 36 filas y corta demasiado pronto.
+            # no convergencia con max_iter = 1000. Con 364 filas de entrenamiento en
+            # cada vuelta, el 10 % interno de validación son unas 36 filas y corta pronto.
             # Se apaga early_stopping y se sube max_iter a 2000 por margen. La
             # configuración elegida terminó en 407 épocas, lejos del tope.
             "pipe": Pipeline(
