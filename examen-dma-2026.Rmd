@@ -765,7 +765,9 @@ genética, donde el individuo es un programa representado como árbol, es una de
 del mismo esquema y no se toma como el pseudocódigo pedido.
 
 Para ver la diferencia en un caso concreto se programaron los dos AG con DEAP sobre la
-función de Rastrigin en dos variables,
+función de Rastrigin en dos variables, que es el banco de pruebas del notebook de
+algoritmos evolutivos de la clase 7, de donde se toman también el dominio, el cruce de
+mezcla con $\alpha = 0{,}5$, la mutación gaussiana de desvío 0,3 y el torneo de tres,
 $f(x) = 20 + \sum_{i=1}^{2} \left(x_i^2 - 10\cos 2\pi x_i\right)$ en
 $[-5{,}12;\, 5{,}12]^2$, cuyo mínimo global $f = 0$ está en el origen, rodeado de una
 grilla de mínimos locales cerca de los puntos enteros. Se descartó la esfera
@@ -833,9 +835,9 @@ Tres casos de aplicación documentados, en dominios distintos:
    muchos mínimos locales.
 3. **Selección de variables en datos de alta dimensión.** Feng (2024) usa un AG en el
    que cada individuo representa un subconjunto de variables y el fitness es el
-   desempeño del clasificador, sobre conjuntos de expresión génica de tumores (colon,
-   linfoma, entre otros); en uno de ellos informa una reducción de 724 a 372 variables
-   con una exactitud que sube de 0,935 a 0,982.
+   desempeño del clasificador, y lo evalúa sobre conjuntos de expresión génica de tumores
+   (colon, linfoma, SRBCT, sistema nervioso central y ovario). Entre los resultados que
+   informa, un filtrado baja de 724 a 372 variables y la exactitud sube de 0,935 a 0,982.
 
 ## Implementación con software libre
 
