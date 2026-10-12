@@ -596,10 +596,335 @@ Vapnik (1995) para la formulación general de la teoría y la cota de riesgo.
 
 \newpage
 
+# Ejercicio 10 · Pipeline en Python
+
+*Puede elegir cualquiera de las 2 opciones (si desea puede hacer las 2. A los fines de
+la evaluación uno es suficiente).*
+
+## Opción 1
+
+*Seleccione dos datasets públicos (uno de clasificación y uno de regresión) y construya
+un Pipeline completo en Python que compare el desempeño de cuatro modelos: Support
+Vector Machine, Random Forest, Gradient Boosting y Multi-Layer Perceptron.*
+
+*El pipeline debe incluir: (1) preprocesamiento adecuado de los datos, (2) definición
+explícita del espacio de búsqueda de hiperparámetros para cada modelo, (3) una
+estrategia de optimización (GridSearch o RandomSearch), y (4) validación mediante k-fold
+cross-validation.*
+
+*Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
+tarea.*
+
+Se resuelve solo la Opción 1, ya que la consigna admite una sola; sus cuatro modelos son
+los de la materia (Ejercicios 1, 2, 8 y 9) y se discuten con la notación de clase.
+
+```{r e10-load, include=FALSE}
+e10_dir <- "codigo/resultados/e10/"
+e10 <- read.csv(paste0(e10_dir, "comparacion_modelos.csv"), stringsAsFactors = FALSE)
+e10_g <- read.csv(paste0(e10_dir, "espacio_busqueda.csv"), colClasses = "character")
+e10_s <- read.csv(paste0(e10_dir, "hiperparametros_elegidos.csv"),
+                  colClasses = "character")
+e10_m <- jsonlite::fromJSON(paste0(e10_dir, "meta.json"))
+e10_c <- e10[e10$tarea == "clasificacion", ]
+e10_r <- e10[e10$tarea == "regresion", ]
+rownames(e10_c) <- e10_c$modelo
+rownames(e10_r) <- e10_r$modelo
+f10 <- function(x, d = 3) formatC(x, format = "f", digits = d, decimal.mark = ",")
+n10 <- function(x) formatC(x, format = "d", big.mark = ".", decimal.mark = ",")
+p10 <- function(x, d = 1) paste0(f10(100 * x, d), "\\thinspace{}%")
+pm10 <- function(df, m) paste0(f10(df[m, "cv_media"]), " ± ", f10(df[m, "cv_sd"]))
+bc <- e10_m$breast_cancer
+ch <- e10_m$california_housing
+pc <- e10_m$particion$clasificacion
+pr <- e10_m$particion$regresion
+esc <- e10_m$prueba_escalador_arboles_f1_cv
+cubre <- e10[as.logical(e10$cubre_grilla), ]
+tsvr <- e10_m$tiempo_svr_prueba_previa_s
+ppt <- e10_m$prueba_parada_temprana_mlp_f1_cv
+busca10 <- function(d, col, t, m, h) {
+  d[[col]][d$tarea == t & d$modelo == m & d$hiperparametro == h]
+}
+fijo10 <- function(t, m, h) busca10(e10_g, "valores", t, m, h)
+sel10 <- function(t, m, h) busca10(e10_s, "valor", t, m, h)
+g_svm <- as.numeric(sub(",", ".", sel10("clasificacion", "SVM", "gamma")))
+m10 <- function(x) gsub(",", "{,}", x, fixed = TRUE)  # coma decimal dentro de $...$
+# F1 de test en función de los malignos no detectados (sin falsos positivos).
+f1fn <- function(fn, P = pc$malignos_test) 2 * (P - fn) / (2 * (P - fn) + fn)
+n_bloque <- function(n) n * (e10_m$cv_splits - 1) / e10_m$cv_splits
+# Orden por CV interna; rango de clasificación y ventaja del primero en regresión.
+c_ord <- e10_c[order(-e10_c$cv_media), ]
+r_ord <- e10_r[order(e10_r$cv_media), ]
+c_rng <- max(e10_c$cv_media) - min(e10_c$cv_media)
+r_gap <- r_ord$cv_media[2] - r_ord$cv_media[1]
+borde <- e10_s[e10_s$en_borde == "True", ]
+borde_ext <- borde[borde$borde_extensible == "True", ]
+```
+
+### Datos y esquema de validación
+
+- **Clasificación:** *Breast Cancer Wisconsin (Diagnostic)* (Wolberg et al., 1993):
+  `r n10(bc$n)` tumores descritos por `r bc$p` medidas de los núcleos celulares en una
+  imagen digitalizada; `r n10(bc$malignos)` son malignos (`r p10(bc$malignos / bc$n)`).
+- **Regresión:** *California Housing* (Pace & Barry, 1997): `r n10(ch$n)` grupos
+  censales, `r ch$p` predictores y el valor mediano de la vivienda (en 100.000 USD) como
+  respuesta. Se usa una submuestra aleatoria de `r n10(ch$n_submuestra)` filas, tomada
+  antes de partir, porque en una prueba previa un SVR (SVM de regresión) con
+  $C$ = `r n10(tsvr$C)` tardó
+  `r f10(tsvr$segundos_por_fit[1], 1)` s por ajuste con `r n10(tsvr$filas_submuestra[1])`
+  filas y `r f10(tsvr$segundos_por_fit[2], 1)` s con `r n10(tsvr$filas_submuestra[2])`.
+
+Un hiperparámetro es un valor que se fija antes del entrenamiento (la penalización $C$
+de SVM, la cantidad de árboles), a diferencia de los pesos que el algoritmo aprende. Para
+elegirlos sin contaminar la evaluación hay dos niveles de partición. El externo es un
+*hold-out*: el `r p10(e10_m$test_size, 0)` de los datos (`r pc$test` casos en
+clasificación, con estratificación por clase, y `r n10(pr$test)` en regresión) se aparta
+al principio y no interviene en ninguna decisión. El interno es una validación cruzada
+*k-fold* con $k = `r e10_m$cv_splits`$ sobre el resto: el entrenamiento se parte en
+cinco bloques, cada configuración se ajusta cinco veces y en cada vuelta se evalúa sobre
+el bloque excluido (estratificado en clasificación). La configuración ganadora se
+reentrena con todo el entrenamiento y se mide una sola vez en el *hold-out*.
+
+Una primera corrida informaba el mismo promedio de validación cruzada
+que había servido para elegir la configuración. Esa cifra es optimista: la ganadora es
+en parte la que tuvo suerte con los bloques, y ese sesgo de selección puede igualar las
+diferencias entre algoritmos (Cawley & Talbot, 2010). Ahora se informan la media y el
+desvío estándar (DE) de los cinco bloques de la configuración elegida y, por separado, el
+puntaje en *hold-out*. La semilla es `r e10_m$seed` en particiones, búsquedas y modelos.
+
+### Preprocesamiento y métricas
+
+Preproceso y modelo se encadenan en un `Pipeline` de scikit-learn, que la validación
+cruzada reajusta completo en cada bloque. Así se evita la fuga de información: si el
+`StandardScaler` (media 0 y desvío 1 por variable) se ajustara con todos los datos, los
+casos de evaluación entrarían en el cálculo y la métrica sería optimista. Se escala para
+SVM, cuyo kernel RBF depende de distancias euclídeas, y para el MLP, cuyo descenso por
+gradiente converge mal con variables de magnitudes dispares. En los árboles se probó con
+y sin escalador y el F1 fue idéntico (Random Forest
+`r f10(esc[["Random Forest"]]$sin_escalador, 4)`, Gradient Boosting
+`r f10(esc[["Gradient Boosting"]]$sin_escalador, 4)` en ambos casos): un corte por umbral
+no cambia ante una transformación monótona. Se lo dejó fuera.
+
+En el MLP de clasificación se desactivó la parada temprana (*early stopping*, que corta
+el entrenamiento cuando deja de mejorar el error sobre una fracción interna de
+validación): con `r n10(n_bloque(pc$train))` casos por bloque, el
+`r p10(ppt$fraccion_validacion, 0)` interno son unas
+`r round(n_bloque(pc$train) * ppt$fraccion_validacion)` filas. En una prueba con una capa
+de 64 neuronas y tasa de aprendizaje `r f10(ppt$tasas[1], 4)`, la parada temprana bajó el
+F1 de `r f10(ppt$sin_parada[1])` a `r f10(ppt$con_parada[1])`. Sin ella
+`r if (ppt$avisos_no_convergencia == 0) "no hubo avisos" else paste("hubo", ppt$avisos_no_convergencia, "avisos")` de falta de convergencia, y la red elegida convergió
+en la época `r e10_m$mlp_epocas_mejor$clasificacion` (tope:
+`r fijo10("clasificacion", "MLP", "max_iter")`). En regresión, con unas
+`r n10(round(n_bloque(pr$train) * ppt$fraccion_validacion))` filas internas, se mantuvo
+para acotar el tiempo.
+
+La clase positiva es maligno (scikit-learn la codifica como 0; se recodificó). Se elige
+por el F1 de esa clase: la media armónica entre la precisión (fracción de verdaderos
+malignos entre los predichos como malignos) y la exhaustividad (fracción de los malignos
+reales que se detectan). Una primera corrida usaba el F1 ponderado con el argumento del
+desbalance, y el argumento era erróneo: ese promedio pesa cada clase por su tamaño y
+favorece a la benigna, la mayoritaria, cuando el error costoso es un maligno no
+detectado. Se informan también la exactitud (proporción de aciertos) y el AUC, el área
+bajo la curva ROC: la probabilidad de que un maligno al azar reciba un puntaje mayor que
+un benigno al azar. En regresión se elige por RMSE, la raíz del error cuadrático medio,
+en unidades de la respuesta, y se informa el $R^2$, la fracción de varianza explicada.
+
+### Espacio de búsqueda y optimización
+
+La búsqueda es `RandomizedSearchCV`, que evalúa una muestra aleatoria de la grilla en
+lugar de todas sus combinaciones (lo que hace `GridSearchCV`): con el mismo presupuesto
+prueba más valores distintos de cada hiperparámetro (Bergstra & Bengio, 2012). Se
+evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
+`r e10_m$n_iter` o menos, la búsqueda la recorrió completa, como un `GridSearchCV`
+(`r paste(cubre$modelo, ifelse(cubre$tarea == "clasificacion", "en clasificación", "en regresión"), collapse = ", ")`).
+
+La Tabla \ref{tab:e10-grilla} muestra el espacio de cada modelo en cada tarea. Las
+grillas son logarítmicas en los parámetros de escala, como recomiendan Hsu et al. (2003)
+para SVM. En SVM, $C$ es el costo por violar el margen y $\gamma$ es el inverso del ancho
+del kernel RBF: con la dispersión $\sigma$ del Ejercicio 2,
+$\gamma = 1/(2\sigma^2)$, y un $\gamma$ grande da una frontera muy local; en regresión se
+suma $\varepsilon$, el radio del tubo de insensibilidad (Volpacchio, s.f.). En Random
+Forest se fijaron `r fijo10("clasificacion", "Random Forest", "n_estimators")` árboles,
+porque agregar árboles no sobreajusta (Breiman, 2001), y se buscó sobre $m$, que mueve a
+la vez la fuerza de cada árbol y la correlación entre árboles, y sobre el tamaño de hoja.
+En Gradient Boosting se combinan $\nu$, las etapas y la profundidad, los controles del
+avance por pseudo-residuos del Ejercicio 8 (Volpacchio, s.f.). En el MLP, $\alpha$
+penaliza la suma de los pesos al cuadrado (Volpacchio, s.f.).
+
+```{r e10-grilla}
+etq <- c(C = "$C$", gamma = "$\\gamma$", epsilon = "$\\varepsilon$",
+         max_features = "$m$ (max\\_features)", min_samples_leaf = "hoja mínima",
+         n_estimators = "etapas", learning_rate = "$\\nu$ (learning\\_rate)",
+         max_depth = "profundidad", hidden_layer_sizes = "capas ocultas",
+         alpha = "$\\alpha$", learning_rate_init = "tasa inicial")
+etq_fijo <- c(kernel = "kernel", n_estimators = "árboles", max_iter = "épocas máx.",
+              early_stopping = "parada temprana", n_iter_no_change = "paciencia")
+marca <- function(t, m, h) {
+  v <- busca10(e10_g, "valores", t, m, h)
+  if (length(v) == 0) return("")
+  v <- strsplit(v, "; ", fixed = TRUE)[[1]]
+  s <- sel10(t, m, h)
+  v[v == s] <- paste0("\\textbf{", v[v == s], "}")
+  paste(v, collapse = "; ")
+}
+fijos <- function(t, m) {
+  g <- e10_g[e10_g$tarea == t & e10_g$modelo == m & e10_g$fijo == "True", ]
+  paste(etq_fijo[g$hiperparametro], g$valores, collapse = "; ")
+}
+busc <- unique(e10_g[e10_g$fijo == "False", c("modelo", "hiperparametro")])
+tab_g <- data.frame(modelo = busc$modelo, Hiper = unname(etq[busc$hiperparametro]),
+  Clas = mapply(marca, "clasificacion", busc$modelo, busc$hiperparametro),
+  Reg = mapply(marca, "regresion", busc$modelo, busc$hiperparametro))
+for (m in unique(e10_g$modelo[e10_g$fijo == "True"])) {
+  fila <- data.frame(modelo = m, Hiper = "fijos", Clas = fijos("clasificacion", m),
+                     Reg = fijos("regresion", m))
+  tab_g <- rbind(tab_g, fila)
+}
+tab_g <- tab_g[order(match(tab_g$modelo, unique(e10_g$modelo))), ]
+fin_modelo <- which(!duplicated(tab_g$modelo, fromLast = TRUE))
+tab_g$modelo[duplicated(tab_g$modelo)] <- ""
+sep <- ifelse(seq_len(nrow(tab_g)) %in% head(fin_modelo, -1), "\\midrule", "")
+kable(tab_g, format = "latex", booktabs = TRUE, escape = FALSE, row.names = FALSE,
+      linesep = sep,
+      col.names = c("Modelo", "Hiperparámetro", "Clasificación", "Regresión"),
+      caption = "Espacio de búsqueda por modelo y tarea; en negrita, el valor
+                 elegido.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center",
+                font_size = 9) %>%
+  column_spec(1, width = "2.8cm") %>%
+  column_spec(2, width = "2.6cm") %>%
+  column_spec(3, width = "5.5cm") %>%
+  column_spec(4, width = "5.5cm")
+```
+
+*Nota.* Elaboración propia. Hoja mínima: observaciones por hoja; tasa inicial: paso
+inicial del optimizador (Adam); paciencia: épocas sin mejora antes de la parada temprana.
+
+### Resultados
+
+```{r e10-tab-clf}
+mods <- e10_c$modelo
+tab_c <- data.frame(
+  Modelo = mods,
+  CV = sapply(mods, function(m) pm10(e10_c, m)),
+  F1 = e10_c$test, Acc = e10_c$test_accuracy, AUC = e10_c$test_auc,
+  FN = as.integer(e10_c$test_fn), FP = as.integer(e10_c$test_fp),
+  Seg = e10_c$segundos
+)
+kable(tab_c, format = "latex", booktabs = TRUE, row.names = FALSE,
+      digits = c(0, 0, 3, 3, 3, 0, 0, 1),
+      col.names = c("Modelo", "F1 CV (media ± DE)", "F1 test", "Exactitud test",
+                    "AUC test", "FN test", "FP test", "Tiempo (s)"),
+      caption = "Clasificación en Breast Cancer Wisconsin: CV interna y hold-out.",
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center",
+                font_size = 9) %>%
+  column_spec(1, width = "2.8cm") %>%
+  column_spec(2, width = "3.2cm") %>%
+  column_spec(3, width = "1.3cm") %>%
+  column_spec(4, width = "2.1cm") %>%
+  column_spec(5:7, width = "1.4cm") %>%
+  column_spec(8, width = "1.6cm")
+```
+
+*Nota.* Elaboración propia con datos de Wolberg et al. (1993). Hold-out de `r pc$test`
+casos (`r pc$malignos_test` malignos). FN: malignos predichos como benignos; FP: a la
+inversa; tiempo: duración de la búsqueda.
+
+```{r e10-tab-reg}
+mods <- e10_r$modelo
+tab_r <- data.frame(
+  Modelo = mods,
+  CV = sapply(mods, function(m) pm10(e10_r, m)),
+  RMSE = e10_r$test, R2cv = e10_r$cv_r2, R2 = e10_r$test_r2, Seg = e10_r$segundos
+)
+kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
+      digits = c(0, 0, 3, 3, 3, 1), escape = FALSE,
+      col.names = c("Modelo", "RMSE CV (media ± DE)", "RMSE test", "$R^2$ CV",
+                    "$R^2$ test", "Tiempo (s)"),
+      caption = "Regresión en California Housing: CV interna y hold-out.",
+      format.args = list(decimal.mark = ",")) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center",
+                font_size = 9) %>%
+  column_spec(1, width = "2.8cm") %>%
+  column_spec(2, width = "4cm") %>%
+  column_spec(3:5, width = "1.6cm") %>%
+  column_spec(6, width = "1.6cm")
+```
+
+*Nota.* Elaboración propia con datos de Pace y Barry (1997), submuestra de
+`r n10(ch$n_submuestra)` filas; RMSE en 100.000 USD.
+
+En clasificación la media más alta de validación cruzada es la de `r c_ord$modelo[1]`
+(`r pm10(e10_c, c_ord$modelo[1])`), y la distancia entre el primero y el último,
+`r f10(c_rng)`, no supera el mayor DE (`r f10(max(e10_c$cv_sd))`): con estos datos los
+cuatro modelos no se distinguen. En *hold-out* difieren en entre
+`r min(e10_c$test_fn)` y `r max(e10_c$test_fn)` malignos no detectados sobre
+`r pc$malignos_test` (`r if (sum(e10_c$test_fp) == 0) "ningún modelo produjo falsos positivos" else paste(sum(e10_c$test_fp), "falsos positivos en total")`), y cada
+maligno no detectado resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
+bloques. Se interpreta (inferencia propia, no verificada) que las clases son casi
+linealmente separables en el espacio estandarizado. SVM eligió
+$\gamma = `r m10(sel10("clasificacion", "SVM", "gamma"))`$, es decir
+$\sigma = 1/\sqrt{2\gamma} \approx$ `r f10(1 / sqrt(2 * g_svm), 1)`, del orden de la
+distancia típica entre dos casos estandarizados ($\sqrt{2p} \approx$
+`r f10(sqrt(2 * bc$p), 1)`): un kernel ancho, casi lineal a esa escala. Gradient
+Boosting eligió árboles de profundidad
+`r sel10("clasificacion", "Gradient Boosting", "max_depth")`, un modelo aditivo sin
+interacciones.
+
+```{r e10-fig, out.width="80%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
+knitr::include_graphics("codigo/resultados/e10/comparacion_modelos.png")
+```
+
+*Nota.* Elaboración propia con la corrida de `codigo/e10_pipeline/pipeline_opcion1.py`.
+En clasificación, mayor es mejor; en regresión, menor es mejor.
+
+En regresión, a diferencia de la clasificación, la comparación sí separa. Gana
+`r r_ord$modelo[1]`, con RMSE de `r pm10(e10_r, r_ord$modelo[1])` en
+validación cruzada y `r f10(e10_r[r_ord$modelo[1], "test"])` en *hold-out* (unos
+`r n10(round(e10_r[r_ord$modelo[1], "test"] * 1e5, -2))` USD de error típico por grupo
+censal; $R^2$ = `r f10(e10_r[r_ord$modelo[1], "test_r2"])`). Su ventaja sobre
+`r r_ord$modelo[2]`, `r f10(r_gap)`, es `r f10(r_gap / max(r_ord$cv_sd[1:2]), 1)` veces
+el mayor de los dos DE, y ambos ensambles superan a SVM y al MLP en las dos particiones,
+como en la comparación de Grinsztajn et al. (2022) sobre datos tabulares de tamaño medio.
+Una explicación posible (inferencia propia) es que
+el valor cambia en forma brusca con la ubicación (latitud y longitud son predictores),
+algo que un árbol capta con pocos cortes y que el kernel RBF y el MLP, funciones suaves,
+aproximan peor. Que Gradient Boosting supere a Random Forest es coherente con el
+Ejercicio 8: cada etapa corrige los pseudo-residuos de las anteriores y reduce el sesgo;
+el promedio del bosque reduce sobre todo la varianza.
+
+La brecha entre validación cruzada y *hold-out* no tiene un signo único. En SVM y en los
+árboles el RMSE de test es menor: el modelo final se reentrena con `r n10(pr$train)`
+filas y no con `r n10(n_bloque(pr$train))`, y el *hold-out* es una sola partición. El MLP
+empeora de `r f10(e10_r["MLP", "cv_media"])` a `r f10(e10_r["MLP", "test"])`; se
+conjetura, sin verificarlo, que una red con una sola inicialización es más inestable que
+un promedio de árboles.
+
+La primera corrida dejaba $C$ y $\varepsilon$ del SVR en el máximo de su grilla; tras
+ampliar las grillas quedan `r nrow(borde)` valores en un borde. De ellos,
+`r nrow(borde) - nrow(borde_ext)` no se pueden extender: hoja mínima
+`r sel10("regresion", "Random Forest", "min_samples_leaf")` en Random Forest (árboles
+completos, como en Breiman, 2001) y profundidad
+`r sel10("clasificacion", "Gradient Boosting", "max_depth")` en Gradient Boosting de
+clasificación. El restante es una limitación: Gradient Boosting de regresión eligió
+`r borde_ext$valor[1]` etapas, el máximo, con
+$\nu = `r m10(sel10("regresion", "Gradient Boosting", "learning_rate"))`$ (el canje entre tasa
+y etapas del Ejercicio 8); más etapas podrían bajar algo el RMSE, pero esa búsqueda ya es
+la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
+`r round(e10_m$segundos_total)` s) y su costo crece con las etapas.
+
+**Fuentes del Ejercicio 10.**
+Material de cátedra (Volpacchio, s.f.): presentaciones de SVM y de ensambles y apunte
+de redes. Datos: Wolberg et al. (1993); Pace y Barry (1997). Bergstra y Bengio (2012),
+Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001) y Grinsztajn et al. (2022).
+Código propio: `codigo/e10_pipeline/pipeline_opcion1.py` (Apéndice).
+
+\newpage
+
 # Apéndice · Código
 
 El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts de los
-Ejercicio 1 (LSTM y figuras).
+Ejercicios 1 (LSTM y figuras) y 10.
 
 ## A.1 LSTM serie temporal (Ejercicio 1.VI)
 
@@ -614,6 +939,12 @@ generó `codigo/e1_lstm/figuras.py`.
 
 ```{r e1-fig-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
+```
+
+## A.3 Pipeline Opción 1 (Ejercicio 10)
+
+```{r e10-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e10_pipeline/pipeline_opcion1.py"), sep = "\n")
 ```
 
 \newpage
@@ -633,9 +964,20 @@ Belkin, M., Hsu, D., Ma, S., & Mandal, S. (2019). Reconciling modern machine-lea
 practice and the classical bias-variance trade-off. *Proceedings of the National
 Academy of Sciences, 116*(32), 15849-15854. https://doi.org/10.1073/pnas.1903070116
 
+Bergstra, J., & Bengio, Y. (2012). Random search for hyper-parameter
+optimization. *Journal of Machine Learning Research, 13*, 281-305.
+http://jmlr.org/papers/v13/bergstra12a.html
+
+Breiman, L. (2001). Random forests. *Machine Learning, 45*(1), 5-32.
+https://doi.org/10.1023/A:1010933404324
+
 Burges, C. J. C. (1998). A tutorial on support vector machines for pattern
 recognition. *Data Mining and Knowledge Discovery, 2*(2), 121-167.
 https://doi.org/10.1023/A:1009715923555
+
+Cawley, G. C., & Talbot, N. L. C. (2010). On over-fitting in model selection and
+subsequent selection bias in performance evaluation. *Journal of Machine Learning
+Research, 11*, 2079-2107. http://jmlr.org/papers/v11/cawley10a.html
 
 Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*(3),
 273-297. https://doi.org/10.1007/BF00994018
@@ -650,6 +992,10 @@ https://doi.org/10.1162/089976600300015015
 
 Goodfellow, I., Bengio, Y., & Courville, A. (2016). *Deep learning*. MIT Press.
 
+Grinsztajn, L., Oyallon, E., & Varoquaux, G. (2022). Why do tree-based models still
+outperform deep learning on typical tabular data? *Advances in Neural Information
+Processing Systems, 35*, 507-520. https://doi.org/10.52202/068431-0037
+
 He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image
 recognition. *Proceedings of the IEEE Conference on Computer Vision and Pattern
 Recognition (CVPR)*, 770-778. https://doi.org/10.1109/CVPR.2016.90
@@ -659,6 +1005,10 @@ neural networks. *Science, 313*(5786), 504-507. https://doi.org/10.1126/science.
 
 Hochreiter, S., & Schmidhuber, J. (1997). Long short-term memory. *Neural Computation,
 9*(8), 1735-1780. https://doi.org/10.1162/neco.1997.9.8.1735
+
+Hsu, C.-W., Chang, C.-C., & Lin, C.-J. (2003). *A practical guide to support vector
+classification* [Informe técnico]. Department of Computer Science, National Taiwan
+University. https://www.csie.ntu.edu.tw/~cjlin/papers/guide/guide.pdf
 
 Kohonen, T. (1990). The self-organizing map. *Proceedings of the IEEE, 78*(9),
 1464-1480. https://doi.org/10.1109/5.58325
@@ -673,6 +1023,9 @@ on Learning Representations (ICLR)*. https://arxiv.org/abs/1301.3781
 
 Ng, A. (s.f.). *Deep learning: Convolutional neural networks* [Material de cátedra].
 Universidad Austral, Data Mining Avanzado.
+
+Pace, R. K., & Barry, R. (1997). Sparse spatial autoregressions. *Statistics &
+Probability Letters, 33*(3), 291-297. https://doi.org/10.1016/S0167-7152(96)00140-X
 
 Srivastava, N., Hinton, G., Krizhevsky, A., Sutskever, I., & Salakhutdinov, R.
 (2014). Dropout: A simple way to prevent neural networks from overfitting. *Journal
@@ -691,3 +1044,7 @@ Information Processing Systems, 30*, 5998-6008.
 Volpacchio, M. (s.f.). *Data Mining Avanzado: presentaciones, apuntes y notebooks de
 clase* [Material de cátedra]. Universidad Austral, Maestría en Explotación de Datos y
 Gestión del Conocimiento.
+
+Wolberg, W., Mangasarian, O., Street, N., & Street, W. (1993). *Breast Cancer
+Wisconsin (Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.
+https://doi.org/10.24432/C5DW2B

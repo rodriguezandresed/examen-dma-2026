@@ -1,0 +1,31 @@
+tarea,modelo,hiperparametro,valores,fijo
+clasificacion,SVM,C,"0,01; 0,1; 1; 10; 100; 1.000",False
+clasificacion,SVM,gamma,"0,0001; 0,001; 0,01; 0,1; 1",False
+clasificacion,SVM,kernel,rbf,True
+clasificacion,Random Forest,max_features,2; 4; 6; 10; 15; 30,False
+clasificacion,Random Forest,min_samples_leaf,1; 2; 4; 8,False
+clasificacion,Random Forest,n_estimators,300,True
+clasificacion,Gradient Boosting,n_estimators,25; 50; 100; 200; 400,False
+clasificacion,Gradient Boosting,learning_rate,"0,01; 0,03; 0,1; 0,3; 1",False
+clasificacion,Gradient Boosting,max_depth,1; 2; 3; 4; 6,False
+clasificacion,MLP,hidden_layer_sizes,"(16); (32); (64); (128); (64, 32)",False
+clasificacion,MLP,alpha,"0,00001; 0,0001; 0,001; 0,01; 0,1; 1",False
+clasificacion,MLP,learning_rate_init,"0,0001; 0,0003; 0,001; 0,003; 0,01; 0,03",False
+clasificacion,MLP,max_iter,2.000,True
+clasificacion,MLP,early_stopping,no,True
+regresion,SVM,C,"0,1; 1; 10; 100",False
+regresion,SVM,gamma,"0,01; 0,03; 0,1; 0,3; 1",False
+regresion,SVM,epsilon,"0,05; 0,1; 0,2; 0,4; 0,8",False
+regresion,SVM,kernel,rbf,True
+regresion,Random Forest,max_features,1; 2; 3; 4; 6; 8,False
+regresion,Random Forest,min_samples_leaf,1; 2; 4; 8; 16,False
+regresion,Random Forest,n_estimators,300,True
+regresion,Gradient Boosting,n_estimators,100; 200; 400; 800; 1.600,False
+regresion,Gradient Boosting,learning_rate,"0,01; 0,03; 0,1; 0,3",False
+regresion,Gradient Boosting,max_depth,2; 3; 4; 6; 8,False
+regresion,MLP,hidden_layer_sizes,"(32); (64); (128); (64, 32); (128, 64)",False
+regresion,MLP,alpha,"0,00001; 0,0001; 0,001; 0,01; 0,1; 1",False
+regresion,MLP,learning_rate_init,"0,0003; 0,001; 0,003; 0,01; 0,03",False
+regresion,MLP,max_iter,2.000,True
+regresion,MLP,early_stopping,sí,True
+regresion,MLP,n_iter_no_change,20,True
