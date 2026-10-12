@@ -1180,13 +1180,13 @@ la distancia euclídea en el espacio transformado se comporte como una distancia
 Mahalanobis en el original, lo cual sirve cuando los grupos son elipsoidales y están rotados
 respecto de los ejes.
 
-A esa lista hay que hacerle un reparo y un agregado. El reparo es que CANDISC exige grupos
-previamente definidos, con lo cual no sirve para detectar grupos potenciales, que es lo que
-pide la consigna; su lugar está en el otro extremo del proceso, y de hecho reaparece más
-abajo como tercer paso del perfilado. El agregado es que esa lista proviene de un curso de
-SAS y se detiene donde terminaba ese software: corresponde sumarle las técnicas no lineales
-del apunte de la clase 8, t-SNE y UMAP (McInnes et al., 2018), que en la práctica actual
-reemplazaron a MDS para este fin.
+CANDISC no pertenece a esa lista: exige grupos previamente definidos, con lo cual no sirve
+para detectar grupos potenciales, que es lo que pide la consigna. Su lugar está en el otro
+extremo del proceso, y de hecho reaparece más abajo como tercer paso del perfilado. Falta, en
+cambio, lo que el capítulo no podía tener: la lista proviene de un curso de SAS y se detiene
+donde terminaba ese software, así que corresponde sumarle las técnicas no lineales del apunte
+de la clase 8, t-SNE y UMAP (McInnes et al., 2018), que en la práctica actual reemplazaron a
+MDS para este fin.
 
 La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
 estandarizan las variables, se calculan los autovectores de la matriz de correlación y se
@@ -1426,8 +1426,7 @@ Boosting obtiene su coeficiente por minimización; y AdaBoost es más sensible a
 atípicos, porque un atípico mal clasificado gana peso ronda tras ronda, mientras que en
 Gradient Boosting esa sensibilidad se regula con la elección de la pérdida.
 
-Conviene fijar dos términos antes de seguir. El pseudo-residuo es el objetivo
-nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
+El pseudo-residuo es el objetivo nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
 cambiado y evaluado en el modelo acumulado hasta esa ronda,
 $\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática se
 reduce al residuo común $y_i - F_{m-1}(x_i)$, y de ahí viene el nombre: es el residuo cuando
