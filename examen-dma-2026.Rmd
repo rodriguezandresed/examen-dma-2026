@@ -440,8 +440,8 @@ combinan clasificadores binarios, uno contra uno o uno contra el resto (Hsu & Li
 
 ## Parámetros externos
 
-La consigna pregunta por la versión no lineal separable: los datos, una vez llevados
-al Feature Space, se separan sin error. Los parámetros externos (los valores que el
+En la versión no lineal separable los datos, una vez llevados al Feature Space, se
+separan sin error. Los parámetros externos (los valores que el
 usuario fija antes del entrenamiento y que el algoritmo no aprende de los datos) son
 entonces solo el kernel y sus parámetros; $C$ no interviene, porque sin holgura no hay
 errores que penalizar, lo que equivale a $C \to \infty$. Como en la práctica nunca se
@@ -625,9 +625,8 @@ manera heurística que propone la teoría, según el apunte, es una regla sobre 
 relación entre capacidad y datos: $d/l < 0{,}05$, para que el intervalo de confianza VC
 sea chico frente al riesgo empírico (Volpacchio, s.f.). La estimación de $d$ cuenta los
 parámetros libres del modelo; para un clasificador del tipo hiperplano sobre $k$
-variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía no es la fórmula
-de capacidad propia de SVM (allí el margen acota la dimensión VC), que la consigna
-pide dejar de lado. Para modelos no lineales contar parámetros es solo una
+variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía es la genérica, no la fórmula de
+capacidad propia de SVM, donde el margen acota la dimensión VC y que acá queda fuera. Para modelos no lineales contar parámetros es solo una
 aproximación, y el Ejercicio 1.VIII muestra que en una red sobrestima la capacidad.
 
 Con $l = 1000$ observaciones y $k$ variables, la regla exige
@@ -636,7 +635,7 @@ apunte agrega otra regla para el control del sobreajuste: 30 veces más datos qu
 parámetros si hay ruido y 5 veces si no lo hay. Con 1000 observaciones eso da hasta
 33 parámetros con ruido ($k \le 32$) y hasta 200 sin ruido ($k \le 199$). Se adopta la
 regla de 30 veces para datos reales, que casi siempre tienen ruido, y $d/l < 0{,}05$
-como la respuesta a la heurística de Vapnik-Chervonenkis que pide la consigna. Si hay
+como la heurística de Vapnik-Chervonenkis. Si hay
 más variables, las salidas son reducir la dimensión, por ejemplo con componentes
 principales (combinaciones lineales de las variables que concentran su varianza), o
 conseguir más observaciones.
@@ -1196,7 +1195,7 @@ Mahalanobis en el original, lo cual sirve cuando los grupos son elipsoidales y e
 respecto de los ejes.
 
 CANDISC no pertenece a esa lista: exige grupos previamente definidos, con lo cual no sirve
-para detectar grupos potenciales, que es lo que pide la consigna. Su lugar está en el otro
+para detectar grupos potenciales. Su lugar está en el otro
 extremo del proceso, y de hecho reaparece más abajo como tercer paso del perfilado. Falta, en
 cambio, lo que el capítulo no podía tener: la lista proviene de un curso de SAS y se detiene
 donde terminaba ese software, así que corresponde sumarle las técnicas no lineales del apunte
@@ -1746,7 +1745,7 @@ cross-validation.*
 *Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
 tarea.*
 
-Se resuelve la Opción 1; la consigna pide una sola. Sus cuatro modelos son los de la
+Se resuelve la Opción 1. Sus cuatro modelos son los de la
 materia y se discuten con la notación de clase.
 
 ```{r e10-load, include=FALSE}
