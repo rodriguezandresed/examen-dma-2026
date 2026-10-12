@@ -3,7 +3,7 @@ title: "Examen Final"
 subtitle: "Data Mining Avanzado · Maestría en Explotación de Datos y Gestión del Conocimiento · Universidad Austral"
 date: "`r paste0(format(Sys.Date(),'%d'), ' de ', c('enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre')[as.integer(format(Sys.Date(),'%m'))], ' de ', format(Sys.Date(),'%Y'))`"
 lang: es
-geometry: "margin=2.0cm"
+geometry: "top=1.7cm, bottom=2.2cm, left=2.0cm, right=2.0cm, headsep=8pt, footskip=40pt"
 fontsize: 12pt
 output:
   pdf_document:
