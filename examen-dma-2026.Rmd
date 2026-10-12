@@ -132,9 +132,10 @@ salida que alimenta a $j$; $\eta \in (0, 1)$: tasa de aprendizaje), tras cada
 observación (online), tras cada época (batch) o tras lotes chicos.
 
 La calidad depende de los datos frente a la cantidad de pesos, de $\eta$ (chica no
-avanza, grande oscila), de los mínimos locales y del criterio de corte; el apunte frena
-el sobreajuste con early stopping (cortar cuando sube el error de validación) y weight
-decay (penalizar pesos grandes). Sus redes son superficiales (shallow), con una capa
+avanza, grande oscila), de los mínimos locales y del criterio de corte. Contra el
+sobreajuste, el apunte de taxonomía de la clase 4 agrupa early stopping (cortar cuando
+sube el error de validación), weight decay y dropout como formas de la misma idea,
+restringir la familia de funciones. Sus redes son superficiales (shallow), con una capa
 oculta. Una profunda (deep) apila capas que arman rasgos sobre rasgos (bordes, formas,
 objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanece más,
 lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
@@ -144,7 +145,10 @@ lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
 *Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
 De ejemplos de uso.*
 
-Ninguno de los dos aparece con este detalle en los PDF de redes. Un embedding es un
+Los dos están en el material de la clase 4: `autoencoders.pdf` desarrolla el
+autoencoder completo, con el cuello de botella y los tipos denoising, sparse y
+convolucional, y el apunte de taxonomía marca los autoencoders como vistos en clase y
+dedica una subsección a los word embeddings. Un embedding es un
 vector denso y corto que representa un objeto discreto (palabra, producto, cliente) y
 que la red aprende como un peso más: word2vec lo aprende para cada palabra a partir de
 sus vecinas, y palabras de contextos parecidos quedan próximas (Mikolov et al., 2013).
@@ -217,8 +221,9 @@ pct_e1 <- function(x) paste0(round(100 * x), "\\thinspace{}%")
 Una RNN (red recurrente) clásica, las Recurrent Networks del apunte (Volpacchio,
 s.f.), reutiliza su estado, $h_t = f(W x_t + U h_{t-1} + b)$, con los mismos pesos en
 cada paso; hacia atrás el gradiente se multiplica por $U$ una vez por paso y en
-dependencias largas se desvanece o explota. La LSTM (Long Short-Term Memory), no
-desarrollada en los PDF, agrega una celda $c_t$ que se actualiza con una suma de lo nuevo y lo
+dependencias largas se desvanece o explota. La LSTM (Long Short-Term Memory), que el apunte
+`Dimensiones y Arquitectura LSTM` de la clase 4 desarrolla puerta por puerta, agrega una
+celda $c_t$ que se actualiza con una suma de lo nuevo y lo
 anterior (Hochreiter & Schmidhuber, 1997) y una puerta de olvido (Gers et al., 2000).
 En la Figura 2 ($s$: sigmoidal; $\odot$: producto elemento a elemento), cada puerta es
 $g_t = s(W_g x_t + U_g h_{t-1} + b_g)$, $g \in \{f, i, o\}$: $f_t$ dosifica cuánto de
@@ -231,7 +236,7 @@ knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
 
 *Nota.* Elaboración propia. $x_t$ y $h_{t-1}$ alimentan las cuatro cajas superiores.
 
-Con la fórmula de cátedra,
+Con la fórmula de ese apunte,
 $4 \times [(\text{units} \times \text{input\_dim}) + \text{units}^{2} + \text{units}]$
 por capa (tres puertas y la candidata, cada una con $W$, $U$ y sesgo), `lstm_32` tiene
 $4 \times [(32 \times 1) + 32^{2} + 32] = 4352$ parámetros, como `model.summary()`. El
@@ -354,8 +359,13 @@ de test vuelve a bajar porque el descenso de gradiente estocástico (SGD) y la
 regularización limitan la complejidad usada. Es una hipótesis: no se midió el error de
 entrenamiento.
 
-**Fuentes del Ejercicio 1.** Apuntes de redes, MLP y SOM y `deep_learning_CONV_Ng.pptx`
-(Volpacchio, s.f.); fuentes externas citadas en cada punto; código en `codigo/e1_lstm/`.
+**Fuentes del Ejercicio 1.** Material de cátedra (Volpacchio, s.f.): apuntes de redes,
+MLP y SOM de la clase 3 y `deep_learning_CONV_Ng.pptx` para la convolución (Punto V); de la
+clase 4, `autoencoders.pdf` (Punto III), `Apunte - Dimensiones y Arquitectura LSTM`
+para la celda y el conteo de parámetros (Punto VI), `resumen_redes_recurrentes_2024_` y
+`atencion_mecanismo` para encoder-decoder y atención (Punto VII), y el apunte de
+taxonomía para embeddings, regularización y la relación entre parámetros y capacidad
+(Puntos III y VIII). Fuentes externas citadas en cada punto; código en `codigo/e1_lstm/`.
 
 \newpage
 
@@ -1090,7 +1100,7 @@ del seguimiento, y lo correcto es informar que más de la mitad no reincide en
 
 El efecto de una covariable muestra lo mismo. Una regresión lineal de las semanas sobre
 las siete covariables, ajustada solo con los re-arrestados, asigna a la ayuda
-financiera (`fin`) un coeficiente de `r sub("^-", "$-$", f6(e6m$coef_ols_fin, 2))` semanas, un efecto
+financiera (`fin`) un coeficiente de `r f6(e6m$coef_ols_fin, 2)` semanas, un efecto
 casi nulo y, en todo caso, hacia un re-arresto más temprano. Cox, con los `r e6m$n` individuos, estima un *hazard ratio* de
 `r f6(e6m$hr_fin, 2)` (IC 95 %: `r f6(e6m$hr_fin_lo, 2)` a `r f6(e6m$hr_fin_hi, 2)`;
 $p$ = `r f6(e6m$p_fin, 3)`): la ayuda reduce el riesgo instantáneo en un
@@ -1168,12 +1178,15 @@ Por eso conviene mirar antes si esa estructura existe. Y como los datos suelen t
 dimensiones de las que entran en un gráfico, mirar quiere decir proyectarlos a dos
 dimensiones.
 
-La guía de clustering de la cátedra enumera seis técnicas para eso. Los gráficos de
-componentes principales (PRINCOMP)
+La sección de ayudas gráficas de la guía de clustering enumera tres: PRINCOMP, MDS y
+CANDISC. El capítulo agrega otras tres que no son de visualización pero condicionan lo
+que los gráficos muestran, y por eso se listan acá. Los gráficos de componentes
+principales (PRINCOMP)
 proyectan sobre las dos primeras componentes. El escalado multidimensional (MDS) ubica los
 puntos en dos dimensiones con la mayor conservación posible de las distancias originales. El
 discriminante canónico (CANDISC) busca las direcciones que maximizan la separación entre
-grupos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con énfasis
+grupos. Las otras tres son las que agrega el capítulo: VARCLUS selecciona variables y
+elimina colinealidad. STDIZE estandariza, con énfasis
 en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS estima
 la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos para que
 la distancia euclídea en el espacio transformado se comporte como una distancia de
