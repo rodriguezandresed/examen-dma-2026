@@ -792,7 +792,9 @@ coordenada a menos de 0,1 de $\pm 1$. La generación mediana se calcula sobre la
 corridas que bajaron de 0,01.
 
 Ninguna codificación garantiza el óptimo: las dos llegan a $f < 0{,}01$ en cerca de la
-mitad de las corridas. La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
+mitad de las corridas.
+
+La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
 binarias que no entran a la cuenca global quedan clavadas en un valle vecino, con
 alguna coordenada en $\pm 1$: el entero que codifica $x = 1$ difiere en
 `r e4m$hamming_1_0` bits de los que rodean a $x = 0$, y con probabilidad
@@ -801,7 +803,9 @@ imposible. Es el fenómeno anticipado al comparar las codificaciones: valores ve
 del dominio con códigos lejanos. Las reales entran a la cuenca global en
 `r e4m$real$n_cuenca` de `r e4m$n_semillas` corridas; `r sum(e4_fino)` de ellas quedan
 a menos de `r f4(ceiling(100 * max(e4_dist[e4_fino])) / 100)` del origen sin terminar
-el ajuste fino, porque un desvío de 0,3 es grueso a esa escala. Se interpreta que, con
+el ajuste fino, porque un desvío de 0,3 es grueso a esa escala.
+
+Se interpreta que, con
 el mismo presupuesto de `r formatC(e4m$n_evals, format = "d", big.mark = ".", decimal.mark = ",")` evaluaciones, la
 codificación real explora mejor la vecindad del óptimo; la binaria necesitaría una
 mutación más agresiva o un código Gray, en el que enteros consecutivos difieren en un
@@ -886,9 +890,11 @@ grupos antes de un clustering, uso que aparece en `Preparation for Clustering.pd
 combinación de todas; por eso una componente es más difícil de interpretar que una
 variable original. Su limitación estructural es que solo captura relaciones lineales.
 
-Kernel PCA no figura en los apuntes ni en las presentaciones de la cátedra, y la
-selección de kernel aparece solo como prueba y error sobre datos de validación, con la
-herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
+La cátedra nombra a Kernel PCA pero no lo desarrolla: el apunte de taxonomía de la clase 4
+lo lista como variante no lineal del PCA y como uno de los métodos de kernel junto con SVM,
+y el apunte de t-SNE de la clase 7 lo menciona entre las alternativas no lineales. La
+selección de kernel, por su parte, aparece solo como prueba y error sobre datos de
+validación, con la herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
 con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
 `Transformación de clústeres no lineales` como si fuera Kernel PCA: ese material mapea
 clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
@@ -1806,6 +1812,8 @@ algoritmos (Cawley & Talbot, 2010). Por eso se informan la media y el desvío es
 
 ### Preprocesamiento y métricas
 
+## Preprocesamiento
+
 Preproceso y modelo se encadenan en un `Pipeline` de scikit-learn, que la validación
 cruzada reajusta completo en cada bloque. Así se evita la fuga de información: si el
 `StandardScaler` (media 0 y desvío 1 por variable) se ajustara con todos los datos, los
@@ -1843,12 +1851,16 @@ en unidades de la respuesta, y se informa el $R^2$, la fracción de varianza exp
 
 ### Espacio de búsqueda y optimización
 
+## Estrategia de optimización y validación cruzada
+
 La búsqueda es `RandomizedSearchCV`, que evalúa una muestra aleatoria de la grilla en
 lugar de todas sus combinaciones (lo que hace `GridSearchCV`): con el mismo presupuesto
 prueba más valores distintos de cada hiperparámetro (Bergstra & Bengio, 2012). Se
 evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
 `r e10_m$n_iter` o menos, la búsqueda la recorrió completa, como un `GridSearchCV`
 (`r paste(cubre$modelo, ifelse(cubre$tarea == "clasificacion", "en clasificación", "en regresión"), collapse = ", ")`).
+
+## Espacio de búsqueda de hiperparámetros
 
 La Tabla \ref{tab:e10-grilla} muestra el espacio de cada modelo en cada tarea. Las
 grillas son logarítmicas en los parámetros de escala, como recomiendan Hsu et al. (2003)
@@ -1968,6 +1980,8 @@ kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
 
 *Nota.* Elaboración propia con datos de Pace y Barry (1997), submuestra de
 `r n10(ch$n_submuestra)` filas; RMSE en 100.000 USD.
+
+## Comparación de rendimiento
 
 En clasificación la media más alta de validación cruzada es la de `r c_ord$modelo[1]`
 (`r pm10(e10_c, c_ord$modelo[1])`), y la distancia entre el primero y el último,
