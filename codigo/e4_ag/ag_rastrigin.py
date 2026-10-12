@@ -58,7 +58,7 @@ def toolbox_binario():
     tb.register("individuo", tools.initRepeat, creator.Individuo, tb.gen, N_VAR * BITS)
     tb.register("poblacion", tools.initRepeat, list, tb.individuo)
     tb.register("evaluate", lambda ind: (rastrigin(decodificar(ind)),))
-    tb.register("mate", tools.cxOnePoint)  # corta y cambia colas, como en las slides
+    tb.register("mate", tools.cxOnePoint)  # corta y cambia colas, como en las diapositivas
     tb.register("mutate", tools.mutFlipBit, indpb=1.0 / (N_VAR * BITS))
     tb.register("select", tools.selTournament, tournsize=3)
     return tb

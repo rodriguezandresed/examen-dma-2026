@@ -179,7 +179,7 @@ distintas capas de una red convolucional y explique.*
 
 Una convolución recorre un filtro, una matriz de pesos mucho más chica que la entrada,
 sobre un mapa de píxeles; cada suma de productos forma un punto del mapa de
-características. El *kernel* de las slides de CNN es ese filtro, no el de SVM. Con lado
+características. El *kernel* de las diapositivas de CNN es ese filtro, no el de SVM. Con lado
 $n$, filtro $f$, relleno del borde (padding) $r$ y salto (stride) $s$, la salida mide
 $\lfloor (n + 2r - f)/s \rfloor + 1$ (`deep_learning_CONV_Ng.pptx`; Volpacchio, s.f.).
 LeCun et al. (1998) aprenden el filtro por backpropagation, con conexión local y pesos
@@ -713,7 +713,7 @@ torneo toma al azar unos pocos cromosomas y se queda con el mejor. Los parámetr
 externos son el tamaño `pop_size`, la probabilidad de cruce $p_c$, la de mutación $p_m$
 y el criterio de corte: un número fijo de generaciones o el estancamiento del mejor
 fitness. El elitismo copia al mejor individuo de $P(t-1)$ hacia $P(t)$ para que el azar
-no lo elimine; las slides del ciclo básico no lo exigen.
+no lo elimine; las diapositivas del ciclo básico no lo exigen.
 
 ## AG binarios y AG reales
 
@@ -1408,7 +1408,7 @@ brevemente. De una explicación intuitiva de cómo trabaja el Gradiente Boosting
 
 ## Diferencias entre AdaBoost y Gradient Boosting
 
-Los dos son métodos de boosting y comparten el esquema que describe el deck de la clase 6:
+Los dos son métodos de boosting y comparten el esquema que describe la presentación de la clase 6:
 combinar las salidas de muchos clasificadores débiles para producir un comité que funciona
 como clasificador fuerte. Un clasificador débil es una regla de decisión sencilla e
 inestable, pero que acierta mejor que el azar, es decir con $P(\text{error}) < 0{,}5$. El
@@ -1416,12 +1416,12 @@ método es secuencial, porque cada modelo se entrena después del anterior y mir
 para decidir en qué concentrarse, a diferencia de bagging, donde los modelos se entrenan en
 paralelo y sin mirarse.
 
-El deck ubica a los dos dentro de los métodos de perturbar y combinar y, más específicamente,
+La presentación ubica a los dos dentro de los métodos de perturbar y combinar y, más específicamente,
 entre los algoritmos arcing (*adaptive resampling and combining*), en contraposición a
 bagging, que perturba mediante bootstrap. La etiqueta encaja con AdaBoost, que repondera de
 manera adaptativa las observaciones en cada ronda, pero le queda grande a Gradient Boosting,
 que no repondera ni remuestrea nada: lo que cambia de ronda en ronda es el objetivo que se
-ajusta. El deck los agrupa igual, y la diferencia aparece dos párrafos más abajo.
+ajusta. La presentación los agrupa igual, y la diferencia aparece dos párrafos más abajo.
 
 La diferencia de fondo es simple de enunciar. AdaBoost cambia la importancia de las
 observaciones y mantiene fijo el objetivo; Gradient Boosting cambia el objetivo y mantiene
@@ -1452,7 +1452,7 @@ se renormaliza, para que el algoritmo base de la ronda siguiente se focalice sob
 erraron. La fórmula de $\alpha_t$ se lee sola: si el error es chico la hipótesis pesa mucho en
 el voto, y si se acerca a 0,5 el peso tiende a cero y la hipótesis prácticamente no cuenta.
 
-El deck reproduce un ejemplo con semiplanos verticales u horizontales como clasificador base.
+La presentación reproduce un ejemplo con semiplanos verticales u horizontales como clasificador base.
 Las tres rondas se rehicieron con la fórmula.
 
 ```{r e8-rondas, echo=FALSE}
@@ -1465,16 +1465,16 @@ e8 <- data.frame(
             "redondea a 0,66, no a 0,65",
             "error implícito: acierta 86 %"),
   stringsAsFactors = FALSE)
-names(e8) <- c("Ronda", "Error", "Ponderación del deck",
+names(e8) <- c("Ronda", "Error", "Ponderación publicada",
                "Ponderación recalculada", "Observación")
 kable(e8, booktabs = TRUE, align = c("l", "r", "r", "r", "l"),
-      caption = "Las tres rondas de AdaBoost del deck, verificadas.") %>%
+      caption = "Las tres rondas de AdaBoost de la presentación, verificadas.") %>%
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 10)
 ```
 
 *Nota.* Elaboración propia. El error es el $\varepsilon_t$ ponderado de la ronda y la
 ponderación, el $\alpha_t = \tfrac{1}{2}\log((1-\varepsilon_t)/\varepsilon_t)$ con el que
-la hipótesis entra al voto. El $\varepsilon_3$ no lo publica el deck; sale de invertir la
+la hipótesis entra al voto. El $\varepsilon_3$ no lo publica la presentación; sale de invertir la
 fórmula sobre $\alpha_3$.
 
 La segunda ronda no cierra: el error que produce exactamente 0,65 es 0,2142, de manera que lo
@@ -1489,10 +1489,10 @@ función de pérdida deja de estar cableada en el algoritmo y pasa a ser un par�
 que elegir, entre mínimos cuadrados, mínima desviación absoluta, la de Huber (cuadrática
 cerca del cero y lineal en las colas, para que un atípico no domine el ajuste) o la
 log-verosimilitud multinomial negativa para clasificación en varias clases. El otro parámetro
-es el *shrinkage*, que el deck llama tasa de aprendizaje, y Friedman (2001) estimó que
+es el *shrinkage*, que la presentación llama tasa de aprendizaje, y Friedman (2001) estimó que
 valores menores a 0,1 dan los menores errores de generalización. Visto así, AdaBoost es un
 caso particular y no un método aparte: es el Gradient Boosting cuya pérdida es la
-exponencial. Esa unificación el deck no la hace explícita, pero es la que convierte la lista
+exponencial. Esa unificación la presentación no la hace explícita, pero es la que convierte la lista
 de diferencias en una jerarquía.
 
 ## Cómo trabaja Gradient Boosting
@@ -1505,7 +1505,7 @@ desde donde quedó la pelota y calcula el nuevo golpe según cuánto le falta. E
 golpe corrige el error del primero, el tercero corrige lo que quedó del segundo, y así
 sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + v f_m(x)$. Cada modelo débil no intenta
 predecir $y$ sino la distancia que falta, y esa distancia que falta es exactamente lo que el
-deck llama pseudo-residuo. El documento de cátedra desarrolla el ejemplo numérico con los
+material de cátedra llama pseudo-residuo. El documento de cátedra desarrolla el ejemplo numérico con los
 alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
 ahí cada modelo se entrena sobre el vector de residuos que dejó el anterior.
 
@@ -1638,9 +1638,9 @@ que los árboles de un bosque son independientes y se construyen en paralelo. La
 qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
 parte de modelos débiles, de alto sesgo y baja varianza, y reduce el sesgo de forma aditiva.
-Hay acá una tensión con el deck de la clase 6, que agrupa a bagging y a arcing con el
+Hay acá una tensión con la presentación de la clase 6, que agrupa a bagging y a arcing con el
 argumento de que los dos reducen principalmente la varianza, aunque arcing es boosting; las dos
-afirmaciones se concilian si se lee que el deck clasifica por el mecanismo de perturbación y
+afirmaciones se concilian si se lee que la presentación clasifica por el mecanismo de perturbación y
 no por la componente del error, porque boosting también recorta varianza al agregar, pero lo
 que lo distingue es que baja el sesgo.
 
@@ -1651,7 +1651,7 @@ porque con etiquetas ruidosas o con hojas de un solo caso un bosque sobreajusta 
 otro. De ahí la diferencia más relevante en la práctica: la cantidad de árboles es acá un
 parámetro de costo computacional, y en boosting uno de capacidad que hay que validar.
 
-Frente a los métodos de ensamblaje en general, el deck de la clase 6 da tres razones por las
+Frente a los métodos de ensamblaje en general, la presentación de la clase 6 da tres razones por las
 que ensamblar sirve, y Random Forest explota las tres: la estadística, porque con pocos datos
 hay muchas hipótesis igualmente buenas y promediar reduce el riesgo de elegir la equivocada;
 la computacional, porque el aprendizaje es una búsqueda local y partir de muchos puntos
@@ -1659,7 +1659,7 @@ iniciales reduce la chance de quedar en un óptimo local; y la representacional,
 hipótesis verdadera puede no pertenecer al espacio de un modelo único y la combinación
 interpola entre las halladas.
 
-El mismo deck remarca lo que delimita cuándo conviene: el factor
+La misma presentación remarca lo que delimita cuándo conviene: el factor
 clave es la inestabilidad del clasificador base, de manera que los árboles sin podar mejoran
 mucho al ser perturbados y combinados, mientras que k vecinos más cercanos es estable y no
 mejora con bagging. Quedan dos parientes cercanos fuera de esa comparación. Los extra-trees (Geurts et
