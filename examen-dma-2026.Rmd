@@ -141,7 +141,8 @@ sube el error de validación), weight decay y dropout como formas de la misma id
 restringir la familia de funciones. Una red superficial (shallow) tiene una sola capa
 oculta. Una profunda (deep) apila capas que arman rasgos sobre rasgos (bordes, formas,
 objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanece más,
-lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
+lo que motivó ReLU y las conexiones residuales, que suman la entrada de un bloque a su
+salida (Goodfellow et al., 2016).
 
 ## Punto III
 
@@ -339,8 +340,8 @@ al variar sus pesos; la de generalización, sostener el desempeño en datos no v
 neuronas agrandan la primera si la activación es no lineal; weight decay, early
 stopping y dropout (apagar neuronas al azar; Srivastava et al., 2014) la restringen.
 La convolución supone rasgos locales repetidos, la recurrencia orden temporal y la
-capa densa nada; las conexiones residuales (sumar la entrada de un bloque a su salida)
-permiten entrenar más de cien capas (He et al., 2016).
+capa densa nada; las conexiones residuales permiten entrenar más de cien capas
+(He et al., 2016).
 
 Sesgo es la distancia entre la predicción promedio sobre las muestras posibles y el
 valor verdadero; varianza, cuánto cambia el ajuste de una muestra a otra; el error
@@ -532,7 +533,8 @@ de la clasificación es $\varepsilon$, el radio del tubo, que fija cuánta desvi
 tolera sin costo.
 
 **Fuentes del Ejercicio 2.** Material de cátedra (Volpacchio, s.f.): presentación
-`SVM Universidad Austral.pdf` (clases 1 y 2), en particular las secciones de la
+`SVM Universidad Austral.pdf` (clase 2, que reproduce las diapositivas de SLT de la
+clase 1), en particular las secciones de la
 versión lineal, la separación imperfecta, el kernel trick, la cota por vectores
 soporte y Support Vector Regression. Burges (1998) para la formulación del
 clasificador; Cortes y Vapnik (1995) para el margen blando; Vapnik (1995) para la cota
@@ -630,7 +632,10 @@ relación entre capacidad y datos: $d/l < 0{,}05$, para que el intervalo de conf
 sea chico frente al riesgo empírico (Volpacchio, s.f.). La estimación de $d$ cuenta los
 parámetros libres del modelo; para un clasificador del tipo hiperplano sobre $k$
 variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía es la genérica, no la fórmula de
-capacidad propia de SVM, donde el margen acota la dimensión VC y que acá queda fuera. Para modelos no lineales contar parámetros es solo una
+capacidad propia de SVM, donde el margen acota la dimensión VC y que acá queda fuera. El
+propio apunte avisa que contar parámetros no equivale a medir la capacidad y remite al
+contraejemplo de Vapnik (1995); de ahí que la vía sea heurística. Para modelos no lineales
+contar parámetros es solo una
 aproximación, y el Ejercicio 1.VIII muestra que en una red sobrestima la capacidad.
 
 Con $l = 1000$ observaciones y $k$ variables, la regla exige
@@ -972,22 +977,21 @@ kernel lineal se recupera el PCA clásico.
 
 ## Cómo elegir el kernel
 
-Sobre la selección del kernel, la conclusión de la bibliografía es que no existe un
-método universal, pero sí tres procedimientos sencillos que se complementan. Uno
-mira las dimensiones del conjunto: la guía de Hsu et al. (2003) recomienda el kernel
+Sobre la selección del kernel, la bibliografía no ofrece un método universal, pero sí
+procedimientos sencillos que se complementan. La guía de Hsu et al. (2003) decide por las
+dimensiones del conjunto: recomienda el kernel
 lineal cuando la cantidad de variables es grande frente a la de observaciones, porque
 llevar los datos a un espacio mayor no agrega separabilidad, y también cuando las dos
 cantidades son grandes, por costo; si hay muchas más observaciones que variables, el
 candidato es el RBF.
 
-Otro es la validación cruzada sobre una grilla de kernels y de sus
-hiperparámetros: para cada combinación se estima el error en los bloques de validación
+La validación cruzada sobre una grilla de kernels y de sus hiperparámetros decide al final: para cada combinación se estima el error en los bloques de validación
 y se queda la mejor. Hsu et al. (2003) recomiendan empezar por el RBF, que con
 parámetros bien elegidos cubre al lineal como caso límite, y buscar $C$ y
 $\gamma = 1/(2\sigma^2)$ en una grilla exponencial, como se hizo en el Ejercicio 10.
 
-Un tercer camino evita entrenar el modelo para cada candidato: el alineamiento
-kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002) mide el
+El alineamiento kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002)
+evita entrenar el modelo para cada candidato: mide el
 parecido entre la matriz de kernel $K$ y la matriz ideal $yy^\top$ construida desde las
 etiquetas $y_i \in \{-1, +1\}$,
 $A = \langle K, yy^\top \rangle_F / (\lVert K \rVert_F \, \lVert yy^\top \rVert_F)$, donde
@@ -998,9 +1002,8 @@ elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), 
 combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
 2011).
 
-La regla de dimensiones sirve para armar la lista corta, el
-alineamiento para descartar candidatos sin entrenar y la validación cruzada para la
-decisión final. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
+En la práctica conviene empezar por el RBF y recurrir al alineamiento cuando entrenar cada
+candidato sale caro. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
 contra las cuales validar: en la práctica el kernel se ajusta por el error de
 reconstrucción o por el desempeño de la tarea posterior que usa las componentes.
 
@@ -1178,7 +1181,7 @@ e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FAL
 e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
 e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
 est <- function(k) e7est$valor[e7est$metrica == k]
-epsf <- function(x) format(round(x, 2), decimal.mark = ",")
+epsf <- function(x) formatC(x, format = "f", digits = 2, decimal.mark = ",")
 # Grupo de atípicos: el que más se aleja en la quinta componente.
 e7_at <- which.max(e7perf$PC5)
 e7_resto <- e7perf[-e7_at, ]
@@ -1207,7 +1210,7 @@ gráficos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandari
 énfasis en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS
 estima la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos
 para que la distancia euclídea en el espacio transformado se comporte como una distancia de
-Mahalanobis en el original, lo cual sirve cuando los grupos son elipsoidales y están rotados
+Mahalanobis en el original, la euclídea después de descontar la covarianza, lo cual sirve cuando los grupos son elipsoidales y están rotados
 respecto de los ejes.
 
 La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
@@ -1286,8 +1289,8 @@ cual un eje de máxima varianza no es necesariamente un eje de máxima separaci�
 
 Queda la vía que se eligió en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
 etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
-bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
-párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
+bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* en dos pares, y uno de ellos es
+justo donde el párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
 y la importancia mide lo que cada una agrega dado lo que aportan las otras: la quinta separa bien
 sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en las
 `r est("semillas")` semillas, con el OOB entre `r fmt(as.numeric(est("oob_min")), 4)` y `r fmt(as.numeric(est("oob_max")), 4)`. Ninguna de las cinco tiene nombre de
@@ -1345,18 +1348,18 @@ de los datos.
 
 ## Resultados sobre los dígitos manuscritos
 
-El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para
-medir su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia
-media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1 y cuanto más
-alto, más compactos y separados están los grupos. Sobre las clases verdaderas dio
+El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para medir
+su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
+al propio grupo contra la del grupo vecino más cercano: va de -1 a 1 y más alto es más
+compacto y mejor separado. Sobre las clases verdaderas dio
 `r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
 `r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
 
-DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos a distancia menor
-que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
+DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos, contándose a sí
+mismo, a distancia menor que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
 ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
 de pares que ambas particiones dejan juntos o separados, corregida por el azar: 1 si
-coinciden, 0 si el acuerdo es el del azar. El radio se ubicó con la distancia al octavo
+coinciden, 0 si es el del azar. El radio se ubicó con la distancia al octavo
 vecino (gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))`
 y cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`;
 una primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
@@ -1364,20 +1367,17 @@ una primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre 
 `r epsf(max(e7eps$eps))`, el mejor ARI sale con $\varepsilon$ = `r epsf(val("db_eps"))`:
 `r val("db_clusters")` grupos, `r val("db_ruido")` puntos de ruido
 (`r fmt(100 * val("db_ruido") / val("n"), 1)` %) y ARI de `r fmt(val("ari_dbscan"))`
-(`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido).
+(`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido). Con $\varepsilon$ = `r epsf(min(e7eps$eps))`
+quedan `r e7eps$ruido[1]` de los `r val("n")` puntos como ruido, y desde
+$\varepsilon$ = `r epsf(e7_funde)` todo se funde en un grupo (ARI de
+`r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero manda puntos al
+ruido, y subirlo los recupera pero funde dígitos. La causa probable es un radio global frente
+a una densidad que varía entre dígitos, más que la concentración de distancias del apunte.
 
-Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los
-`r val("n")` puntos como ruido, y desde $\varepsilon$ = `r epsf(e7_funde)` todo se funde en
-un grupo (ARI de `r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero
-manda puntos al ruido, y subirlo los recupera pero funde dígitos. La causa probable es un
-radio global frente a una densidad que varía entre dígitos, más que la concentración de
-distancias del apunte. K-means con $k = 10$ da un ARI de
-`r fmt(val("ari_kmeans_pca"))`.
-
-K-means sobre las dos coordenadas del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima del `r fmt(val("ari_kmeans_pca"))`
-obtenido sobre las componentes. La tentación de quedarse con ese número es la trampa: no mide
+K-means con $k = 10$ sobre las componentes dio un ARI de `r fmt(val("ari_kmeans_pca"))`, y
+sobre las dos coordenadas del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima. La tentación de quedarse con ese número es la trampa: no mide
 la capacidad de k-means para descubrir estructura sino el trabajo que ya hizo t-SNE al
-separarla. Sirve como validación visual, no como modelo.
+separarla: sirve como validación visual, no como modelo.
 
 ## Ventajas y limitantes
 
@@ -1391,16 +1391,15 @@ confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y 
 relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
 convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
 la perplejidad, y que la silueta de arriba apenas se mueva entre 30 y 50 no lo desmiente,
-porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: la implementación estándar no proyecta
-observaciones nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y con perplejidad
+porque esa mide clases ya conocidas. Tampoco proyecta observaciones
+nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y con perplejidad
 muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
-for Clustering* y *Assessing Clustering Results* y el apunte de t-SNE de la clase 8,
-`TSNE_Perplejidad_Clustering_NoLineal`. van der
-Maaten y Hinton (2008) para la formulación original y van der Maaten (2014) para Barnes-Hut;
-Ester et al. (1996) para DBSCAN, Campello et al. (2013) para HDBSCAN y McInnes et al. (2018)
-para UMAP. Código propio: Apéndice A.5.
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): *Preparation for
+Clustering*, *Assessing Clustering Results* y el apunte de t-SNE de la clase 8. van der
+Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE y Barnes-Hut; Ester et al. (1996)
+y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP. Código
+propio: Apéndice A.5.
 
 \newpage
 
@@ -1442,7 +1441,7 @@ cambiado y evaluado en el modelo acumulado hasta esa ronda,
 $\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática se
 reduce al residuo común $y_i - F_{m-1}(x_i)$, y de ahí viene el nombre: es el residuo cuando
 la pérdida es la cuadrática y un sustituto del residuo cuando no lo es. El *shrinkage* es el
-factor $v$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
+factor $\nu$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
 para que cada corrección sea parcial.
 
 En AdaBoost (Freund & Schapire, 1997) la primera ronda reparte peso uniforme sobre las $N$
@@ -1508,7 +1507,8 @@ aproximación gruesa que en el caso más simple consiste en predecir para todos 
 $y$, y la pelota queda a cierta distancia. El golfista no vuelve al punto de partida: golpea
 desde donde quedó la pelota y calcula el nuevo golpe según cuánto le falta. Ese segundo
 golpe corrige el error del primero, el tercero corrige lo que quedó del segundo, y así
-sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + v f_m(x)$. Cada modelo débil no intenta
+sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + \nu\, \beta_m h_m(x)$, donde $\nu$
+contrae el paso óptimo $\beta_m$ de la fórmula de arriba. Cada modelo débil no intenta
 predecir $y$ sino la distancia que falta, y esa distancia que falta es exactamente lo que el
 material de cátedra llama pseudo-residuo. El documento de cátedra desarrolla el ejemplo numérico con los
 alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
@@ -1532,7 +1532,7 @@ un residuo enorme domina el ajuste, mientras que con el vector de signos un atí
 $+1$ como cualquier otro punto mal predicho.
 
 La tasa de aprendizaje se entiende con la misma analogía: el golfista podría intentar embocar
-de un solo golpe, pero se pasaría. El parámetro $v$ hace que cada corrección sea parcial, de
+de un solo golpe, pero se pasaría. El parámetro $\nu$ hace que cada corrección sea parcial, de
 manera que se avanza con pasos chicos y muchos modelos, y de ahí el compromiso entre la tasa
 de aprendizaje y la cantidad de iteraciones, que obliga a validarlas juntas.
 
@@ -1544,7 +1544,7 @@ acepta cualquier pérdida diferenciable, y por eso las implementaciones que hoy 
 práctica, como XGBoost, son variantes del segundo y no del primero (Chen & Guestrin, 2016).
 
 **Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.): presentación
-`Ensemble Methods Universidad Austral.pdf` (esquema de boosting, taxonomía de perturbar y
+`Ensemble Methods Universidad Austral` (esquema de boosting, taxonomía de perturbar y
 combinar, arcing, ponderación $\alpha_t$ y ejemplo numérico de las tres rondas) y documentos
 `Gradient boosting explicado` 1 a 3 (clase 6: modelado aditivo, analogía del golfista, ejemplo
 de los alquileres, vector de signos y la demostración de que el gradiente de la pérdida
@@ -1608,22 +1608,17 @@ De la construcción se desprenden otras dos herramientas. La importancia de vari
 de dos maneras. Por permutación, se cuentan los votos a la clase correcta sobre las filas
 *out-of-bag*, se permutan al azar los valores de una variable y se vuelve a predecir; la caída
 promediada sobre todos los árboles es su importancia, con una lógica transparente, porque si
-al desordenar una variable el desempeño no cae, esa variable no aportaba nada.
-
-Por impureza de
-Gini, que es la probabilidad de clasificar mal una observación de un nodo si se le asignara
+al desordenar una variable el desempeño no cae, esa variable no aportaba nada. Por impureza
+de Gini, que es la probabilidad de clasificar mal una observación de un nodo si se le asignara
 una clase al azar según la distribución del propio nodo, se acumula la caída que produce cada
 corte; esa caída corresponde al promedio ponderado por el tamaño de los nodos hijos, lo cual
 no es un detalle, porque un hijo individual puede quedar más impuro que el padre y lo que
-nunca sube es el promedio.
-
-El documento considera las dos medidas muy consistentes entre sí,
+nunca sube es el promedio. El documento considera las dos medidas muy consistentes entre sí,
 aunque Strobl et al. (2007) le encontraron a la de Gini un sesgo a favor de las variables con
 más categorías, con dos fuentes: la selección sesgada dentro de cada árbol y el muestreo con
 reemplazo. Cuando las dos medidas discrepan conviene la de permutación.
 
-La otra herramienta
-es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
+La otra herramienta es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
 aumenta cada vez que caen en el mismo nodo terminal; como $1 - \mathrm{prox}$ son distancias
 al cuadrado en un espacio euclídeo, de ella cuelgan varios de los usos que se describen más
 abajo.
@@ -1639,8 +1634,7 @@ existe una variable muy predictiva, todos los árboles la eligen para la primera
 terminan pareciéndose mucho entre sí, y como el beneficio de promediar depende de que los
 componentes estén poco correlacionados, esa similitud limita la mejora.
 
-Frente a boosting, que se desarrolla en el Ejercicio 8, hay tres diferencias. Boosting es
-intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
+Frente a boosting, que se desarrolla en el Ejercicio 8, Boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
 que los árboles de un bosque son independientes y se construyen en paralelo. También difieren
 en qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
@@ -1709,12 +1703,10 @@ cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay qu
 decisión una por una, un árbol podado o una regresión logística son todavía mejores
 respuestas.
 
-\enlargethispage{3\baselineskip}
-
 **Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.), clase 6: documento
 `randon forest explicado.pdf`, traducción de Breiman y Cutler (crecimiento del árbol,
 correlación y fuerza, rol de $m$, error *out-of-bag*, importancia, proximidad y prototipos),
-y presentación `Ensemble Methods Universidad Austral.pdf` (razones para
+y presentación `Ensemble Methods Universidad Austral` (razones para
 ensamblar, perturbar y combinar, e inestabilidad del clasificador base). Breiman (1996) para
 bagging y Breiman (2001) para la cota de correlación y fuerza; Ho (1995) para el subespacio
 aleatorio y Geurts et al. (2006) para los extra-trees; Janitza y Hornung (2018) para la
@@ -1879,7 +1871,7 @@ porque agregar árboles no sobreajusta (Breiman, 2001), y se buscó sobre $m$, l
 variables sorteadas en cada corte, que mueve la fuerza de cada árbol (su acierto) y la
 correlación entre árboles, y sobre el tamaño de hoja. En Gradient Boosting cada árbol
 se ajusta a los pseudo-residuos, el gradiente negativo de la pérdida respecto de la
-predicción actual (los residuos, con pérdida cuadrática); se combinan la tasa $\nu$
+predicción actual (los residuos, con pérdida cuadrática); se combinan la tasa $\nu$ del Ejercicio 8,
 que encoge cada paso, las etapas y la profundidad (Volpacchio, s.f.). En el MLP,
 $\alpha$ penaliza la suma de los pesos al cuadrado y Adam es el optimizador.
 
