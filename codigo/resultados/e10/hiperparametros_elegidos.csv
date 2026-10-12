@@ -1,0 +1,22 @@
+tarea,modelo,hiperparametro,valor,en_borde,borde_extensible
+clasificacion,SVM,C,10,False,False
+clasificacion,SVM,gamma,"0,01",False,False
+clasificacion,Random Forest,max_features,15,False,False
+clasificacion,Random Forest,min_samples_leaf,1,True,False
+clasificacion,Gradient Boosting,n_estimators,200,False,False
+clasificacion,Gradient Boosting,learning_rate,"0,3",False,False
+clasificacion,Gradient Boosting,max_depth,1,True,False
+clasificacion,MLP,hidden_layer_sizes,(32),,
+clasificacion,MLP,alpha,"0,01",False,False
+clasificacion,MLP,learning_rate_init,"0,0003",False,False
+regresion,SVM,C,1,False,False
+regresion,SVM,gamma,"0,3",False,False
+regresion,SVM,epsilon,"0,1",False,False
+regresion,Random Forest,max_features,3,False,False
+regresion,Random Forest,min_samples_leaf,1,True,False
+regresion,Gradient Boosting,n_estimators,1.600,True,True
+regresion,Gradient Boosting,learning_rate,"0,03",False,False
+regresion,Gradient Boosting,max_depth,6,False,False
+regresion,MLP,hidden_layer_sizes,"(64, 32)",,
+regresion,MLP,alpha,"0,001",False,False
+regresion,MLP,learning_rate_init,"0,01",False,False

@@ -1,0 +1,82 @@
+{
+  "seed": 42,
+  "sklearn": "1.9.1",
+  "python": "3.12.10",
+  "test_size": 0.2,
+  "cv_splits": 5,
+  "n_iter": 30,
+  "particion": {
+    "clasificacion": {
+      "train": 455,
+      "test": 114,
+      "malignos_test": 42
+    },
+    "regresion": {
+      "train": 6400,
+      "test": 1600
+    }
+  },
+  "mlp_epocas_mejor": {
+    "clasificacion": 407,
+    "regresion": 62
+  },
+  "breast_cancer": {
+    "n": 569,
+    "p": 30,
+    "malignos": 212
+  },
+  "prueba_escalador_arboles_f1_cv": {
+    "Random Forest": {
+      "sin_escalador": 0.9552,
+      "con_escalador": 0.9552
+    },
+    "Gradient Boosting": {
+      "sin_escalador": 0.9703,
+      "con_escalador": 0.9703
+    }
+  },
+  "prueba_parada_temprana_mlp_f1_cv": {
+    "tasas": [
+      0.0003,
+      0.03
+    ],
+    "fraccion_validacion": 0.1,
+    "con_parada": [
+      0.8628,
+      0.962
+    ],
+    "sin_parada": [
+      0.9644,
+      0.9646
+    ],
+    "avisos_no_convergencia": 0
+  },
+  "tiempo_svr_prueba_previa_s": {
+    "C": 1000,
+    "gamma": 1.0,
+    "filas_submuestra": [
+      8000,
+      12000
+    ],
+    "segundos_por_fit": [
+      46.5,
+      80.7
+    ]
+  },
+  "california_housing": {
+    "n": 20640,
+    "p": 8,
+    "n_submuestra": 8000
+  },
+  "segundos_por_busqueda": {
+    "clasificacion/SVM": 1.6,
+    "clasificacion/Random Forest": 7.0,
+    "clasificacion/Gradient Boosting": 5.9,
+    "clasificacion/MLP": 5.1,
+    "regresion/SVM": 39.5,
+    "regresion/Random Forest": 66.2,
+    "regresion/Gradient Boosting": 172.4,
+    "regresion/MLP": 30.8
+  },
+  "segundos_total": 331.4
+}
