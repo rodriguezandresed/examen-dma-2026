@@ -312,7 +312,7 @@ pide es la propia entrada.
 \setlength{\itemsep}{1pt}
 \setlength{\parsep}{0pt}
 \setlength{\topsep}{2pt}
-\enlargethispage{2\baselineskip}
+\enlargethispage{1\baselineskip}
 
 *Explique de qué manera la arquitectura de una red neuronal artificial influye en su
 capacidad de representación y generalización.*
@@ -1943,13 +1943,13 @@ kable(tab_c, format = "latex", booktabs = TRUE, row.names = FALSE,
       caption = "Clasificación en Breast Cancer Wisconsin: CV interna y hold-out.",
       format.args = list(decimal.mark = ",")) %>%
   kable_styling(latex_options = "HOLD_position", position = "center",
-                font_size = 9) %>%
-  column_spec(1, width = "2.8cm") %>%
-  column_spec(2, width = "3.2cm") %>%
+                font_size = 8) %>%
+  column_spec(1, width = "2.6cm") %>%
+  column_spec(2, width = "2.9cm") %>%
   column_spec(3, width = "1.3cm") %>%
-  column_spec(4, width = "2.1cm") %>%
-  column_spec(5:7, width = "1.4cm") %>%
-  column_spec(8, width = "1.6cm")
+  column_spec(4, width = "1.7cm") %>%
+  column_spec(5:7, width = "1.25cm") %>%
+  column_spec(8, width = "1.5cm")
 ```
 
 *Nota.* Elaboración propia con datos de Wolberg et al. (1993). Hold-out de `r pc$test`
@@ -1970,7 +1970,7 @@ kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
       caption = "Regresión en California Housing: CV interna y hold-out.",
       format.args = list(decimal.mark = ",")) %>%
   kable_styling(latex_options = "HOLD_position", position = "center",
-                font_size = 9) %>%
+                font_size = 8) %>%
   column_spec(1, width = "2.8cm") %>%
   column_spec(2, width = "4cm") %>%
   column_spec(3:5, width = "1.6cm") %>%
