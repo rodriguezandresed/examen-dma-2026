@@ -1355,20 +1355,21 @@ compacto y mejor separado. Sobre las clases verdaderas dio
 `r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
 `r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
 
-DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos, contándose a sí
-mismo, a distancia menor que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
-ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
+DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos, él incluido, a
+distancia menor que un radio $\varepsilon$; los núcleos vecinos se encadenan y el resto queda
+como ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
 de pares que ambas particiones dejan juntos o separados, corregida por el azar: 1 si
-coinciden, 0 si es el del azar. El radio se ubicó con la distancia al octavo
-vecino (gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))`
-y cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`;
-una primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
+coinciden, 0 si es el del azar. El radio se ubicó con la distancia al octavo vecino
+(gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))` y
+cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`; una
+primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
 `r nrow(e7eps)` valores barridos, de `r epsf(min(e7eps$eps))` a
 `r epsf(max(e7eps$eps))`, el mejor ARI sale con $\varepsilon$ = `r epsf(val("db_eps"))`:
 `r val("db_clusters")` grupos, `r val("db_ruido")` puntos de ruido
 (`r fmt(100 * val("db_ruido") / val("n"), 1)` %) y ARI de `r fmt(val("ari_dbscan"))`
-(`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido). Con $\varepsilon$ = `r epsf(min(e7eps$eps))`
-quedan `r e7eps$ruido[1]` de los `r val("n")` puntos como ruido, y desde
+(`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido).
+
+Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los `r val("n")` puntos como ruido, y desde
 $\varepsilon$ = `r epsf(e7_funde)` todo se funde en un grupo (ARI de
 `r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero manda puntos al
 ruido, y subirlo los recupera pero funde dígitos. La causa probable es un radio global frente
