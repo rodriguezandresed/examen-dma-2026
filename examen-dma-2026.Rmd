@@ -1232,6 +1232,8 @@ Ejercicio 5: al tratarse de una proyección lineal, no detecta grupos definidos 
 curvas, y un conjunto de anillos concéntricos aparece como una nube sin estructura. Ese es
 precisamente el problema que motiva a t-SNE.
 
+\needspace{7\baselineskip}
+
 ## Perfilado de los grupos obtenidos
 
 El perfilado es la generación de descripciones de cada grupo a partir de las variables de
@@ -1359,8 +1361,8 @@ de los datos.
 
 El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para medir
 su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
-al propio grupo contra la del grupo vecino más cercano: va de -1 a 1 y más alto es más
-compacto y mejor separado. Sobre las clases verdaderas dio
+al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y cuanto más alto, más
+compactos y separados están los grupos. Sobre las clases verdaderas dio
 `r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
 `r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
 
@@ -1401,14 +1403,16 @@ confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y 
 relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
 convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
 la perplejidad, y que la silueta de arriba apenas se mueva entre 30 y 50 no lo desmiente,
-porque esa mide clases ya conocidas. Tampoco proyecta observaciones
-nuevas sin recalcular todo, y por eso UMAP lo reemplaza ahí. Y con perplejidad
+porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: la
+implementación estándar no proyecta observaciones nuevas sin recalcular todo, y por eso UMAP
+lo reemplaza ahí. Y con perplejidad
 muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): *Preparation for
-Clustering*, *Assessing Clustering Results* y el apunte de t-SNE de la clase 8. van der
-Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE y Barnes-Hut; Ester et al. (1996)
-y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP. Código
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
+for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la clase 8,
+`TSNE_Perplejidad_Clustering_NoLineal`. van der Maaten y Hinton (2008) para la formulación
+original y van der Maaten (2014) para la variante de Barnes-Hut; Ester et al. (1996) para
+DBSCAN y Campello et al. (2013) para HDBSCAN; McInnes et al. (2018) para UMAP. Código
 propio: Apéndice A.5.
 
 \newpage
