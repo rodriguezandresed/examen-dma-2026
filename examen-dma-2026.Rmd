@@ -145,17 +145,16 @@ objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanec
 lo que motivó ReLU y las conexiones residuales, que suman la entrada de un bloque a su
 salida (Goodfellow et al., 2016).
 
-\needspace{7\baselineskip}
+\needspace{4\baselineskip}
 
 ## Punto III
 
 *Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
 De ejemplos de uso.*
 
-Los dos están en el material de la clase 4: `autoencoders.pdf` desarrolla el
-autoencoder completo, con el cuello de botella y los tipos convolucional, sparse,
-profundo y contractivo, y el apunte de taxonomía marca los autoencoders como vistos en clase y
-dedica una subsección a los word embeddings. Un embedding es un
+Los dos están en la clase 4: `autoencoders.pdf` desarrolla el autoencoder (tipos
+convolucional, sparse, profundo y contractivo) y el apunte de taxonomía dedica una
+subsección a los word embeddings. Un embedding es un
 vector denso y corto que representa un objeto discreto (palabra, producto, cliente) y
 que la red aprende como un peso más: word2vec lo aprende para cada palabra a partir de
 sus vecinas, y palabras de contextos parecidos quedan próximas (Mikolov et al., 2013).
@@ -196,13 +195,13 @@ cada ventana agrega invariancia a corrimientos chicos. En la Figura 1, el aplana
 convierte los mapas en un vector, la capa densa combina los rasgos y softmax da la
 probabilidad de cada clase.
 
-```{r e1-cnn, out.width="75%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
+```{r e1-cnn, out.width="56%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
 knitr::include_graphics("codigo/resultados/e1/cnn_capas.png")
 ```
 
 *Nota.* Elaboración propia a partir de `deep_learning_CONV_Ng.pptx` (Volpacchio, s.f.).
 
-\needspace{7\baselineskip}
+\needspace{4\baselineskip}
 
 ## Punto VI
 
@@ -239,7 +238,7 @@ $g_t = s(W_g x_t + U_g h_{t-1} + b_g)$, $g \in \{f, i, o\}$: $f_t$ dosifica cuá
 $c_{t-1}$ se conserva, $i_t$ cuánto de la candidata $\tilde c_t$ (tanh) se escribe y
 $o_t$ cuánto sale en $h_t$; con $f_t \approx 1$ el gradiente cruza la celda.
 
-```{r e1-lstm-topo, out.width="55%", fig.cap="Celda LSTM en un paso temporal."}
+```{r e1-lstm-topo, out.width="42%", fig.cap="Celda LSTM en un paso temporal."}
 knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
 ```
 
@@ -272,7 +271,7 @@ kable(
   caption = "LSTM: parámetros y error (media de tres semillas).",
   format.args = list(decimal.mark = ",")
 ) %>%
-  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
   column_spec(1, width = "2cm") %>%
   column_spec(2, width = "1.8cm") %>%
   column_spec(3, width = "1.4cm") %>%
@@ -294,25 +293,22 @@ todas las corridas (peor con una: `r fmt_e1(max(e1runs$val_mae[una]))`; mejor co
 desvío; se mantiene la elección, porque decidir con el test le quita valor de
 estimación.
 
-\needspace{7\baselineskip}
+\needspace{4\baselineskip}
 
 ## Punto VII
 
 *Describa el algoritmo encoder-decoder. Usos habituales.*
 
-La arquitectura existe porque una red recurrente sola exige que la entrada y la salida
-tengan el mismo largo, y traducir no funciona así. Son dos redes acopladas: el encoder
-resume la secuencia de entrada en un vector de contexto y el decoder genera la salida de a
-un elemento, realimentado con lo ya generado, hasta emitir el símbolo de fin
-(Sutskever et al., 2014). El cuello de botella está en ese vector de contexto, que tiene
-tamaño fijo y carga con la oración entera, de manera que el rendimiento se degrada cuanto
-más larga es. La atención lo resuelve: deja al decoder consultar en cada paso todos los
-estados del encoder en lugar de un único resumen (Bahdanau et al., 2015), y de ahí sale el
-Transformer, que descarta la recurrencia y se queda solo con la atención (Vaswani et al.,
-2017). Usos habituales: traducción automática, resumen de textos, reconocimiento de voz y
-descripción automática de imágenes, donde el encoder es una red convolucional y el decoder
-una recurrente. El autoencoder del Punto III es el caso particular en que la salida que se
-pide es la propia entrada.
+Una red recurrente sola exige entrada y salida del mismo largo, y traducir no funciona
+así. El encoder-decoder acopla dos redes: el encoder resume la entrada en un vector de
+contexto y el decoder genera la salida de a un elemento, realimentado con lo ya generado,
+hasta el símbolo de fin (Sutskever et al., 2014). El cuello de botella es ese vector de
+tamaño fijo, que carga con la oración entera y degrada el rendimiento cuanto más larga es;
+la atención deja al decoder consultar en cada paso todos los estados del encoder
+(Bahdanau et al., 2015), y el Transformer descarta la recurrencia y conserva solo la
+atención (Vaswani et al., 2017). Usos: traducción, resumen, voz y descripción de imágenes
+(encoder convolucional, decoder recurrente); el autoencoder del Punto III es el caso en
+que la salida pedida es la entrada.
 
 ## Punto VIII
 
@@ -340,6 +336,7 @@ generalización en el contexto del aprendizaje automático.*
   esto se conecta con el principio de mínima complejidad y el aprendizaje profundo
   moderno.*
 
+\enlargethispage{\baselineskip}
 La capacidad de representación es el conjunto de funciones que la arquitectura computa
 al variar sus pesos; la de generalización, sostener el desempeño en datos no vistos
 (brecha entre error de entrenamiento y de validación; Volpacchio, s.f.). Más capas y
@@ -369,14 +366,10 @@ de test vuelve a bajar porque el descenso de gradiente estocástico (SGD) y la
 regularización limitan la complejidad usada. Es una hipótesis: no se midió el error de
 entrenamiento.
 
-**Fuentes del Ejercicio 1.** Material de cátedra (Volpacchio, s.f.): apuntes de redes,
-MLP y SOM de la clase 3 y `deep_learning_CONV_Ng.pptx` para la convolución (Punto V); de la
-clase 4, `autoencoders.pdf` (Punto III), `Apunte - Dimensiones y Arquitectura LSTM`
-para la celda y el conteo de parámetros (Punto VI), `resumen_redes_recurrentes_2024_` y
-`atencion_mecanismo` para encoder-decoder y atención (Punto VII), y el apunte de
-taxonomía para embeddings, regularización y la relación entre parámetros y capacidad
-(Puntos III y VIII). Fuentes externas citadas en cada punto. Código propio: Apéndices A.1
-y A.2.
+**Fuentes del Ejercicio 1.** Material de cátedra (Volpacchio, s.f.): clase 3 (redes, MLP,
+SOM; `deep_learning_CONV_Ng.pptx`) y clase 4 (`autoencoders.pdf`, `Apunte - Dimensiones
+y Arquitectura LSTM`, `resumen_redes_recurrentes_2024_`, `atencion_mecanismo` y
+taxonomía). Código: A.1 y A.2.
 
 \newpage
 
@@ -1232,7 +1225,7 @@ Ejercicio 5: al tratarse de una proyección lineal, no detecta grupos definidos 
 curvas, y un conjunto de anillos concéntricos aparece como una nube sin estructura. Ese es
 precisamente el problema que motiva a t-SNE.
 
-\needspace{7\baselineskip}
+\needspace{3\baselineskip}
 
 ## Perfilado de los grupos obtenidos
 
@@ -1259,9 +1252,8 @@ separables son. Es la vía que reaparece en el Ejercicio 9. Se descarta la alter
 pruebas no paramétricas variable por variable, porque el sesgo viene de que los grupos se
 construyeron con estos mismos datos y no del supuesto de normalidad.
 
-El procedimiento se aplicó a los diez grupos que devolvió k-means sobre el conjunto de
-dígitos que se describe más abajo. Las variables de entrada son 64 píxeles, con
-lo cual una tabla de 10 por 64 resultaría ilegible, así que el perfilado va sobre las cinco
+Se aplicó a los diez grupos de k-means sobre los dígitos que se describen más abajo; con 64
+píxeles por imagen una tabla de 10 por 64 sería ilegible, y el perfilado va sobre las cinco
 primeras componentes principales.
 
 ```{r e7-perfiles}
@@ -1273,7 +1265,7 @@ knitr::kable(
   format.args = list(decimal.mark = ",")
 ) |>
   kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center",
-                            font_size = 9) |>
+                            font_size = 8) |>
   kableExtra::column_spec(1:7, width = "1.5cm")
 ```
 
@@ -1291,9 +1283,9 @@ mientras que otros dos se oponen sobre la primera componente con
 
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
 `r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
-para las cinco componentes. Hay un detalle que vale más que las magnitudes: el orden de los
-*F* no coincide con el orden de las componentes, porque la quinta separa mejor los grupos que
-la cuarta pese a explicar menos varianza total. Esa es exactamente la diferencia entre
+para las cinco componentes. Más que las magnitudes importa que el orden de los *F* no
+coincide con el de las componentes: la quinta separa mejor los grupos que la cuarta pese a
+explicar menos varianza total. Esa es exactamente la diferencia entre
 varianza total y varianza entre grupos, que es la razón de ser de CANDISC y el motivo por el
 cual un eje de máxima varianza no es necesariamente un eje de máxima separación. Los valores
 *p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
@@ -1309,11 +1301,10 @@ dominio, así que el perfil dice en qué dirección difieren los grupos y no qu�
 
 ## El algoritmo t-SNE
 
-El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una aclaración
-que el apunte de la clase 8 pone al inicio porque evita la mayor parte de los malentendidos:
-no es un algoritmo de clustering. Transforma el espacio de características para que las
-estructuras latentes se vuelvan visibles; el agrupamiento viene después, y sobre el espacio
-original.
+El apunte de la clase 8 abre con una aclaración que evita la mayor parte de los
+malentendidos: t-SNE (*t-distributed stochastic neighbor embedding*) no es un algoritmo de
+clustering. Transforma el espacio para que las estructuras latentes se vuelvan visibles; el
+agrupamiento viene después, y sobre el espacio original.
 
 En alta dimensión las distancias euclídeas al cuadrado se
 convierten en probabilidades mediante un kernel gaussiano centrado en cada punto $x_i$,
@@ -1348,14 +1339,14 @@ un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o 
 jerárquica HDBSCAN (Campello et al., 2013), y validar mediante la superposición de las
 etiquetas obtenidas sobre la proyección.
 
-El ejemplo de implementación está completo en el apéndice A.5 y aplica ese pipeline sobre los
+El ejemplo (apéndice A.5) aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
 componentes, nunca sobre el embedding, que es lo que el apunte admite al hablar de agrupar
 sobre el espacio original "o sobre una reducción PCA previa si la dimensionalidad es
-extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen siendo las
-de los datos.
+extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza, y las
+distancias son las de los datos.
 
 ## Resultados sobre los dígitos
 
@@ -1408,12 +1399,11 @@ implementación estándar no proyecta observaciones nuevas sin recalcular todo, 
 lo reemplaza ahí. Y con perplejidad
 muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos *Preparation
-for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la clase 8,
-`TSNE_Perplejidad_Clustering_NoLineal`. van der Maaten y Hinton (2008) para la formulación
-original y van der Maaten (2014) para la variante de Barnes-Hut; Ester et al. (1996) para
-DBSCAN y Campello et al. (2013) para HDBSCAN; McInnes et al. (2018) para UMAP. Código
-propio: Apéndice A.5.
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): *Preparation for
+Clustering*, *Assessing Clustering Results* y `TSNE_Perplejidad_Clustering_NoLineal`
+(clase 8). Van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE; Ester et
+al. (1996) y Campello et al. (2013) para DBSCAN; McInnes et al. (2018) para UMAP. Código:
+A.5.
 
 \newpage
 
