@@ -43,6 +43,7 @@ header-includes:
   - \setlength{\textfloatsep}{8pt plus 2pt minus 4pt}
   - \setlength{\abovecaptionskip}{4pt}
   - \setlength{\belowcaptionskip}{1pt}
+  - \usepackage{needspace}
   - \usepackage{etoolbox}
   - \pretocmd{\tableofcontents}{\clearpage}{}{}
   - \apptocmd{\tableofcontents}{\clearpage}{}{}
@@ -144,6 +145,8 @@ objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanec
 lo que motivó ReLU y las conexiones residuales, que suman la entrada de un bloque a su
 salida (Goodfellow et al., 2016).
 
+\needspace{7\baselineskip}
+
 ## Punto III
 
 *Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
@@ -198,6 +201,8 @@ knitr::include_graphics("codigo/resultados/e1/cnn_capas.png")
 ```
 
 *Nota.* Elaboración propia a partir de `deep_learning_CONV_Ng.pptx` (Volpacchio, s.f.).
+
+\needspace{7\baselineskip}
 
 ## Punto VI
 
@@ -289,6 +294,8 @@ todas las corridas (peor con una: `r fmt_e1(max(e1runs$val_mae[una]))`; mejor co
 desvío; se mantiene la elección, porque decidir con el test le quita valor de
 estimación.
 
+\needspace{7\baselineskip}
+
 ## Punto VII
 
 *Describa el algoritmo encoder-decoder. Usos habituales.*
@@ -312,7 +319,6 @@ pide es la propia entrada.
 \setlength{\itemsep}{1pt}
 \setlength{\parsep}{0pt}
 \setlength{\topsep}{2pt}
-\enlargethispage{1\baselineskip}
 
 *Explique de qué manera la arquitectura de una red neuronal artificial influye en su
 capacidad de representación y generalización.*
@@ -414,7 +420,7 @@ hiperplano, porque $w = \sum_i \alpha_i y_i x_i$.
 El apunte presenta cuatro versiones; cada una relaja un supuesto de la anterior, y por
 eso aparece en cada paso un componente nuevo del algoritmo (Volpacchio, s.f.).
 
-- SVM lineal con datos separables (margen duro). Es la versión básica descripta arriba:
+- SVM lineal con datos separables (margen duro). Es la versión básica descrita arriba:
   exige que ningún punto quede entre $H_{+1}$ y $H_{-1}$, por lo que solo funciona si
   las clases se separan en forma perfecta con un hiperplano.
 - SVM lineal con separación imperfecta (margen blando). Admite ruido en la frontera: se
@@ -913,14 +919,14 @@ grupos antes de un clustering, uso que aparece en `Preparation for Clustering.pd
 combinación de todas; por eso una componente es más difícil de interpretar que una
 variable original. Su limitación estructural es que solo captura relaciones lineales.
 
-La cátedra nombra a Kernel PCA pero no lo desarrolla: el apunte de taxonomía de la clase 4
-lo lista como variante no lineal del PCA y como uno de los métodos de kernel junto con SVM,
-y `t_sne.pdf` de la clase 7 lo menciona entre las alternativas no lineales. La
-selección de kernel, por su parte, aparece solo como prueba y error sobre datos de
-validación, con la herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
-con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
-`Transformación de clústeres no lineales` como si fuera Kernel PCA: ese material mapea
-clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
+Kernel PCA figura en el material sin desarrollo: el apunte de taxonomía de la clase 4 lo
+lista como variante no lineal del PCA, y `t_sne.pdf` de la clase 7 lo menciona entre las
+alternativas no lineales. De la selección de kernel solo hay prueba y error sobre datos de
+validación, con la herramienta de SVM del Ejercicio 2. No corresponde tomar el PDF
+`Transformación de clústeres no lineales` como Kernel PCA: ese material mapea clusters con
+una $\phi$ explícita y no diagonaliza una matriz de kernel.
+
+\needspace{7\baselineskip}
 
 ## El truco del kernel
 
@@ -974,6 +980,8 @@ reconstrucción directa: un punto del espacio de características no siempre tie
 pre-imagen exacta en el espacio original, y las componentes ya no tienen cargas sobre
 las variables que se puedan leer. Kernel PCA extiende al PCA; no lo reemplaza, y con el
 kernel lineal se recupera el PCA clásico.
+
+\needspace{7\baselineskip}
 
 ## Cómo elegir el kernel
 
@@ -1250,7 +1258,7 @@ pruebas no paramétricas variable por variable, porque el sesgo viene de que los
 construyeron con estos mismos datos y no del supuesto de normalidad.
 
 El procedimiento se aplicó a los diez grupos que devolvió k-means sobre el conjunto de
-dígitos manuscritos que se describe más abajo. Las variables de entrada son 64 píxeles, con
+dígitos que se describe más abajo. Las variables de entrada son 64 píxeles, con
 lo cual una tabla de 10 por 64 resultaría ilegible, así que el perfilado va sobre las cinco
 primeras componentes principales.
 
@@ -1262,7 +1270,8 @@ knitr::kable(
   align = c("l", "r", "r", "r", "r", "r", "r"),
   format.args = list(decimal.mark = ",")
 ) |>
-  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") |>
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center",
+                            font_size = 9) |>
   kableExtra::column_spec(1:7, width = "1.5cm")
 ```
 
@@ -1346,7 +1355,7 @@ sobre el espacio original "o sobre una reducción PCA previa si la dimensionalid
 extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias siguen siendo las
 de los datos.
 
-## Resultados sobre los dígitos manuscritos
+## Resultados sobre los dígitos
 
 El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para medir
 su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
@@ -1426,7 +1435,7 @@ manera adaptativa las observaciones en cada ronda, pero le queda grande a Gradie
 que no repondera ni remuestrea nada: lo que cambia de ronda en ronda es el objetivo que se
 ajusta. La presentación los agrupa igual, y la diferencia aparece dos párrafos más abajo.
 
-La diferencia de fondo es simple de enunciar. AdaBoost cambia la importancia de las
+AdaBoost cambia la importancia de las
 observaciones y mantiene fijo el objetivo; Gradient Boosting cambia el objetivo y mantiene
 fija la importancia de las observaciones. Son dos maneras distintas de indicarle al siguiente
 modelo dónde están los errores del anterior. De ahí se desprende el resto: AdaBoost nació para
@@ -1502,7 +1511,7 @@ de diferencias en una jerarquía.
 
 ## Cómo trabaja Gradient Boosting
 
-La explicación intuitiva que trae el material de cátedra es la del golfista. Un golfista
+La explicación intuitiva de `Gradient boosting explicado` es la del golfista. Un golfista
 intenta embocar la pelota en el hoyo, ubicado en $y$. El primer golpe, $F_0(x)$, es una
 aproximación gruesa que en el caso más simple consiste en predecir para todos el promedio de
 $y$, y la pelota queda a cierta distancia. El golfista no vuelve al punto de partida: golpea
@@ -1510,9 +1519,8 @@ desde donde quedó la pelota y calcula el nuevo golpe según cuánto le falta. E
 golpe corrige el error del primero, el tercero corrige lo que quedó del segundo, y así
 sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + \nu\, \beta_m h_m(x)$, donde $\nu$
 contrae el paso óptimo $\beta_m$ de la fórmula de arriba. Cada modelo débil no intenta
-predecir $y$ sino la distancia que falta, y esa distancia que falta es exactamente lo que el
-material de cátedra llama pseudo-residuo. El documento de cátedra desarrolla el ejemplo numérico con los
-alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
+predecir $y$ sino la distancia que falta, y esa distancia es el pseudo-residuo. El ejemplo
+numérico son los alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
 ahí cada modelo se entrena sobre el vector de residuos que dejó el anterior.
 
 El nombre del método viene de que el gradiente de la pérdida cuadrática respecto de la
