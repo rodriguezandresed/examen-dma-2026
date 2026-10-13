@@ -3,7 +3,7 @@ title: "Examen Final"
 subtitle: "Data Mining Avanzado · Maestría en Explotación de Datos y Gestión del Conocimiento · Universidad Austral"
 date: "`r paste0(format(Sys.Date(),'%d'), ' de ', c('enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre')[as.integer(format(Sys.Date(),'%m'))], ' de ', format(Sys.Date(),'%Y'))`"
 lang: es
-geometry: "margin=2.0cm"
+geometry: "top=1.7cm, bottom=2.2cm, left=2.0cm, right=2.0cm, headsep=8pt, footskip=40pt"
 fontsize: 12pt
 output:
   pdf_document:
@@ -17,6 +17,9 @@ header-includes:
   - \usepackage{float}
   - \usepackage{graphicx}
   - \usepackage{grffile}
+  - \usepackage{titlesec}
+  - \titlespacing*{\section}{0pt}{10pt plus 2pt minus 2pt}{5pt}
+  - \titlespacing*{\subsection}{0pt}{7pt plus 1pt minus 1pt}{3pt}
   - \usepackage{fvextra}
   - \DefineVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
   - \usepackage{titling}
@@ -40,10 +43,11 @@ header-includes:
   - \setlength{\textfloatsep}{8pt plus 2pt minus 4pt}
   - \setlength{\abovecaptionskip}{4pt}
   - \setlength{\belowcaptionskip}{1pt}
+  - \usepackage{needspace}
   - \usepackage{etoolbox}
   - \pretocmd{\tableofcontents}{\clearpage}{}{}
   - \apptocmd{\tableofcontents}{\clearpage}{}{}
-  - \apptocmd{\maketitle}{\thispagestyle{empty}\begin{center}\vspace{1.2em}{\large Andres Rodriguez}\\[0.35em]{\large Marcos Maceo}\end{center}}{}{}
+  - \apptocmd{\maketitle}{\thispagestyle{empty}\begin{center}\vspace{1.2em}{\large Ulises Catalano}\\[0.35em]{\large Marcos Maceo}\\[0.35em]{\large Andrés Rodríguez}\end{center}}{}{}
 ---
 
 <!-- PORTADA grupal: nombres en la misma hoja del título (via apptocmd maketitle).
@@ -105,8 +109,8 @@ más que una regresión lineal. Con activación sigmoidal, una capa oculta con s
 neuronas aproxima cuanto se quiera cualquier función continua sobre una región cerrada
 y acotada (Cybenko, 1989).
 
-El apunte cubre cuatro activaciones y se agrega ReLU, $\max(0, z)$, la más usada en
-redes profundas (Goodfellow et al., 2016). El escalón da salida binaria, pero su
+Las activaciones más comunes son el escalón, la sigmoide, tanh, softmax y ReLU,
+$\max(0, z)$, la más usada en redes profundas (Goodfellow et al., 2016). El escalón da salida binaria, pero su
 derivada es nula (salvo en 0, donde no existe) y no sirve para entrenar por gradiente.
 La sigmoidal, con rango $(0, 1)$, se lee como probabilidad; tanh, con rango $(-1, 1)$,
 está centrada en cero. Ambas saturan: lejos del origen la derivada es casi nula y su
@@ -132,19 +136,25 @@ salida que alimenta a $j$; $\eta \in (0, 1)$: tasa de aprendizaje), tras cada
 observación (online), tras cada época (batch) o tras lotes chicos.
 
 La calidad depende de los datos frente a la cantidad de pesos, de $\eta$ (chica no
-avanza, grande oscila), de los mínimos locales y del criterio de corte; el apunte frena
-el sobreajuste con early stopping (cortar cuando sube el error de validación) y weight
-decay (penalizar pesos grandes). Sus redes son superficiales (shallow), con una capa
+avanza, grande oscila), de los mínimos locales y del criterio de corte. Contra el
+sobreajuste, el apunte de taxonomía de la clase 4 agrupa early stopping (cortar cuando
+sube el error de validación), weight decay y dropout como formas de la misma idea,
+restringir la familia de funciones. Una red superficial (shallow) tiene una sola capa
 oculta. Una profunda (deep) apila capas que arman rasgos sobre rasgos (bordes, formas,
 objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanece más,
-lo que motivó ReLU y las conexiones residuales (Goodfellow et al., 2016).
+lo que motivó ReLU y las conexiones residuales, que suman la entrada de un bloque a su
+salida (Goodfellow et al., 2016).
+
+\needspace{4\baselineskip}
 
 ## Punto III
 
 *Explique el concepto de "embedding" y autoencoder en el contexto de "Deep Learning".
 De ejemplos de uso.*
 
-Ninguno de los dos aparece con este detalle en los PDF de redes. Un embedding es un
+Los dos están en la clase 4: `autoencoders.pdf` desarrolla el autoencoder (tipos
+convolucional, sparse, profundo y contractivo) y el apunte de taxonomía dedica una
+subsección a los word embeddings. Un embedding es un
 vector denso y corto que representa un objeto discreto (palabra, producto, cliente) y
 que la red aprende como un peso más: word2vec lo aprende para cada palabra a partir de
 sus vecinas, y palabras de contextos parecidos quedan próximas (Mikolov et al., 2013).
@@ -175,7 +185,7 @@ distintas capas de una red convolucional y explique.*
 
 Una convolución recorre un filtro, una matriz de pesos mucho más chica que la entrada,
 sobre un mapa de píxeles; cada suma de productos forma un punto del mapa de
-características. El *kernel* de las slides de CNN es ese filtro, no el de SVM. Con lado
+características. El *kernel* de las diapositivas de CNN es ese filtro, no el de SVM. Con lado
 $n$, filtro $f$, relleno del borde (padding) $r$ y salto (stride) $s$, la salida mide
 $\lfloor (n + 2r - f)/s \rfloor + 1$ (`deep_learning_CONV_Ng.pptx`; Volpacchio, s.f.).
 LeCun et al. (1998) aprenden el filtro por backpropagation, con conexión local y pesos
@@ -185,11 +195,13 @@ cada ventana agrega invariancia a corrimientos chicos. En la Figura 1, el aplana
 convierte los mapas en un vector, la capa densa combina los rasgos y softmax da la
 probabilidad de cada clase.
 
-```{r e1-cnn, out.width="75%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
+```{r e1-cnn, out.width="56%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
 knitr::include_graphics("codigo/resultados/e1/cnn_capas.png")
 ```
 
 *Nota.* Elaboración propia a partir de `deep_learning_CONV_Ng.pptx` (Volpacchio, s.f.).
+
+\needspace{4\baselineskip}
 
 ## Punto VI
 
@@ -217,21 +229,22 @@ pct_e1 <- function(x) paste0(round(100 * x), "\\thinspace{}%")
 Una RNN (red recurrente) clásica, las Recurrent Networks del apunte (Volpacchio,
 s.f.), reutiliza su estado, $h_t = f(W x_t + U h_{t-1} + b)$, con los mismos pesos en
 cada paso; hacia atrás el gradiente se multiplica por $U$ una vez por paso y en
-dependencias largas se desvanece o explota. La LSTM (Long Short-Term Memory), no
-desarrollada en los PDF, agrega una celda $c_t$ que se actualiza con una suma de lo nuevo y lo
+dependencias largas se desvanece o explota. La LSTM (Long Short-Term Memory), que el apunte
+`Dimensiones y Arquitectura LSTM` de la clase 4 desarrolla puerta por puerta, agrega una
+celda $c_t$ que se actualiza con una suma de lo nuevo y lo
 anterior (Hochreiter & Schmidhuber, 1997) y una puerta de olvido (Gers et al., 2000).
 En la Figura 2 ($s$: sigmoidal; $\odot$: producto elemento a elemento), cada puerta es
 $g_t = s(W_g x_t + U_g h_{t-1} + b_g)$, $g \in \{f, i, o\}$: $f_t$ dosifica cuánto de
 $c_{t-1}$ se conserva, $i_t$ cuánto de la candidata $\tilde c_t$ (tanh) se escribe y
 $o_t$ cuánto sale en $h_t$; con $f_t \approx 1$ el gradiente cruza la celda.
 
-```{r e1-lstm-topo, out.width="55%", fig.cap="Celda LSTM en un paso temporal."}
+```{r e1-lstm-topo, out.width="42%", fig.cap="Celda LSTM en un paso temporal."}
 knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
 ```
 
 *Nota.* Elaboración propia. $x_t$ y $h_{t-1}$ alimentan las cuatro cajas superiores.
 
-Con la fórmula de cátedra,
+Con la fórmula de ese apunte,
 $4 \times [(\text{units} \times \text{input\_dim}) + \text{units}^{2} + \text{units}]$
 por capa (tres puertas y la candidata, cada una con $W$, $U$ y sesgo), `lstm_32` tiene
 $4 \times [(32 \times 1) + 32^{2} + 32] = 4352$ parámetros, como `model.summary()`. El
@@ -258,7 +271,7 @@ kable(
   caption = "LSTM: parámetros y error (media de tres semillas).",
   format.args = list(decimal.mark = ",")
 ) %>%
-  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 8) %>%
   column_spec(1, width = "2cm") %>%
   column_spec(2, width = "1.8cm") %>%
   column_spec(3, width = "1.4cm") %>%
@@ -280,23 +293,28 @@ todas las corridas (peor con una: `r fmt_e1(max(e1runs$val_mae[una]))`; mejor co
 desvío; se mantiene la elección, porque decidir con el test le quita valor de
 estimación.
 
+\needspace{4\baselineskip}
+
 ## Punto VII
 
 *Describa el algoritmo encoder-decoder. Usos habituales.*
 
-No aparece con este detalle en los PDF. Son dos redes acopladas: el encoder resume la
-secuencia de entrada en un vector de contexto y el decoder genera la salida de a un
-elemento, realimentado con lo ya generado (Sutskever et al., 2014). Para no comprimir
-una oración larga en un vector fijo, la atención deja al decoder consultar todos los
-estados del encoder (Bahdanau et al., 2015), base del Transformer (Vaswani et al.,
-2017). Usos: traducción, resumen, voz, descripción de imágenes y el autoencoder (III).
+Una red recurrente sola exige entrada y salida del mismo largo, y traducir no funciona
+así. El encoder-decoder acopla dos redes: el encoder resume la entrada en un vector de
+contexto y el decoder genera la salida de a un elemento, realimentado con lo ya generado,
+hasta el símbolo de fin (Sutskever et al., 2014). El cuello de botella es ese vector de
+tamaño fijo, que carga con la oración entera y degrada el rendimiento cuanto más larga es;
+la atención deja al decoder consultar en cada paso todos los estados del encoder
+(Bahdanau et al., 2015), y el Transformer descarta la recurrencia y conserva solo la
+atención (Vaswani et al., 2017). Usos: traducción, resumen, voz y descripción de imágenes
+(encoder convolucional, decoder recurrente); el autoencoder del Punto III es el caso en
+que la salida pedida es la entrada.
 
 ## Punto VIII
 
 \setlength{\itemsep}{1pt}
 \setlength{\parsep}{0pt}
 \setlength{\topsep}{2pt}
-\enlargethispage{2\baselineskip}
 
 *Explique de qué manera la arquitectura de una red neuronal artificial influye en su
 capacidad de representación y generalización.*
@@ -318,14 +336,15 @@ generalización en el contexto del aprendizaje automático.*
   esto se conecta con el principio de mínima complejidad y el aprendizaje profundo
   moderno.*
 
+\enlargethispage{\baselineskip}
 La capacidad de representación es el conjunto de funciones que la arquitectura computa
 al variar sus pesos; la de generalización, sostener el desempeño en datos no vistos
 (brecha entre error de entrenamiento y de validación; Volpacchio, s.f.). Más capas y
 neuronas agrandan la primera si la activación es no lineal; weight decay, early
 stopping y dropout (apagar neuronas al azar; Srivastava et al., 2014) la restringen.
 La convolución supone rasgos locales repetidos, la recurrencia orden temporal y la
-capa densa nada; las conexiones residuales (sumar la entrada de un bloque a su salida)
-permiten entrenar más de cien capas (He et al., 2016).
+capa densa nada; las conexiones residuales permiten entrenar más de cien capas
+(He et al., 2016).
 
 Sesgo es la distancia entre la predicción promedio sobre las muestras posibles y el
 valor verdadero; varianza, cuánto cambia el ajuste de una muestra a otra; el error
@@ -347,8 +366,10 @@ de test vuelve a bajar porque el descenso de gradiente estocástico (SGD) y la
 regularización limitan la complejidad usada. Es una hipótesis: no se midió el error de
 entrenamiento.
 
-**Fuentes del Ejercicio 1.** Apuntes de redes, MLP y SOM y `deep_learning_CONV_Ng.pptx`
-(Volpacchio, s.f.); fuentes externas citadas en cada punto; código en `codigo/e1_lstm/`.
+**Fuentes del Ejercicio 1.** Material de cátedra (Volpacchio, s.f.): clase 3 (redes, MLP,
+SOM; `deep_learning_CONV_Ng.pptx`) y clase 4 (`autoencoders.pdf`, `Apunte - Dimensiones
+y Arquitectura LSTM`, `resumen_redes_recurrentes_2024_`, `atencion_mecanismo` y
+taxonomía). Código: A.1 y A.2.
 
 \newpage
 
@@ -361,6 +382,8 @@ resto de los algoritmos de Machine Learning?*
 *¿Cómo se adapta SVM clasificación, para poder usarlo como regresión?*
 
 <!-- El PDF original escribe "VSM"; es un error de tipeo por SVM. -->
+
+## Qué es y tipos de SVM
 
 Una máquina de vectores soporte (SVM, por Support Vector Machine) es un algoritmo de
 clasificación que busca un hiperplano separador entre dos clases (Volpacchio, s.f.). En
@@ -390,7 +413,7 @@ hiperplano, porque $w = \sum_i \alpha_i y_i x_i$.
 El apunte presenta cuatro versiones; cada una relaja un supuesto de la anterior, y por
 eso aparece en cada paso un componente nuevo del algoritmo (Volpacchio, s.f.).
 
-- SVM lineal con datos separables (margen duro). Es la versión básica descripta arriba:
+- SVM lineal con datos separables (margen duro). Es la versión básica descrita arriba:
   exige que ningún punto quede entre $H_{+1}$ y $H_{-1}$, por lo que solo funciona si
   las clases se separan en forma perfecta con un hiperplano.
 - SVM lineal con separación imperfecta (margen blando). Admite ruido en la frontera: se
@@ -419,8 +442,10 @@ espacio para detectar anomalías (Schölkopf et al., 2001); y con más de dos cl
 combinan clasificadores binarios, uno contra uno o uno contra el resto (Hsu & Lin,
 2002).
 
-La consigna pregunta por la versión no lineal separable: los datos, una vez llevados
-al Feature Space, se separan sin error. Los parámetros externos (los valores que el
+## Parámetros externos
+
+En la versión no lineal separable los datos, una vez llevados al Feature Space, se
+separan sin error. Los parámetros externos (los valores que el
 usuario fija antes del entrenamiento y que el algoritmo no aprende de los datos) son
 entonces solo el kernel y sus parámetros; $C$ no interviene, porque sin holgura no hay
 errores que penalizar, lo que equivale a $C \to \infty$. Como en la práctica nunca se
@@ -448,6 +473,8 @@ valores de $C$, con kernel RBF y polinómicos de varios grados, y con distintos 
 de conjunto de entrenamiento, con la eficacia de clasificación como criterio de
 comparación (Volpacchio, s.f.).
 
+## La característica que lo distingue
+
 La característica que distingue a SVM es que el control de la capacidad está dentro
 del propio criterio que optimiza y tiene respaldo en la teoría del Ejercicio 3. En
 otros algoritmos de la materia la regularización se agrega aparte y se ajusta por
@@ -470,6 +497,8 @@ Otros algoritmos estiman el error sin hold-out, como el error out-of-bag de Rand
 Forest, pero no dan una cota leída de la propia solución. El problema de optimización,
 además, es convexo (mínimo global), a diferencia de las redes neuronales, que pueden
 quedar atrapadas en mínimos locales.
+
+## De clasificación a regresión
 
 Para usar SVM como regresión se cambia el criterio de ajuste: en lugar del margen entre
 clases se mide el error de aproximación entre la predicción $f(x) = w \cdot x - b$ y el
@@ -503,7 +532,8 @@ de la clasificación es $\varepsilon$, el radio del tubo, que fija cuánta desvi
 tolera sin costo.
 
 **Fuentes del Ejercicio 2.** Material de cátedra (Volpacchio, s.f.): presentación
-`SVM Universidad Austral.pdf` (clases 1 y 2), en particular las secciones de la
+`SVM Universidad Austral.pdf` (clase 2, que reproduce las diapositivas de SLT de la
+clase 1), en particular las secciones de la
 versión lineal, la separación imperfecta, el kernel trick, la cota por vectores
 soporte y Support Vector Regression. Burges (1998) para la formulación del
 clasificador; Cortes y Vapnik (1995) para el margen blando; Vapnik (1995) para la cota
@@ -530,6 +560,8 @@ e3l <- e3m$particion$clasificacion$train
 f3 <- function(x, d = 3) formatC(x, format = "f", digits = d, decimal.mark = ",")
 ```
 
+## De qué trata el campo
+
 La Statistical Learning Theory (SLT, teoría del aprendizaje estadístico) es el marco
 teórico del aprendizaje automático: estudia cómo inducir, a partir de la información
 empírica de una muestra, el comportamiento de una población, con un riesgo de error
@@ -550,12 +582,16 @@ del riesgo empírico es consistente, es decir, converge al mejor clasificador de
 espacio de funciones del algoritmo a medida que crece la muestra: la condición es que
 la capacidad de ese espacio esté restringida. De este marco surgió el desarrollo de SVM.
 
+## El indicador de complejidad con SVM
+
 Con el algoritmo SVM, el indicador de la complejidad de un conjunto de datos es la
 cantidad de vectores soporte de la solución, los puntos definidos en el Ejercicio 2 que
 determinan el hiperplano. Clases bien separadas se resuelven con pocos vectores
 soporte; una frontera con clases superpuestas obliga a retener muchos puntos. Por la
 cota del Ejercicio 2, una proporción alta de vectores soporte anticipa un error de
 generalización alto: el problema es complejo para ese algoritmo.
+
+## Capacidad y dimensión VC
 
 La capacidad de un algoritmo es la aptitud de su familia de funciones para adaptarse a
 los datos: cuanto más grande es el espacio de funciones entre las que el algoritmo
@@ -587,14 +623,18 @@ $d$. La lectura operativa es la minimización del riesgo estructural: no alcanza
 $R_{\mathrm{emp}}$ bajo; hay que elegir la familia cuya suma de riesgo empírico e
 intervalo de confianza VC sea la menor (Vapnik, 1995; Volpacchio, s.f.).
 
+## La estimación heurística
+
 Fuera del caso de SVM, la dimensión VC en general no se calcula en forma exacta. La
 manera heurística que propone la teoría, según el apunte, es una regla sobre la
 relación entre capacidad y datos: $d/l < 0{,}05$, para que el intervalo de confianza VC
 sea chico frente al riesgo empírico (Volpacchio, s.f.). La estimación de $d$ cuenta los
 parámetros libres del modelo; para un clasificador del tipo hiperplano sobre $k$
-variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía no es la fórmula
-de capacidad propia de SVM (allí el margen acota la dimensión VC), que la consigna
-pide dejar de lado. Para modelos no lineales contar parámetros es solo una
+variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía es la genérica, no la fórmula de
+capacidad propia de SVM, donde el margen acota la dimensión VC y que acá queda fuera. El
+propio apunte avisa que contar parámetros no equivale a medir la capacidad y remite al
+contraejemplo de Vapnik (1995); de ahí que la vía sea heurística. Para modelos no lineales
+contar parámetros es solo una
 aproximación, y el Ejercicio 1.VIII muestra que en una red sobrestima la capacidad.
 
 Con $l = 1000$ observaciones y $k$ variables, la regla exige
@@ -603,7 +643,7 @@ apunte agrega otra regla para el control del sobreajuste: 30 veces más datos qu
 parámetros si hay ruido y 5 veces si no lo hay. Con 1000 observaciones eso da hasta
 33 parámetros con ruido ($k \le 32$) y hasta 200 sin ruido ($k \le 199$). Se adopta la
 regla de 30 veces para datos reales, que casi siempre tienen ruido, y $d/l < 0{,}05$
-como la respuesta a la heurística de Vapnik-Chervonenkis que pide la consigna. Si hay
+como la heurística de Vapnik-Chervonenkis. Si hay
 más variables, las salidas son reducir la dimensión, por ejemplo con componentes
 principales (combinaciones lineales de las variables que concentran su varianza), o
 conseguir más observaciones.
@@ -640,6 +680,8 @@ e4r <- e4c[e4c$codificacion == "real", ]
 e4_dist <- pmax(abs(e4r$x1), abs(e4r$x2))
 e4_fino <- e4_dist < 0.5 & e4r$mejor_f >= e4m$umbral
 ```
+
+## Pseudocódigo
 
 Un algoritmo genético (AG) es un procedimiento probabilístico de optimización que
 mantiene una población de soluciones candidatas y la hace evolucionar con mecanismos
@@ -679,7 +721,9 @@ torneo toma al azar unos pocos cromosomas y se queda con el mejor. Los parámetr
 externos son el tamaño `pop_size`, la probabilidad de cruce $p_c$, la de mutación $p_m$
 y el criterio de corte: un número fijo de generaciones o el estancamiento del mejor
 fitness. El elitismo copia al mejor individuo de $P(t-1)$ hacia $P(t)$ para que el azar
-no lo elimine; las slides del ciclo básico no lo exigen.
+no lo elimine; las diapositivas del ciclo básico no lo exigen.
+
+## AG binarios y AG reales
 
 En el AG binario cada cromosoma es una cadena de bits. Para una variable continua en
 un dominio $[a, b]$, el dominio se discretiza: con $m$ bits se obtienen $2^m$ valores
@@ -728,7 +772,9 @@ genética, donde el individuo es un programa representado como árbol, es una de
 del mismo esquema y no se toma como el pseudocódigo pedido.
 
 Para ver la diferencia en un caso concreto se programaron los dos AG con DEAP sobre la
-función de Rastrigin en dos variables,
+función de Rastrigin en dos variables, que es el banco de pruebas del notebook de
+algoritmos evolutivos de la clase 7, de donde se toman también el dominio, el cruce de
+mezcla con $\alpha = 0{,}5$, la mutación gaussiana de desvío 0,3 y el torneo de tres,
 $f(x) = 20 + \sum_{i=1}^{2} \left(x_i^2 - 10\cos 2\pi x_i\right)$ en
 $[-5{,}12;\, 5{,}12]^2$, cuyo mínimo global $f = 0$ está en el origen, rodeado de una
 grilla de mínimos locales cerca de los puntos enteros. Se descartó la esfera
@@ -765,16 +811,20 @@ coordenada a menos de 0,1 de $\pm 1$. La generación mediana se calcula sobre la
 corridas que bajaron de 0,01.
 
 Ninguna codificación garantiza el óptimo: las dos llegan a $f < 0{,}01$ en cerca de la
-mitad de las corridas. La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
+mitad de las corridas.
+
+La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
 binarias que no entran a la cuenca global quedan clavadas en un valle vecino, con
 alguna coordenada en $\pm 1$: el entero que codifica $x = 1$ difiere en
-`r e4m$hamming_1_0` bits de los que rodean a $x = 0$, y con probabilidad
+`r e4m$hamming_1_0` bits del más cercano de los dos enteros que rodean a $x = 0$, y con probabilidad
 1/`r 1 / e4m$p_mut_bit` por bit una mutación que cambie esos bits a la vez es casi
 imposible. Es el fenómeno anticipado al comparar las codificaciones: valores vecinos
 del dominio con códigos lejanos. Las reales entran a la cuenca global en
 `r e4m$real$n_cuenca` de `r e4m$n_semillas` corridas; `r sum(e4_fino)` de ellas quedan
 a menos de `r f4(ceiling(100 * max(e4_dist[e4_fino])) / 100)` del origen sin terminar
-el ajuste fino, porque un desvío de 0,3 es grueso a esa escala. Se interpreta que, con
+el ajuste fino, porque un desvío de 0,3 es grueso a esa escala.
+
+Se interpreta que, con
 el mismo presupuesto de `r formatC(e4m$n_evals, format = "d", big.mark = ".", decimal.mark = ",")` evaluaciones, la
 codificación real explora mejor la vecindad del óptimo; la binaria necesitaría una
 mutación más agresiva o un código Gray, en el que enteros consecutivos difieren en un
@@ -792,9 +842,12 @@ Tres casos de aplicación documentados, en dominios distintos:
    muchos mínimos locales.
 3. **Selección de variables en datos de alta dimensión.** Feng (2024) usa un AG en el
    que cada individuo representa un subconjunto de variables y el fitness es el
-   desempeño del clasificador, sobre conjuntos de expresión génica de tumores (colon,
-   linfoma, entre otros); en uno de ellos informa una reducción de 724 a 372 variables
-   con una exactitud que sube de 0,935 a 0,982.
+   desempeño del clasificador, y lo evalúa sobre Fashion-MNIST y sobre ocho conjuntos de
+   expresión génica (colon, leucemia, linfoma, SRBCT, sistema nervioso central, ovario y
+   dos más). Sobre Fashion-MNIST el filtrado baja de 724 a 372 variables y la exactitud
+   sube de 0,935 a 0,982.
+
+## Implementación con software libre
 
 Para una implementación con software libre se eligió DEAP (*Distributed Evolutionary
 Algorithms in Python*), presentado por Fortin et al. (2012): es la biblioteca de la
@@ -816,9 +869,11 @@ operador queda a la vista, mientras que GA los trae ya elegidos por defecto.
 **Fuentes del Ejercicio 4.** Material de cátedra (Volpacchio, s.f.): presentación
 `Algoritmos geneticos Universidad Austral.pdf` (ciclo básico, ruleta, representación de
 22 bits y teorema del esquema) y notebook de la clase 7, mitad evolutiva (DEAP y máscara
-binaria para variables). Goldberg (1989); Michalewicz (1996); Holland (1975); Davis
-(1985); Montana y Davis (1989); Feng (2024); Fortin et al. (2012); Scrucca (2013).
-Código propio: Apéndice A.3.
+binaria para variables). Holland (1975) para el esquema original y Goldberg (1989) para la
+codificación binaria y el efecto de los operadores; Michalewicz (1996) para los AG reales y
+la estructura del pseudocódigo; Davis (1985), Montana y Davis (1989) y Feng (2024) para los
+tres casos de aplicación; Fortin et al. (2012) para DEAP y Scrucca (2013) para el paquete
+GA de R. Código propio: Apéndice A.3.
 
 \newpage
 
@@ -834,6 +889,8 @@ explique con sus palabras).*
 Kernel apropiado en un determinado data set? Mencione fuentes y conclusiones
 brevemente.*
 
+## PCA en Machine Learning
+
 El análisis de componentes principales (PCA) es una técnica lineal de reducción de
 dimensionalidad. Busca combinaciones lineales de las variables originales, ortogonales
 entre sí, que concentran la mayor varianza posible: esas direcciones son los
@@ -843,7 +900,7 @@ varianza restante, y así sucesivamente; al retener las primeras $k$ se obtiene 
 representación de menor dimensión que conserva un porcentaje conocido de la varianza
 total.
 
-En Machine Learning el PCA cumple tres funciones. Reduce la cantidad de variables de
+En Machine Learning el PCA reduce la cantidad de variables de
 entrada $p$, lo que baja el costo de entrenamiento y acota la capacidad del modelo (la
 riqueza de la familia de funciones que puede ajustar): para un clasificador lineal la
 dimensión VC es $d = p + 1$, el $d = k + 1$ del Ejercicio 3, y bajar $p$ relaja la
@@ -855,15 +912,18 @@ grupos antes de un clustering, uso que aparece en `Preparation for Clustering.pd
 combinación de todas; por eso una componente es más difícil de interpretar que una
 variable original. Su limitación estructural es que solo captura relaciones lineales.
 
-Kernel PCA no figura en los apuntes ni en las presentaciones de la cátedra, y la
-selección de kernel aparece solo como prueba y error sobre datos de validación, con la
-herramienta de la clase de SVM descripta en el Ejercicio 2. Ambos puntos se responden
-con bibliografía externa, reescrita en palabras propias. Se descarta tratar el PDF
-`Transformación de clústeres no lineales` como si fuera Kernel PCA: ese material mapea
-clusters con una $\phi$ explícita y no diagonaliza una matriz de kernel.
+Kernel PCA figura en el material sin desarrollo: el apunte de taxonomía de la clase 4 lo
+lista como variante no lineal del PCA, y `t_sne.pdf` de la clase 7 lo menciona entre las
+alternativas no lineales. De la selección de kernel solo hay prueba y error sobre datos de
+validación, con la herramienta de SVM del Ejercicio 2. No corresponde tomar el PDF
+`Transformación de clústeres no lineales` como Kernel PCA: ese material mapea clusters con
+una $\phi$ explícita y no diagonaliza una matriz de kernel.
 
-Se presenta primero el truco del kernel, porque Kernel PCA se define a partir de él. Un
-kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
+\needspace{7\baselineskip}
+
+## El truco del kernel
+
+Un kernel es una función $K(x, x')$ que devuelve el producto interno de dos observaciones
 en un espacio de características: un espacio de dimensión mayor que el original,
 alcanzado por una transformación $\phi$, en el cual un problema no lineal puede
 volverse lineal. El ejemplo de la clase de SVM es el problema XOR (dos clases ubicadas
@@ -892,6 +952,8 @@ Los kernels más utilizados, con la notación del Ejercicio 2 y de la clase de S
 La suma, el producto y el escalado por una constante positiva de kernels válidos dan
 kernels válidos, lo que permite construir kernels a medida de un problema.
 
+## Kernel PCA
+
 Kernel PCA es la aplicación del truco del kernel al PCA, propuesta por Schölkopf et al.
 (1998). En lugar de diagonalizar la matriz de covarianzas, de dimensión $p \times p$, se
 diagonaliza la matriz de kernel de dimensión $n \times n$, cuyos elementos son
@@ -904,7 +966,7 @@ capturar estructura no lineal: datos dispuestos sobre curvas o anillos concéntr
 que el PCA lineal no separa, pueden quedar ordenados a lo largo de las primeras
 componentes no lineales.
 
-De ahí salen tres consecuencias prácticas. El costo pasa a depender del número de
+De ahí salen consecuencias prácticas. El costo pasa a depender del número de
 observaciones $n$ y no de $p$, lo que encarece el método en conjuntos grandes. Se
 pueden extraer hasta $n$ componentes, más que las $p$ del caso lineal. Y se pierde la
 reconstrucción directa: un punto del espacio de características no siempre tiene
@@ -912,22 +974,25 @@ pre-imagen exacta en el espacio original, y las componentes ya no tienen cargas 
 las variables que se puedan leer. Kernel PCA extiende al PCA; no lo reemplaza, y con el
 kernel lineal se recupera el PCA clásico.
 
-Sobre la selección del kernel, la conclusión de la bibliografía es que no existe un
-método universal, pero sí tres procedimientos sencillos que se complementan. El primero
-mira las dimensiones del conjunto: la guía de Hsu et al. (2003) recomienda el kernel
+\needspace{7\baselineskip}
+
+## Cómo elegir el kernel
+
+Sobre la selección del kernel, la bibliografía no ofrece un método universal, pero sí
+procedimientos sencillos que se complementan. La guía de Hsu et al. (2003) decide por las
+dimensiones del conjunto: recomienda el kernel
 lineal cuando la cantidad de variables es grande frente a la de observaciones, porque
 llevar los datos a un espacio mayor no agrega separabilidad, y también cuando las dos
 cantidades son grandes, por costo; si hay muchas más observaciones que variables, el
 candidato es el RBF.
 
-El segundo es la validación cruzada sobre una grilla de kernels y de sus
-hiperparámetros: para cada combinación se estima el error en los bloques de validación
+La validación cruzada sobre una grilla de kernels y de sus hiperparámetros decide al final: para cada combinación se estima el error en los bloques de validación
 y se queda la mejor. Hsu et al. (2003) recomiendan empezar por el RBF, que con
 parámetros bien elegidos cubre al lineal como caso límite, y buscar $C$ y
 $\gamma = 1/(2\sigma^2)$ en una grilla exponencial, como se hizo en el Ejercicio 10.
 
-El tercero evita entrenar el modelo para cada candidato: el alineamiento
-kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002) mide el
+El alineamiento kernel-objetivo (*kernel-target alignment*) de Cristianini et al. (2002)
+evita entrenar el modelo para cada candidato: mide el
 parecido entre la matriz de kernel $K$ y la matriz ideal $yy^\top$ construida desde las
 etiquetas $y_i \in \{-1, +1\}$,
 $A = \langle K, yy^\top \rangle_F / (\lVert K \rVert_F \, \lVert yy^\top \rVert_F)$, donde
@@ -938,9 +1003,8 @@ elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), 
 combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
 2011).
 
-Como conclusión, la regla de dimensiones sirve para armar la lista corta, el
-alineamiento para descartar candidatos sin entrenar y la validación cruzada para la
-decisión final. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
+En la práctica conviene empezar por el RBF y recurrir al alineamiento cuando entrenar cada
+candidato sale caro. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
 contra las cuales validar: en la práctica el kernel se ajusta por el error de
 reconstrucción o por el desempeño de la tarea posterior que usa las componentes.
 
@@ -948,8 +1012,10 @@ reconstrucción o por el desempeño de la tarea posterior que usa las componente
 `Preparation for Clustering.pdf` (PCA como visualización previa al clustering) y
 presentación `SVM Universidad Austral.pdf` (espacio de características, truco del
 kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selección
-sistemática de kernel no tienen material de clase: Schölkopf et al. (1998); Hsu et al.
-(2003); Cristianini et al. (2002); Gönen y Alpaydın (2011).
+sistemática de kernel no tienen material de clase: Schölkopf et al. (1998) para Kernel PCA;
+Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
+(2002) para el alineamiento kernel-objetivo; Gönen y Alpaydın (2011) para el aprendizaje de
+múltiples kernels.
 
 \newpage
 
@@ -965,6 +1031,8 @@ e6m <- jsonlite::fromJSON("codigo/resultados/e6/meta.json")
 f6 <- function(x, d = 1) formatC(x, format = "f", digits = d, decimal.mark = ",")
 p6 <- function(x, d = 0) paste0(f6(x, d), "\\thinspace{}%")
 ```
+
+## Por qué supera a la regresión
 
 En los problemas de tiempo hasta un evento, la variable de interés es el tiempo $T$
 hasta que ocurre algo definido: la falla de un equipo, la baja de un cliente, la
@@ -994,6 +1062,8 @@ la probabilidad por unidad de tiempo de que el evento ocurra en $t$ entre quiene
 llegaron a $t$ sin él. Una regresión devuelve un único valor esperado; la curva $S(t)$
 responde preguntas a cualquier horizonte, por ejemplo qué fracción de clientes sigue
 activa a los 90 días.
+
+## Tipos
 
 Los tipos de análisis se ordenan por la cantidad de supuestos. El estimador no
 paramétrico de Kaplan-Meier (Kaplan & Meier, 1958) construye la supervivencia como
@@ -1043,9 +1113,9 @@ del seguimiento, y lo correcto es informar que más de la mitad no reincide en
 
 El efecto de una covariable muestra lo mismo. Una regresión lineal de las semanas sobre
 las siete covariables, ajustada solo con los re-arrestados, asigna a la ayuda
-financiera (`fin`) un coeficiente de `r sub("^-", "$-$", f6(e6m$coef_ols_fin, 2))` semanas, un efecto
+financiera (`fin`) un coeficiente de `r f6(e6m$coef_ols_fin, 2)` semanas, un efecto
 casi nulo y, en todo caso, hacia un re-arresto más temprano. Cox, con los `r e6m$n` individuos, estima un *hazard ratio* de
-`r f6(e6m$hr_fin, 2)` (IC 95 %: `r f6(e6m$hr_fin_lo, 2)` a `r f6(e6m$hr_fin_hi, 2)`;
+`r f6(e6m$hr_fin, 3)` (IC 95 %: `r f6(e6m$hr_fin_lo, 3)` a `r f6(e6m$hr_fin_hi, 3)`;
 $p$ = `r f6(e6m$p_fin, 3)`): la ayuda reduce el riesgo instantáneo en un
 `r p6(100 * (1 - e6m$hr_fin))`. Se interpreta que la regresión no lo ve porque la ayuda
 actúa sobre quiénes llegan a la semana `r e6m$horizonte` sin re-arresto, que son los
@@ -1073,6 +1143,8 @@ kable(e6t, format = "latex", booktabs = TRUE, row.names = FALSE,
 
 *Nota.* Elaboración propia; funciones de lifelines tomadas del notebook de la clase 7.
 
+## Implementaciones en Python y R
+
 En Python, lifelines (Davidson-Pilon, 2019) es la biblioteca de la clase y la de la
 corrida anterior; scikit-survival (Pölsterl, 2020) adapta modelos de aprendizaje
 automático al dato censurado con la interfaz de scikit-learn. En R, el objeto
@@ -1081,9 +1153,12 @@ funciones de la Tabla \ref{tab:e6-tab}.
 
 **Fuentes del Ejercicio 6.** Material de cátedra (Volpacchio, s.f.): notebook de la
 clase 7, parte de supervivencia (Kaplan-Meier, log-rank, Cox y AFT sobre los datos
-Rossi). Kleinbaum y Klein (2012); Kaplan y Meier (1958); Cox (1972); Grambsch y
-Therneau (1994); Ishwaran et al. (2008); Rossi et al. (1980); Davidson-Pilon (2019);
-Pölsterl (2020); Therneau y Grambsch (2000). Código propio: Apéndice A.4.
+Rossi). Kleinbaum y Klein (2012) para la censura y los tipos de análisis; Kaplan y Meier
+(1958) para el estimador no paramétrico y Cox (1972) para el modelo de riesgos
+proporcionales; Grambsch y Therneau (1994) para el diagnóstico de ese supuesto; Ishwaran et
+al. (2008) para los bosques de supervivencia; Rossi et al. (1980) para los datos;
+Davidson-Pilon (2019), Pölsterl (2020) y Therneau y Grambsch (2000) para las
+implementaciones. Código propio: Apéndice A.4.
 
 \newpage
 
@@ -1107,35 +1182,37 @@ e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FAL
 e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
 e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
 est <- function(k) e7est$valor[e7est$metrica == k]
-epsf <- function(x) format(round(x, 2), decimal.mark = ",")
+epsf <- function(x) formatC(x, format = "f", digits = 2, decimal.mark = ",")
+# Grupo de atípicos: el que más se aleja en la quinta componente.
+e7_at <- which.max(e7perf$PC5)
+e7_resto <- e7perf[-e7_at, ]
 # Primer radio, por encima del mejor, desde el cual DBSCAN devuelve un solo grupo.
 e7_funde <- min(e7eps$eps[e7eps$clusters == 1 & e7eps$eps > val("db_eps")])
 ```
+
+## Técnicas de pre-proceso
 
 Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no los haya.
 Por eso conviene mirar antes si esa estructura existe. Y como los datos suelen tener más
 dimensiones de las que entran en un gráfico, mirar quiere decir proyectarlos a dos
 dimensiones.
 
-La guía de clustering de la cátedra enumera seis técnicas para eso. Los gráficos de
-componentes principales (PRINCOMP)
-proyectan sobre las dos primeras componentes. El escalado multidimensional (MDS) ubica los
-puntos en dos dimensiones con la mayor conservación posible de las distancias originales. El
-discriminante canónico (CANDISC) busca las direcciones que maximizan la separación entre
-grupos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con énfasis
-en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS estima
-la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos para que
-la distancia euclídea en el espacio transformado se comporte como una distancia de
-Mahalanobis en el original, lo cual sirve cuando los grupos son elipsoidales y están rotados
-respecto de los ejes.
+La guía de clustering de la cátedra trae tres ayudas gráficas. Los gráficos de componentes
+principales (PRINCOMP) proyectan sobre las dos primeras componentes. El escalado
+multidimensional (MDS) ubica los puntos en dos dimensiones con la mayor conservación posible
+de las distancias originales. El discriminante canónico (CANDISC) busca las direcciones que
+maximizan la separación entre grupos, pero las necesita ya definidas: sirve para mirar una
+partición que ya se tiene, no para descubrirla, y por eso reaparece más abajo como tercer
+paso del perfilado. A esas tres hoy se les suman t-SNE y UMAP (McInnes et al., 2018), que
+para este fin desplazaron a MDS.
 
-A esa lista hay que hacerle un reparo y un agregado. El reparo es que CANDISC exige grupos
-previamente definidos, con lo cual no sirve para detectar grupos potenciales, que es lo que
-pide la consigna; su lugar está en el otro extremo del proceso, y de hecho reaparece más
-abajo como tercer paso del perfilado. El agregado es que esa lista proviene de un curso de
-SAS y se detiene donde terminaba ese software: corresponde sumarle las técnicas no lineales
-del apunte de la clase 8, t-SNE y UMAP (McInnes et al., 2018), que en la práctica actual
-reemplazaron a MDS para este fin.
+El capítulo trata además tres pasos que no son de visualización pero deciden qué muestran los
+gráficos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con
+énfasis en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS
+estima la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos
+para que la distancia euclídea en el espacio transformado se comporte como una distancia de
+Mahalanobis en el original, la euclídea después de descontar la covarianza, lo cual sirve cuando los grupos son elipsoidales y están rotados
+respecto de los ejes.
 
 La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
 estandarizan las variables, se calculan los autovectores de la matriz de correlación y se
@@ -1148,14 +1225,18 @@ Ejercicio 5: al tratarse de una proyección lineal, no detecta grupos definidos 
 curvas, y un conjunto de anillos concéntricos aparece como una nube sin estructura. Ese es
 precisamente el problema que motiva a t-SNE.
 
+\needspace{3\baselineskip}
+
+## Perfilado de los grupos obtenidos
+
 El perfilado es la generación de descripciones de cada grupo a partir de las variables de
-entrada, y la guía propone tres pasos. El primero es calcular los vectores de
-medias de cada grupo. El segundo es un MANOVA, que es un análisis de varianza con varias
-variables respuesta simultáneas: en lugar de preguntar si los grupos difieren en una
-variable, pregunta si difieren en el vector completo. Va primero porque de esa manera
-controla el error de tipo I a nivel del experimento, en lugar de inflarlo con una prueba
-separada por variable. El tercero es el ANOVA por variable junto con el análisis
-discriminante canónico, que identifica qué variables concretas producen las diferencias; en
+entrada, y la guía lo ordena en tres pasos: los vectores de
+medias de cada grupo, el MANOVA y, recién después, el ANOVA por variable. El MANOVA es un
+análisis de varianza con varias variables respuesta simultáneas: en lugar de preguntar si
+los grupos difieren en una variable, pregunta si difieren en el vector completo. Va primero
+porque de esa manera controla el error de tipo I a nivel del experimento, en lugar de
+inflarlo con una prueba separada por variable. El ANOVA por variable va acompañado del
+análisis discriminante canónico, que identifica qué variables concretas producen las diferencias; en
 la dirección inversa es igual de útil, porque las variables que no difieren entre grupos
 probablemente puedan podarse del conjunto de entrada.
 
@@ -1163,18 +1244,16 @@ La propia guía advierte que los resultados de MANOVA y ANOVA deben interpretars
 cautela, porque el proceso de clustering viola supuestos clave de esas pruebas: los grupos no
 se definieron de forma independiente de los datos sino para maximizar la separación, así que
 los valores *p* quedan sesgados hacia la significación. Valen como medida descriptiva del
-tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no
-ofrece salida, de manera que hay que elegir una: la que se adopta acá es entrenar un
-clasificador contra la etiqueta de grupo tratada como si fuera una clase dada y leer su
-importancia de variables, porque no hay supuesto distribucional que violar, la salida ya es
-la descripción del grupo y la exactitud mide de paso cuán separables son. Es la vía que
-reaparece en el Ejercicio 9. Se descarta en cambio la alternativa de pruebas no paramétricas
-variable por variable, porque el sesgo proviene de que los grupos se construyeron con estos
-mismos datos y no del supuesto de normalidad.
+tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no ofrece
+salida, así que acá se entrena un clasificador contra la etiqueta de grupo, tratada como si
+fuera una clase dada, y se lee su importancia de variables: no hay supuesto distribucional
+que violar, la salida ya es la descripción del grupo y la exactitud mide de paso cuán
+separables son. Es la vía que reaparece en el Ejercicio 9. Se descarta la alternativa de
+pruebas no paramétricas variable por variable, porque el sesgo viene de que los grupos se
+construyeron con estos mismos datos y no del supuesto de normalidad.
 
-El procedimiento se aplicó a los diez grupos que devolvió k-means sobre el conjunto de
-dígitos manuscritos que se describe más abajo. Las variables de entrada son 64 píxeles, con
-lo cual una tabla de 10 por 64 resultaría ilegible, así que el perfilado va sobre las cinco
+Se aplicó a los diez grupos de k-means sobre los dígitos que se describen más abajo; con 64
+píxeles por imagen una tabla de 10 por 64 sería ilegible, y el perfilado va sobre las cinco
 primeras componentes principales.
 
 ```{r e7-perfiles}
@@ -1185,7 +1264,8 @@ knitr::kable(
   align = c("l", "r", "r", "r", "r", "r", "r"),
   format.args = list(decimal.mark = ",")
 ) |>
-  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center") |>
+  kableExtra::kable_styling(latex_options = c("HOLD_position"), position = "center",
+                            font_size = 8) |>
   kableExtra::column_spec(1:7, width = "1.5cm")
 ```
 
@@ -1196,33 +1276,37 @@ cada uno, un grupo de `r e7perf$n[which.max(e7perf$n)]` casos fusiona al menos d
 clases y otro de `r min(e7perf$n)` es un fragmento, no una clase. Antes de mirar una sola
 media ya se sabe que la partición no reproduce las diez clases, lo cual es coherente con el
 índice de Rand ajustado de `r fmt(val("ari_kmeans_pca"))` que se reporta más abajo. Después
-están los apartamientos: un grupo se aleja hasta 5,98 en la segunda componente y 7,07 en la
-quinta, que es el perfil de un grupo de atípicos, mientras que otros dos se oponen sobre la
-primera componente con -4,67 contra 3,82.
+están los apartamientos: un grupo se aleja hasta `r fmt(e7perf$PC2[e7_at], 2)` en la segunda componente y
+`r fmt(e7perf$PC5[e7_at], 2)` en la quinta, que es el perfil de un grupo de atípicos,
+mientras que otros dos se oponen sobre la primera componente con
+`r fmt(min(e7_resto$PC1), 2)` contra `r fmt(max(e7_resto$PC1), 2)`.
 
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
 `r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
-para las cinco componentes. Hay un detalle que vale más que las magnitudes: el orden de los
-*F* no coincide con el orden de las componentes, porque la quinta separa mejor los grupos que
-la cuarta pese a explicar menos varianza total. Esa es exactamente la diferencia entre
+para las cinco componentes. Más que las magnitudes importa que el orden de los *F* no
+coincide con el de las componentes: la quinta separa mejor los grupos que la cuarta pese a
+explicar menos varianza total. Esa es exactamente la diferencia entre
 varianza total y varianza entre grupos, que es la razón de ser de CANDISC y el motivo por el
 cual un eje de máxima varianza no es necesariamente un eje de máxima separación. Los valores
 *p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
 
 Queda la vía que se eligió en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
 etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
-bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* justo donde el
-párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
+bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* en dos pares, y uno de ellos es
+justo donde el párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
 y la importancia mide lo que cada una agrega dado lo que aportan las otras: la quinta separa bien
 sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en las
 `r est("semillas")` semillas, con el OOB entre `r fmt(as.numeric(est("oob_min")), 4)` y `r fmt(as.numeric(est("oob_max")), 4)`. Ninguna de las cinco tiene nombre de
 dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
-El algoritmo t-SNE (*t-distributed stochastic neighbor embedding*) parte de una aclaración
-que el apunte de la clase 8 pone al inicio porque evita la mayor parte de los malentendidos:
-no es un algoritmo de clustering. Transforma el espacio de características para que las
-estructuras latentes se vuelvan visibles; el agrupamiento viene después, y sobre el espacio
-original. Tiene cuatro piezas. En alta dimensión las distancias euclídeas al cuadrado se
+## El algoritmo t-SNE
+
+El apunte de la clase 8 abre con una aclaración que evita la mayor parte de los
+malentendidos: t-SNE (*t-distributed stochastic neighbor embedding*) no es un algoritmo de
+clustering. Transforma el espacio para que las estructuras latentes se vuelvan visibles; el
+agrupamiento viene después, y sobre el espacio original.
+
+En alta dimensión las distancias euclídeas al cuadrado se
 convierten en probabilidades mediante un kernel gaussiano centrado en cada punto $x_i$,
 $p_{j|i} \propto \exp(-\lVert x_i - x_j \rVert^2 / 2\sigma_i^2)$, simetrizadas como
 $p_{ij} = (p_{j|i}+p_{i|j})/2n$. En baja dimensión, y ahí está lo que da el nombre al método,
@@ -1234,8 +1318,9 @@ $KL(P \Vert Q) = \sum_{i \ne j} p_{ij} \log(p_{ij}/q_{ij})$, cuya
 asimetría es constitutiva: penaliza con fuerza separar en el
 mapa a vecinos que estaban cerca y tolera que puntos lejanos queden próximos, de donde se
 sigue que preserve la estructura local y no la global. La optimización es un descenso de
-gradiente sobre las coordenadas del mapa, inicializado con componentes principales (van der
-Maaten & Hinton, 2008).
+gradiente sobre las coordenadas del mapa (van der Maaten & Hinton, 2008), que el apunte de
+la clase 8 inicializa con los componentes principales de un PCA previo para acelerar la
+convergencia.
 
 El único hiperparámetro relevante es la perplejidad, que funciona como ancho de banda del
 kernel. Se define como $2^{H(P_i)}$, con $H$ la entropía de Shannon de la vecindad del punto, de
@@ -1254,72 +1339,71 @@ un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o 
 jerárquica HDBSCAN (Campello et al., 2013), y validar mediante la superposición de las
 etiquetas obtenidas sobre la proyección.
 
-El ejemplo de implementación está completo en el apéndice A.5 y aplica ese pipeline sobre los
+El ejemplo (apéndice A.5) aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding. El apunte contempla el caso: propone agrupar sobre el
-espacio original "o sobre una reducción PCA previa si la dimensionalidad es extrema". Se
-respeta lo esencial, que es no agrupar sobre el mapa, porque el PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza y las distancias son
-todavía las de los datos y no las que fabricó t-SNE.
+componentes, nunca sobre el embedding, que es lo que el apunte admite al hablar de agrupar
+sobre el espacio original "o sobre una reducción PCA previa si la dimensionalidad es
+extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza, y las
+distancias son las de los datos.
 
-Para medir la calidad del mapa se usa el coeficiente de silueta, que compara para cada punto
-su distancia media al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y
-cuanto más alto, más compactos y separados están los grupos. Calculado sobre las clases verdaderas dio `r fmt(val("sil_p5"))` con perplejidad
-5, `r fmt(val("sil_p30"))` con 30 y `r fmt(val("sil_p50"))` con 50, es decir que mejora al
-pasar de 5 a 30 y después se estanca.
+## Resultados sobre los dígitos
 
-DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos a distancia menor
-que un radio $\varepsilon$, los núcleos vecinos se encadenan en un grupo y el resto queda como
-ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
+El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para medir
+su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
+al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y cuanto más alto, más
+compactos y separados están los grupos. Sobre las clases verdaderas dio
+`r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
+`r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
+
+DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos, él incluido, a
+distancia menor que un radio $\varepsilon$; los núcleos vecinos se encadenan y el resto queda
+como ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
 de pares que ambas particiones dejan juntos o separados, corregida por el azar: 1 si
-coinciden, 0 si el acuerdo es el del azar. El radio se ubicó con la distancia al octavo
-vecino (gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))`
-y cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`;
-una primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
+coinciden, 0 si es el del azar. El radio se ubicó con la distancia al octavo vecino
+(gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))` y
+cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`; una
+primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
 `r nrow(e7eps)` valores barridos, de `r epsf(min(e7eps$eps))` a
 `r epsf(max(e7eps$eps))`, el mejor ARI sale con $\varepsilon$ = `r epsf(val("db_eps"))`:
 `r val("db_clusters")` grupos, `r val("db_ruido")` puntos de ruido
 (`r fmt(100 * val("db_ruido") / val("n"), 1)` %) y ARI de `r fmt(val("ari_dbscan"))`
 (`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido).
 
-Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los
-`r val("n")` puntos como ruido, y desde $\varepsilon$ = `r epsf(e7_funde)` todo se funde en
-un grupo (ARI de `r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero
-manda puntos al ruido, y subirlo los recupera pero funde dígitos. La causa probable es un
-radio global frente a una densidad que varía entre dígitos, más que la concentración de
-distancias del apunte. K-means con $k = 10$ da un ARI de
-`r fmt(val("ari_kmeans_pca"))`.
+Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los `r val("n")` puntos como ruido, y desde
+$\varepsilon$ = `r epsf(e7_funde)` todo se funde en un grupo (ARI de
+`r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero manda puntos al
+ruido, y subirlo los recupera pero funde dígitos. La causa probable es un radio global frente
+a una densidad que varía entre dígitos, más que la concentración de distancias del apunte.
 
-El último resultado justifica la advertencia metodológica. K-means sobre las dos coordenadas
-del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima del
-`r fmt(val("ari_kmeans_pca"))` obtenido sobre las componentes. La tentación de quedarse con
-ese número es la trampa: el `r fmt(val("ari_kmeans_emb"))` no mide la capacidad de k-means
-para descubrir estructura sino el trabajo que ya hizo t-SNE al separarla. Sirve como
-validación visual, que es el tercer paso del pipeline, y no como modelo.
+K-means con $k = 10$ sobre las componentes dio un ARI de `r fmt(val("ari_kmeans_pca"))`, y
+sobre las dos coordenadas del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima. La tentación de quedarse con ese número es la trampa: no mide
+la capacidad de k-means para descubrir estructura sino el trabajo que ya hizo t-SNE al
+separarla: sirve como validación visual, no como modelo.
+
+## Ventajas y limitantes
 
 Entre las ventajas, t-SNE captura estructura no lineal a diferencia de PCA y desenreda
-variedades que MDS superpone; preserva muy bien la vecindad local, que es lo que hace que los
-grupos se vean separados; las colas pesadas de la t resuelven el problema de aglomeración; y
-tiene un solo hiperparámetro relevante.
+superficies curvas (variedades) que MDS superpone; preserva la vecindad local, que es lo que separa visualmente
+los grupos; las colas pesadas de la t resuelven la aglomeración; y tiene un solo
+hiperparámetro relevante.
 
-Entre las limitantes, la principal es que no es clustering, con lo cual los grupos visuales
-hay que confirmarlos con un algoritmo sobre el espacio original. Las distancias entre grupos,
-los ejes y los tamaños relativos no significan nada, por la asimetría de la divergencia. La
-función de costo no es convexa, así que cada corrida produce un mapa distinto y hay que fijar
-la semilla. Es sensible a la perplejidad, lo cual no contradice la silueta
-estable de arriba, porque esa mide clases ya conocidas y lo que varía es cuántos grupos cree
-ver quien mira el mapa. Tampoco es un modelo entrenado,
-porque la implementación estándar no proyecta observaciones nuevas sin recalcular todo, que
-es una de las razones por las que UMAP lo reemplaza ahí. Y con perplejidad muy baja puede
-producir grupos nítidos a partir de datos sin estructura, que es el riesgo de
-sobreinterpretación.
+Entre las limitantes, la principal es que no es clustering: los grupos visuales hay que
+confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y los tamaños
+relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
+convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
+la perplejidad, y que la silueta de arriba apenas se mueva entre 30 y 50 no lo desmiente,
+porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: la
+implementación estándar no proyecta observaciones nuevas sin recalcular todo, y por eso UMAP
+lo reemplaza ahí. Y con perplejidad
+muy baja puede producir grupos nítidos a partir de datos sin estructura.
 
-**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): capítulos
-*Preparation for Clustering* y *Assessing Clustering Results*, y el apunte de t-SNE de la
-clase 8. Van der Maaten y Hinton (2008) y van der Maaten (2014) para el algoritmo; Ester et
-al. (1996) y Campello et al. (2013) para DBSCAN y HDBSCAN; McInnes et al. (2018) para UMAP.
-Números de `tsne_digits.py`.
+**Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): *Preparation for
+Clustering*, *Assessing Clustering Results* y `TSNE_Perplejidad_Clustering_NoLineal`
+(clase 8). Van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE; Ester et
+al. (1996) y Campello et al. (2013) para DBSCAN; McInnes et al. (2018) para UMAP. Código:
+A.5.
 
 \newpage
 
@@ -1328,7 +1412,9 @@ Números de `tsne_digits.py`.
 *Que diferencia existen entre el algoritmo Adaboost y Gradiente Boosting. Explique
 brevemente. De una explicación intuitiva de cómo trabaja el Gradiente Boosting.*
 
-Los dos son métodos de boosting y comparten el esquema que describe el deck de la clase 6:
+## Diferencias entre AdaBoost y Gradient Boosting
+
+Los dos son métodos de boosting y comparten el esquema que describe la presentación de la clase 6:
 combinar las salidas de muchos clasificadores débiles para producir un comité que funciona
 como clasificador fuerte. Un clasificador débil es una regla de decisión sencilla e
 inestable, pero que acierta mejor que el azar, es decir con $P(\text{error}) < 0{,}5$. El
@@ -1336,14 +1422,14 @@ método es secuencial, porque cada modelo se entrena después del anterior y mir
 para decidir en qué concentrarse, a diferencia de bagging, donde los modelos se entrenan en
 paralelo y sin mirarse.
 
-El deck ubica a los dos dentro de los métodos de perturbar y combinar y, más específicamente,
+La presentación ubica a los dos dentro de los métodos de perturbar y combinar y, más específicamente,
 entre los algoritmos arcing (*adaptive resampling and combining*), en contraposición a
 bagging, que perturba mediante bootstrap. La etiqueta encaja con AdaBoost, que repondera de
 manera adaptativa las observaciones en cada ronda, pero le queda grande a Gradient Boosting,
 que no repondera ni remuestrea nada: lo que cambia de ronda en ronda es el objetivo que se
-ajusta. El deck los agrupa igual, y la diferencia aparece dos párrafos más abajo.
+ajusta. La presentación los agrupa igual, y la diferencia aparece dos párrafos más abajo.
 
-La diferencia de fondo es simple de enunciar. AdaBoost cambia la importancia de las
+AdaBoost cambia la importancia de las
 observaciones y mantiene fijo el objetivo; Gradient Boosting cambia el objetivo y mantiene
 fija la importancia de las observaciones. Son dos maneras distintas de indicarle al siguiente
 modelo dónde están los errores del anterior. De ahí se desprende el resto: AdaBoost nació para
@@ -1354,16 +1440,16 @@ Boosting obtiene su coeficiente por minimización; y AdaBoost es más sensible a
 atípicos, porque un atípico mal clasificado gana peso ronda tras ronda, mientras que en
 Gradient Boosting esa sensibilidad se regula con la elección de la pérdida.
 
-Conviene fijar dos términos antes de seguir. El pseudo-residuo es el objetivo
-nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
+El pseudo-residuo es el objetivo nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
 cambiado y evaluado en el modelo acumulado hasta esa ronda,
 $\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática se
 reduce al residuo común $y_i - F_{m-1}(x_i)$, y de ahí viene el nombre: es el residuo cuando
 la pérdida es la cuadrática y un sustituto del residuo cuando no lo es. El *shrinkage* es el
-factor $v$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
+factor $\nu$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
 para que cada corrección sea parcial.
 
-En AdaBoost la primera ronda reparte peso uniforme sobre las $N$ observaciones. En cada ronda
+En AdaBoost (Freund & Schapire, 1997) la primera ronda reparte peso uniforme sobre las $N$
+observaciones. En cada ronda
 se entrena el clasificador débil sobre esa distribución de pesos, se mide su error ponderado
 $\varepsilon_t$ y se le asigna la ponderación
 $\alpha_t = \tfrac{1}{2}\log((1 - \varepsilon_t)/\varepsilon_t)$, con la que entra al voto
@@ -1373,18 +1459,36 @@ se renormaliza, para que el algoritmo base de la ronda siguiente se focalice sob
 erraron. La fórmula de $\alpha_t$ se lee sola: si el error es chico la hipótesis pesa mucho en
 el voto, y si se acerca a 0,5 el peso tiende a cero y la hipótesis prácticamente no cuenta.
 
-El deck reproduce un ejemplo con semiplanos verticales u horizontales como clasificador base,
-donde la primera ronda da $\varepsilon_1 = 0{,}30$ y $\alpha_1 = 0{,}42$, la segunda
-$\varepsilon_2 = 0{,}21$ y $\alpha_2 = 0{,}65$, y la tercera llega a $\alpha_3 = 0{,}92$. Se
-rehicieron esas tres cuentas con la fórmula y aparece un detalle: con $\varepsilon_1 = 0{,}30$
-el resultado es $0{,}4236$, que redondea al 0,42 publicado, pero con $\varepsilon_2 = 0{,}21$
-da $0{,}6625$, que redondea a 0,66 y no al 0,65 de la diapositiva. El error que produce
-exactamente 0,65 es 0,2142, de manera que lo más probable es que la cuenta original se haya
-hecho con el valor sin redondear. La diferencia es de un centésimo y no cambia nada, pero
-queda constancia de que se verificó. Con la fórmula invertida, el $\alpha_3 = 0{,}92$ de la
-tercera ronda corresponde a un error de 0,137, es decir un clasificador débil que acierta el
-86 % de las veces sobre la distribución ya reponderada. Ese clasificador base, un único corte
-paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
+La presentación reproduce un ejemplo con semiplanos verticales u horizontales como clasificador base.
+Las tres rondas se rehicieron con la fórmula.
+
+```{r e8-rondas, echo=FALSE}
+e8 <- data.frame(
+  Ronda = c("1", "2", "3"),
+  err   = c("0,30", "0,21", "0,14"),
+  apub  = c("0,42", "0,65", "0,92"),
+  acalc = c("0,4236", "0,6625", "0,9076"),
+  obs   = c("coincide al redondear",
+            "redondea a 0,66, no a 0,65",
+            "redondea a 0,91, no a 0,92"),
+  stringsAsFactors = FALSE)
+names(e8) <- c("Ronda", "Error", "Ponderación publicada",
+               "Ponderación recalculada", "Observación")
+kable(e8, booktabs = TRUE, align = c("l", "r", "r", "r", "l"),
+      caption = "Las tres rondas de AdaBoost de la presentación, verificadas.") %>%
+  kable_styling(latex_options = "HOLD_position", position = "center", font_size = 10)
+```
+
+*Nota.* Elaboración propia. El error es el $\varepsilon_t$ ponderado de la ronda y la
+ponderación, el $\alpha_t = \tfrac{1}{2}\log((1-\varepsilon_t)/\varepsilon_t)$ con el que
+la hipótesis entra al voto. Los seis valores publicados se leen de las diapositivas del
+ejemplo.
+
+Dos de las tres rondas no cierran: el error que produce exactamente 0,65 es 0,2142 y el que
+produce 0,92 es 0,137, de manera que lo más probable es que las cuentas originales se hayan
+hecho con los errores sin redondear. La diferencia
+es de un centésimo y no cambia nada, pero queda constancia de que se verificó. El clasificador
+base, un único corte paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
 
 Gradient Boosting se formula como $F_m(x) = F_{m-1}(x) + \beta_m h(x; a_m)$ y se resuelve en
 dos etapas: primero $h(x)$ se ajusta por mínimos cuadrados a los pseudo-residuos y después,
@@ -1393,27 +1497,31 @@ función de pérdida deja de estar cableada en el algoritmo y pasa a ser un par�
 que elegir, entre mínimos cuadrados, mínima desviación absoluta, la de Huber (cuadrática
 cerca del cero y lineal en las colas, para que un atípico no domine el ajuste) o la
 log-verosimilitud multinomial negativa para clasificación en varias clases. El otro parámetro
-es el *shrinkage*, que el deck llama tasa de aprendizaje, y Friedman (2001) estimó que
+es el *shrinkage*, que la presentación llama tasa de aprendizaje, y Friedman (2001) estimó que
 valores menores a 0,1 dan los menores errores de generalización. Visto así, AdaBoost es un
 caso particular y no un método aparte: es el Gradient Boosting cuya pérdida es la
-exponencial. Esa unificación el deck no la hace explícita, pero es la que convierte la lista
+exponencial. Esa unificación la presentación no la hace explícita, pero es la que convierte la lista
 de diferencias en una jerarquía.
 
-La explicación intuitiva que trae el material de cátedra es la del golfista. Un golfista
+## Cómo trabaja Gradient Boosting
+
+La explicación intuitiva de `Gradient boosting explicado` es la del golfista. Un golfista
 intenta embocar la pelota en el hoyo, ubicado en $y$. El primer golpe, $F_0(x)$, es una
 aproximación gruesa que en el caso más simple consiste en predecir para todos el promedio de
 $y$, y la pelota queda a cierta distancia. El golfista no vuelve al punto de partida: golpea
 desde donde quedó la pelota y calcula el nuevo golpe según cuánto le falta. Ese segundo
 golpe corrige el error del primero, el tercero corrige lo que quedó del segundo, y así
-sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + v f_m(x)$. Cada modelo débil no intenta
-predecir $y$ sino la distancia que falta, y esa distancia que falta es exactamente lo que el
-deck llama pseudo-residuo. El documento de cátedra desarrolla el ejemplo numérico con los
-alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
+sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + \nu\, \beta_m h_m(x)$, donde $\nu$
+contrae el paso óptimo $\beta_m$ de la fórmula de arriba. Cada modelo débil no intenta
+predecir $y$ sino la distancia que falta, y esa distancia es el pseudo-residuo. El ejemplo
+numérico son los alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
 ahí cada modelo se entrena sobre el vector de residuos que dejó el anterior.
 
 El nombre del método viene de que el gradiente de la pérdida cuadrática respecto de la
 predicción es $\partial L / \partial F = -(y - F)$, con lo cual el vector de residuos es el
-gradiente negativo y no el gradiente. El signo importa, porque es la razón por la que sumar
+gradiente negativo y no el gradiente.
+
+El signo importa, porque es la razón por la que sumar
 el residuo al modelo acumulado baja la pérdida en lugar de subirla. Ajustar los residuos es
 hacer descenso de gradiente, pero en el espacio de las predicciones en lugar del espacio de
 los parámetros, con la particularidad de que cada paso lo da un modelo débil. Eso explica la
@@ -1427,7 +1535,7 @@ un residuo enorme domina el ajuste, mientras que con el vector de signos un atí
 $+1$ como cualquier otro punto mal predicho.
 
 La tasa de aprendizaje se entiende con la misma analogía: el golfista podría intentar embocar
-de un solo golpe, pero se pasaría. El parámetro $v$ hace que cada corrección sea parcial, de
+de un solo golpe, pero se pasaría. El parámetro $\nu$ hace que cada corrección sea parcial, de
 manera que se avanza con pasos chicos y muchos modelos, y de ahí el compromiso entre la tasa
 de aprendizaje y la cantidad de iteraciones, que obliga a validarlas juntas.
 
@@ -1439,14 +1547,14 @@ acepta cualquier pérdida diferenciable, y por eso las implementaciones que hoy 
 práctica, como XGBoost, son variantes del segundo y no del primero (Chen & Guestrin, 2016).
 
 **Fuentes del Ejercicio 8.** Material de cátedra (Volpacchio, s.f.): presentación
-`Ensemble Methods Universidad Austral.pdf` (esquema de boosting, taxonomía de perturbar y
+`Ensemble Methods Universidad Austral` (esquema de boosting, taxonomía de perturbar y
 combinar, arcing, ponderación $\alpha_t$ y ejemplo numérico de las tres rondas) y documentos
 `Gradient boosting explicado` 1 a 3 (clase 6: modelado aditivo, analogía del golfista, ejemplo
 de los alquileres, vector de signos y la demostración de que el gradiente de la pérdida
 cuadrática es el vector residual). Freund y Schapire (1997) para la formulación original de
 AdaBoost, Friedman (2001) para Gradient Boosting y la recomendación sobre la tasa de
-aprendizaje, y Chen y Guestrin (2016) para las implementaciones actuales. La verificación de
-los $\alpha_t$ es propia.
+aprendizaje, y Chen y Guestrin (2016) para las implementaciones actuales. El recálculo de
+los $\alpha_t$ es propio.
 
 \newpage
 
@@ -1455,12 +1563,15 @@ los $\alpha_t$ es propia.
 *Random Forest. Describir el algoritmo y su diferencia con el resto de los algoritmos de
 ensamblaje. Describa los principales usos del algoritmo.*
 
-Random Forest construye cada árbol en tres pasos. El primero es el bootstrap: de las $N$ filas de entrenamiento se muestrean $N$
-casos al azar con reemplazo, y esa muestra entrena el árbol. El segundo es el subespacio
-aleatorio de variables: de las $M$ variables disponibles se fija un número $m \ll M$ tal que
-en cada nodo se sortean $m$ y se usa la mejor de ellas para dividir, con $m$ constante durante
-todo el crecimiento del bosque. El tercero es el crecimiento sin poda: cada árbol crece lo más
-posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio nodo final.
+## El algoritmo
+
+Cada árbol de un Random Forest se entrena sobre una muestra bootstrap: de las $N$ filas de
+entrenamiento se sortean $N$ casos al azar con reemplazo. Sobre esa muestra el árbol crece con
+subespacio aleatorio de variables (Ho, 1995), es decir que de las $M$ disponibles se fija un número
+$m \ll M$ tal que en cada nodo se sortean $m$ y se divide por la mejor de ellas, con $m$
+constante durante todo el crecimiento del bosque. Y crece sin poda: cada árbol se desarrolla
+lo más posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio
+nodo final.
 
 Para predecir se evalúa la observación en cada árbol y se agregan las salidas, pero la forma
 de agregar depende de la tarea. En clasificación cada árbol vota y gana la clase más votada;
@@ -1500,21 +1611,25 @@ De la construcción se desprenden otras dos herramientas. La importancia de vari
 de dos maneras. Por permutación, se cuentan los votos a la clase correcta sobre las filas
 *out-of-bag*, se permutan al azar los valores de una variable y se vuelve a predecir; la caída
 promediada sobre todos los árboles es su importancia, con una lógica transparente, porque si
-al desordenar una variable el desempeño no cae, esa variable no aportaba nada. Por impureza de
-Gini, que es la probabilidad de clasificar mal una observación de un nodo si se le asignara
+al desordenar una variable el desempeño no cae, esa variable no aportaba nada. Por impureza
+de Gini, que es la probabilidad de clasificar mal una observación de un nodo si se le asignara
 una clase al azar según la distribución del propio nodo, se acumula la caída que produce cada
 corte; esa caída corresponde al promedio ponderado por el tamaño de los nodos hijos, lo cual
 no es un detalle, porque un hijo individual puede quedar más impuro que el padre y lo que
 nunca sube es el promedio. El documento considera las dos medidas muy consistentes entre sí,
 aunque Strobl et al. (2007) le encontraron a la de Gini un sesgo a favor de las variables con
 más categorías, con dos fuentes: la selección sesgada dentro de cada árbol y el muestreo con
-reemplazo. Cuando las dos medidas discrepan conviene la de permutación. La otra herramienta
-es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
+reemplazo. Cuando las dos medidas discrepan conviene la de permutación.
+
+La otra herramienta es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
 aumenta cada vez que caen en el mismo nodo terminal; como $1 - \mathrm{prox}$ son distancias
 al cuadrado en un espacio euclídeo, de ella cuelgan varios de los usos que se describen más
 abajo.
 
-Frente a bagging, que también promedia árboles construidos sobre muestras bootstrap pero usa
+## Diferencias con el resto de los algoritmos de ensamblaje
+
+Frente a bagging (Breiman, 1996), que también promedia árboles construidos sobre muestras
+bootstrap pero usa
 todas las variables en cada división, la diferencia esencial es el subespacio aleatorio,
 aunque no la única: bagging está definido para cualquier aprendiz base y Random Forest solo
 para árboles, que además crecen sin poda. La razón del sorteo es concreta: en bagging, si
@@ -1522,30 +1637,33 @@ existe una variable muy predictiva, todos los árboles la eligen para la primera
 terminan pareciéndose mucho entre sí, y como el beneficio de promediar depende de que los
 componentes estén poco correlacionados, esa similitud limita la mejora.
 
-Frente a boosting, que se desarrolla en el Ejercicio 8, hay tres diferencias. La primera es
-que boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
-que los árboles de un bosque son independientes y se construyen en paralelo. La segunda es
-qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
+Frente a boosting, que se desarrolla en el Ejercicio 8, Boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
+que los árboles de un bosque son independientes y se construyen en paralelo. También difieren
+en qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
 parte de modelos débiles, de alto sesgo y baja varianza, y reduce el sesgo de forma aditiva.
-Hay acá una tensión con el deck de la clase 6, que agrupa a bagging y a arcing con el
+Hay acá una tensión con la presentación de la clase 6, que agrupa a bagging y a arcing con el
 argumento de que los dos reducen principalmente la varianza, aunque arcing es boosting; las dos
-afirmaciones se concilian si se lee que el deck clasifica por el mecanismo de perturbación y
+afirmaciones se concilian si se lee que la presentación clasifica por el mecanismo de perturbación y
 no por la componente del error, porque boosting también recorta varianza al agregar, pero lo
-que lo distingue es que baja el sesgo. La tercera es el comportamiento frente al sobreajuste:
+que lo distingue es que baja el sesgo.
+
+Y difieren en el comportamiento frente al sobreajuste:
 Breiman afirma que los Random Forest no se sobreajustan y que se pueden correr tantos árboles
 como se desee, lo cual vale para el número de árboles pero no para la capacidad del modelo,
 porque con etiquetas ruidosas o con hojas de un solo caso un bosque sobreajusta como cualquier
 otro. De ahí la diferencia más relevante en la práctica: la cantidad de árboles es acá un
 parámetro de costo computacional, y en boosting uno de capacidad que hay que validar.
 
-Frente a los métodos de ensamblaje en general, el deck de la clase 6 da tres razones por las
+Frente a los métodos de ensamblaje en general, la presentación de la clase 6 da tres razones por las
 que ensamblar sirve, y Random Forest explota las tres: la estadística, porque con pocos datos
 hay muchas hipótesis igualmente buenas y promediar reduce el riesgo de elegir la equivocada;
 la computacional, porque el aprendizaje es una búsqueda local y partir de muchos puntos
 iniciales reduce la chance de quedar en un óptimo local; y la representacional, porque la
 hipótesis verdadera puede no pertenecer al espacio de un modelo único y la combinación
-interpola entre las halladas. El mismo deck remarca lo que delimita cuándo conviene: el factor
+interpola entre las halladas.
+
+La misma presentación remarca lo que delimita cuándo conviene: el factor
 clave es la inestabilidad del clasificador base, de manera que los árboles sin podar mejoran
 mucho al ser perturbados y combinados, mientras que k vecinos más cercanos es estable y no
 mejora con bagging. Quedan dos parientes cercanos fuera de esa comparación. Los extra-trees (Geurts et
@@ -1555,6 +1673,8 @@ $\bar{\rho}$ y $s$ en el mismo sentido otra vez. Y el stacking pertenece a otra 
 no perturba nada: entrena modelos de familias distintas y después un meta-modelo que aprende a
 combinarlos con pesos ajustados, mientras que acá se combinan copias del mismo tipo de modelo.
 
+## Principales usos
+
 Breiman y Cutler enumeran los usos en una lista larga y plana. Acá se reordenan según de dónde
 sale cada uno, porque agrupados así se entiende por qué existen: casi ninguno es una función
 que alguien le agregó al algoritmo, sino un subproducto de cómo está construido. El uso
@@ -1562,20 +1682,22 @@ principal es la predicción sobre datos tabulares, clasificación o regresión i
 de las tres virtudes que reivindica el documento, escrito en 2001, dos siguen intactas, porque
 corre eficiente en bases grandes y tolera miles de variables sin preselección, mientras que la
 tercera, la de una precisión excelente entre los algoritmos disponibles, hay que leerla con la
-fecha puesta. Del primer subproducto, la muestra *out-of-bag*, sale la estimación del error
+fecha puesta.
+
+Del primer subproducto, la muestra *out-of-bag*, sale la estimación del error
 sin reservar datos, que es lo que vuelve barato buscar $m$. Del segundo, la importancia de
-variables, sale la selección de variables, con el procedimiento concreto que propone el
-documento de correr el bosque una vez con todas, quedarse con las más importantes y volver a
-correrlo solo con esas, útil justamente cuando hay miles de variables y ningún criterio previo
-para descartarlas. Del tercero, la matriz de proximidad, cuelgan cuatro usos que en la lista
-original aparecían sueltos. El primero es la imputación de faltantes, con pesos dados por la
-proximidad. El segundo, la detección de atípicos, por proximidad baja respecto del resto de su
-clase. El tercero, el clustering no supervisado junto con las vistas en baja dimensión que se
-obtienen al escalar la matriz, que es la respuesta alternativa a la del Ejercicio 7. El cuarto,
-los prototipos, que describen la relación entre variables y clase mediante la mediana y los
-cuartiles de los vecinos más cercanos de cada clase. Queda fuera del esquema
-el manejo de clases desbalanceadas, que no es un subproducto sino un agregado posterior por
-ponderación del error.
+variables, sale la selección de variables, con el procedimiento que propone el documento:
+correr el bosque con todas, quedarse con las más importantes y volver a correrlo solo con
+esas, útil cuando hay miles de variables y ningún criterio previo para descartarlas.
+
+Del tercero, la matriz de proximidad, cuelgan cuatro usos que en la lista
+original aparecían sueltos: la imputación de faltantes, con pesos dados por la proximidad; la
+detección de atípicos, por proximidad baja respecto del resto de su clase; el clustering no
+supervisado junto con las vistas en baja dimensión que se obtienen al escalar la matriz, que
+es la respuesta alternativa a la del Ejercicio 7; y los prototipos, que describen la relación
+entre variables y clase mediante la mediana y los cuartiles de los vecinos más cercanos de
+cada clase. Queda fuera del esquema el manejo de clases desbalanceadas, que no es un
+subproducto sino un agregado posterior por ponderación del error.
 
 Hay algo que el documento no menciona y que conviene decir. Frente a un árbol único la mejora
 en varianza es grande, pero se pierde la lectura del modelo: un bosque de quinientos árboles
@@ -1584,17 +1706,15 @@ cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay qu
 decisión una por una, un árbol podado o una regresión logística son todavía mejores
 respuestas.
 
-**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.): documento
-`randon forest explicado.pdf`, traducción del texto de Breiman y Cutler (crecimiento del
-árbol, correlación y fuerza, rol de $m$, error *out-of-bag*, las dos medidas de importancia,
-matriz de proximidad, prototipos e imputación), y presentación
-`Ensemble Methods Universidad Austral.pdf` (las tres razones para ensamblar, perturbar y
-combinar, inestabilidad del clasificador base y k vecinos más cercanos como caso que no
-mejora), ambos de la clase 6. Breiman (1996) para bagging y Breiman (2001) para la cota de
-correlación y fuerza. Ho (1995) para el método de subespacio aleatorio y Geurts et al. (2006)
-para los extra-trees. Janitza y Hornung (2018) para la sobrestimación del error
-*out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia de Gini, que son
-los dos reparos que el documento de cátedra no hace.
+**Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.), clase 6: documento
+`randon forest explicado.pdf`, traducción de Breiman y Cutler (crecimiento del árbol,
+correlación y fuerza, rol de $m$, error *out-of-bag*, importancia, proximidad y prototipos),
+y presentación `Ensemble Methods Universidad Austral` (razones para
+ensamblar, perturbar y combinar, e inestabilidad del clasificador base). Breiman (1996) para
+bagging y Breiman (2001) para la cota de correlación y fuerza; Ho (1995) para el subespacio
+aleatorio y Geurts et al. (2006) para los extra-trees; Janitza y Hornung (2018) para la
+sobrestimación del error *out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia
+de Gini, los dos reparos que el documento de cátedra no hace.
 
 \newpage
 
@@ -1617,7 +1737,7 @@ cross-validation.*
 *Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
 tarea.*
 
-Se resuelve la Opción 1; la consigna pide una sola. Sus cuatro modelos son los de la
+Se resuelve la Opción 1. Sus cuatro modelos son los de la
 materia y se discuten con la notación de clase.
 
 ```{r e10-load, include=FALSE}
@@ -1732,7 +1852,7 @@ bajo la curva ROC: la probabilidad de que un maligno al azar reciba un puntaje m
 un benigno al azar. En regresión se elige por RMSE, la raíz del error cuadrático medio,
 en unidades de la respuesta, y se informa el $R^2$, la fracción de varianza explicada.
 
-### Espacio de búsqueda y optimización
+### Estrategia de optimización y validación cruzada
 
 La búsqueda es `RandomizedSearchCV`, que evalúa una muestra aleatoria de la grilla en
 lugar de todas sus combinaciones (lo que hace `GridSearchCV`): con el mismo presupuesto
@@ -1740,6 +1860,8 @@ prueba más valores distintos de cada hiperparámetro (Bergstra & Bengio, 2012).
 evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
 `r e10_m$n_iter` o menos, la búsqueda la recorrió completa, como un `GridSearchCV`
 (`r paste(cubre$modelo, ifelse(cubre$tarea == "clasificacion", "en clasificación", "en regresión"), collapse = ", ")`).
+
+### Espacio de búsqueda de hiperparámetros
 
 La Tabla \ref{tab:e10-grilla} muestra el espacio de cada modelo en cada tarea. Las
 grillas son logarítmicas en los parámetros de escala, como recomiendan Hsu et al. (2003)
@@ -1752,7 +1874,7 @@ porque agregar árboles no sobreajusta (Breiman, 2001), y se buscó sobre $m$, l
 variables sorteadas en cada corte, que mueve la fuerza de cada árbol (su acierto) y la
 correlación entre árboles, y sobre el tamaño de hoja. En Gradient Boosting cada árbol
 se ajusta a los pseudo-residuos, el gradiente negativo de la pérdida respecto de la
-predicción actual (los residuos, con pérdida cuadrática); se combinan la tasa $\nu$
+predicción actual (los residuos, con pérdida cuadrática); se combinan la tasa $\nu$ del Ejercicio 8,
 que encoge cada paso, las etapas y la profundidad (Volpacchio, s.f.). En el MLP,
 $\alpha$ penaliza la suma de los pesos al cuadrado y Adam es el optimizador.
 
@@ -1823,13 +1945,13 @@ kable(tab_c, format = "latex", booktabs = TRUE, row.names = FALSE,
       caption = "Clasificación en Breast Cancer Wisconsin: CV interna y hold-out.",
       format.args = list(decimal.mark = ",")) %>%
   kable_styling(latex_options = "HOLD_position", position = "center",
-                font_size = 9) %>%
-  column_spec(1, width = "2.8cm") %>%
-  column_spec(2, width = "3.2cm") %>%
+                font_size = 8) %>%
+  column_spec(1, width = "2.6cm") %>%
+  column_spec(2, width = "2.9cm") %>%
   column_spec(3, width = "1.3cm") %>%
-  column_spec(4, width = "2.1cm") %>%
-  column_spec(5:7, width = "1.4cm") %>%
-  column_spec(8, width = "1.6cm")
+  column_spec(4, width = "1.7cm") %>%
+  column_spec(5:7, width = "1.25cm") %>%
+  column_spec(8, width = "1.5cm")
 ```
 
 *Nota.* Elaboración propia con datos de Wolberg et al. (1993). Hold-out de `r pc$test`
@@ -1850,7 +1972,7 @@ kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
       caption = "Regresión en California Housing: CV interna y hold-out.",
       format.args = list(decimal.mark = ",")) %>%
   kable_styling(latex_options = "HOLD_position", position = "center",
-                font_size = 9) %>%
+                font_size = 8) %>%
   column_spec(1, width = "2.8cm") %>%
   column_spec(2, width = "4cm") %>%
   column_spec(3:5, width = "1.6cm") %>%
@@ -1859,6 +1981,8 @@ kable(tab_r, format = "latex", booktabs = TRUE, row.names = FALSE,
 
 *Nota.* Elaboración propia con datos de Pace y Barry (1997), submuestra de
 `r n10(ch$n_submuestra)` filas; RMSE en 100.000 USD.
+
+### Comparación de rendimiento
 
 En clasificación la media más alta de validación cruzada es la de `r c_ord$modelo[1]`
 (`r pm10(e10_c, c_ord$modelo[1])`), y la distancia entre el primero y el último,
@@ -1877,7 +2001,7 @@ Boosting eligió árboles de profundidad
 `r sel10("clasificacion", "Gradient Boosting", "max_depth")`: cada árbol usa una sola
 variable, por lo que el modelo es una suma de efectos por variable, sin interacciones.
 
-```{r e10-fig, out.width="74%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
+```{r e10-fig, out.width="52%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
 knitr::include_graphics("codigo/resultados/e10/comparacion_modelos.png")
 ```
 
@@ -1920,10 +2044,12 @@ chica hacen falta más etapas); más etapas podrían bajar algo el RMSE, pero es
 la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
 `r round(e10_m$segundos_total)` s) y su costo crece con las etapas.
 
-**Fuentes del Ejercicio 10.** Presentaciones de SVM y de ensambles y apunte de redes
-(Volpacchio, s.f.). Datos: Wolberg et al. (1993); Pace y Barry (1997). Método: Bergstra
-y Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman (2001), Grinsztajn
-et al. (2022). Código propio: Apéndice A.6.
+**Fuentes del Ejercicio 10.** Material de cátedra (Volpacchio, s.f.): presentaciones de SVM
+y de ensambles y apunte de redes. Wolberg et al. (1993) y Pace y Barry (1997) para los
+datos; Bergstra y Bengio (2012) para la búsqueda aleatoria; Hsu et al. (2003) para las
+grillas logarítmicas; Cawley y Talbot (2010) para el sesgo de selección; Breiman (2001)
+para el número de árboles; Grinsztajn et al. (2022) para la comparación entre árboles y
+redes. Código propio: Apéndice A.6.
 
 \newpage
 
@@ -1966,6 +2092,13 @@ cat(readLines("codigo/e6_supervivencia/supervivencia_rossi.py"), sep = "\n")
 
 Produce `codigo/resultados/e7/`: las métricas, el barrido del radio de DBSCAN, los
 perfiles de los grupos, el ANOVA por componente y el mapa.
+
+```{r e7-mapa-ap, out.width="100%", fig.cap=paste0("Proyección t-SNE de los ", val("n"), " dígitos. A la izquierda el color es el dígito real; a la derecha, el grupo que asignó k-means sobre las 30 componentes.")}
+knitr::include_graphics("codigo/resultados/e7/tsne_mapa.png")
+```
+
+*Nota.* Elaboración propia. En el panel derecho se lee el índice de Rand de k-means: un grupo
+cubre dos nubes que a la izquierda son dígitos distintos y otras nubes aparecen partidas.
 
 ```{r e7-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e7_tsne/tsne_digits.py"), sep = "\n")
