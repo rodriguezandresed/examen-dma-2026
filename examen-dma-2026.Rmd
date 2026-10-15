@@ -107,16 +107,24 @@ activación transforma esa suma en la salida de la neurona (Volpacchio, s.f.). S
 linealidad, dos capas colapsan a $W_2(W_1 x)=(W_2 W_1)x$ y la red entera no representa
 más que una regresión lineal. Con activación sigmoidal, una capa oculta con suficientes
 neuronas aproxima cuanto se quiera cualquier función continua sobre una región cerrada
-y acotada (Cybenko, 1989).
+y acotada (Cybenko, 1989). Con ReLU la red computa una función lineal por tramos, y la
+cantidad de tramos crece con la profundidad: ahí está lo que aporta apilar capas a la
+capacidad de representación (Goodfellow et al., 2016).
 
 Las activaciones más comunes son el escalón, la sigmoide, tanh, softmax y ReLU,
-$\max(0, z)$, la más usada en redes profundas (Goodfellow et al., 2016). El escalón da salida binaria, pero su
-derivada es nula (salvo en 0, donde no existe) y no sirve para entrenar por gradiente.
-La sigmoidal, con rango $(0, 1)$, se lee como probabilidad; tanh, con rango $(-1, 1)$,
-está centrada en cero. Ambas saturan: lejos del origen la derivada es casi nula y su
-producto capa tras capa tiende a cero (desvanecimiento del gradiente). Softmax da
-probabilidades que suman 1; en clasificación va en la salida. ReLU no satura para
-$z > 0$, pero una neurona que recibe siempre $z < 0$ muere: deja de actualizarse.
+$\max(0, z)$, la más usada en redes profundas (Goodfellow et al., 2016), y sus ventajas
+y desventajas se reparten alrededor de dos defectos. La saturación afecta a la sigmoide,
+con rango $(0, 1)$, que se lee como probabilidad, y a tanh, con rango $(-1, 1)$, que está
+centrada en cero: en las dos, lejos del origen la derivada es casi nula y su producto
+capa tras capa tiende a cero (desvanecimiento del gradiente). La sigmoide arrastra además
+una salida que no está centrada, lo que sesga el gradiente de la capa siguiente, y las dos
+cuestan una exponencial. La neurona muerta es el defecto de ReLU, que no satura para
+$z > 0$, es una comparación en lugar de una exponencial, deja activaciones ralas y
+converge más rápido, pero deja de actualizarse si recibe siempre $z < 0$; Leaky ReLU y ELU
+lo corrigen con una pendiente chica para $z < 0$. Los dos extremos quedan fuera de esa
+comparación: el escalón, de salida binaria y derivada nula (salvo en 0, donde no existe),
+no entrena por gradiente, y softmax, que da probabilidades que suman 1, solo sirve en la
+salida, porque normaliza entre clases.
 
 ## Punto II
 
@@ -242,7 +250,10 @@ $o_t$ cuánto sale en $h_t$; con $f_t \approx 1$ el gradiente cruza la celda.
 knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
 ```
 
-*Nota.* Elaboración propia. $x_t$ y $h_{t-1}$ alimentan las cuatro cajas superiores.
+*Nota.* Elaboración propia. $x_t$ y $h_{t-1}$ alimentan las cuatro cajas superiores. La
+celda se repite en cada paso temporal con los mismos pesos, y $h_t$ y $c_t$ pasan al paso
+siguiente; en las configuraciones de dos capas, una segunda LSTM recorre la secuencia de
+salidas de la primera.
 
 Con la fórmula de ese apunte,
 $4 \times [(\text{units} \times \text{input\_dim}) + \text{units}^{2} + \text{units}]$
@@ -302,7 +313,10 @@ estimación.
 Una red recurrente sola exige entrada y salida del mismo largo, y traducir no funciona
 así. El encoder-decoder acopla dos redes: el encoder resume la entrada en un vector de
 contexto y el decoder genera la salida de a un elemento, realimentado con lo ya generado,
-hasta el símbolo de fin (Sutskever et al., 2014). El cuello de botella es ese vector de
+hasta el símbolo de fin (Sutskever et al., 2014). Así se usa una vez entrenado; durante el
+entrenamiento el decoder recibe en cada paso el objetivo verdadero y no lo que predijo
+(*teacher forcing*), y en la generación se puede tomar el elemento más probable de cada
+paso o explorar varias secuencias parciales a la vez (*beam search*). El cuello de botella es ese vector de
 tamaño fijo, que carga con la oración entera y degrada el rendimiento cuanto más larga es;
 la atención deja al decoder consultar en cada paso todos los estados del encoder
 (Bahdanau et al., 2015), y el Transformer descarta la recurrencia y conserva solo la
@@ -336,15 +350,15 @@ generalización en el contexto del aprendizaje automático.*
   esto se conecta con el principio de mínima complejidad y el aprendizaje profundo
   moderno.*
 
-\enlargethispage{\baselineskip}
 La capacidad de representación es el conjunto de funciones que la arquitectura computa
 al variar sus pesos; la de generalización, sostener el desempeño en datos no vistos
 (brecha entre error de entrenamiento y de validación; Volpacchio, s.f.). Más capas y
 neuronas agrandan la primera si la activación es no lineal; weight decay, early
 stopping y dropout (apagar neuronas al azar; Srivastava et al., 2014) la restringen.
 La convolución supone rasgos locales repetidos, la recurrencia orden temporal y la
-capa densa nada; las conexiones residuales permiten entrenar más de cien capas
-(He et al., 2016).
+capa densa nada: ese supuesto es el que mejora la generalización cuando se cumple, porque
+restringe la familia sin pagar error de ajuste, y el que la arruina cuando no; las
+conexiones residuales permiten entrenar más de cien capas (He et al., 2016).
 
 Sesgo es la distancia entre la predicción promedio sobre las muestras posibles y el
 valor verdadero; varianza, cuánto cambia el ajuste de una muestra a otra; el error
@@ -352,7 +366,9 @@ esperado suma sesgo al cuadrado, varianza y ruido. Un perceptrón sin capa ocult
 separa el XOR (clases en esquinas opuestas de un cuadrado) y subajusta: sesgo alto. Un
 MLP (perceptrón multicapa) muy ancho, sin regularización y con pocos datos, memoriza el
 ruido y sobreajusta: varianza alta. Con los mismos datos, una capa oculta mejora al
-primero y más neuronas empeoran al segundo.
+primero, porque agranda la familia de funciones hasta incluir la frontera que el XOR
+necesita, y más neuronas empeoran al segundo, porque la agrandan más allá de lo que esos
+datos pueden identificar y el ajuste pasa a seguir el ruido.
 
 Más parámetros no garantizan más acierto: la LSTM 64-32 tiene
 `r round(p6432$params_keras / p32$params_keras)` veces los parámetros de `lstm_32` y
