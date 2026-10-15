@@ -15,6 +15,8 @@ Conocimiento, Universidad Austral), desarrollado en R Markdown y compilado a PDF
   - `e6_supervivencia/supervivencia_rossi.py`: atajos de regresión contra Kaplan-Meier
     y Cox sobre los datos Rossi (Ejercicio 6).
   - `e10_pipeline/pipeline_opcion1.py`: pipeline comparativo del Ejercicio 10.
+  - `verificacion/revisar_entrega.py`: controles de la entrega sobre el `.Rmd` y
+    el PDF compilado (ver más abajo).
   - `resultados/`: CSV, JSON y PNG generados por esos scripts.
 - `Austral logo.png`: logo de la portada. Tiene que quedar en la misma carpeta que el
   `.Rmd`.
@@ -46,6 +48,33 @@ Knit a PDF (`xelatex`). Requiere `rmarkdown`, `knitr` y `kableExtra`:
 ```bash
 Rscript -e 'rmarkdown::render("examen-dma-2026.Rmd")'
 ```
+
+## Verificar la entrega
+
+Después de knitear, desde la raíz del repo:
+
+```bash
+python codigo/verificacion/revisar_entrega.py   # necesita: pip install pymupdf
+```
+
+Corre de una vez los controles que antes se medían a mano y devuelve 1 si algo
+falla, así que se puede encadenar:
+
+- **Sobre el PDF compilado**, que es donde se ven: hojas por pregunta contra el
+  límite de la consigna, distancia del último renglón al número de página
+  (mínimo 0,45 cm) y títulos que quedan colgados al pie sin su contenido.
+- **Sobre el `.Rmd`**: que haya un bloque `Fuentes del Ejercicio N` por
+  ejercicio, que la lista de Referencias no tenga huérfanas ni falte ninguna
+  cita (se comprueba en las dos direcciones) y las reglas de redacción del
+  `CLAUDE.md`: em dashes, muletillas, primera persona, `PENDIENTE`, el símbolo
+  de sección, los rótulos "Cuadro" y "Gráfico", y el punto decimal en prosa.
+
+Las excepciones al límite de hojas viven en `HOJAS_EXCEPCION`, arriba del
+script, con el motivo escrito. Se muestran en cada corrida a propósito: una
+excepción que no se ve se vuelve un incumplimiento olvidado. Hoy hay una, el
+Ejercicio 1 en 5 hojas.
+
+Sin PyMuPDF el script igual corre: avisa y saltea los tres controles de maqueta.
 
 ## Reglas de la consigna a tener en cuenta
 
