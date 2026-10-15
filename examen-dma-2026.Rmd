@@ -307,6 +307,14 @@ todas las corridas (peor con una: `r fmt_e1(max(e1runs$val_mae[una]))`; mejor co
 desvío; se mantiene la elección, porque decidir con el test le quita valor de
 estimación.
 
+La serie es sintética, y eso acota lo que el ensayo puede mostrar. A favor: con dos senos
+y ruido de desvío conocido hay dos referencias contra las cuales medir, la persistencia y
+el piso de ruido, que en una serie real no se conocen. En contra, y pesa más: las cuatro
+configuraciones quedan dentro de su propia dispersión, así que el experimento no alcanza
+para ordenarlas y la comparación de arquitecturas que pide el enunciado queda sin
+respuesta firme. Separarlas pediría una serie real, con tendencia y estacionalidad, donde
+la memoria larga de la LSTM tenga algo que aportar frente a un modelo lineal.
+
 \needspace{4\baselineskip}
 
 ## Punto VII
@@ -2052,16 +2060,17 @@ En clasificación la media más alta de validación cruzada es la de `r c_ord$mo
 informal, los cuatro modelos no se distinguen. En *hold-out* difieren en entre
 `r min(e10_c$test_fn)` y `r max(e10_c$test_fn)` malignos no detectados sobre
 `r pc$malignos_test` (`r if (sum(e10_c$test_fp) == 0) "ningún modelo produjo falsos positivos" else paste(sum(e10_c$test_fp), "falsos positivos en total")`), y cada
-maligno no detectado resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
-bloques. Se interpreta que las clases son casi linealmente separables en el espacio
-estandarizado, que es lo que mide el alineamiento del Ejercicio 5. SVM eligió
+uno resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
+bloques. El empate es del conjunto antes que de los modelos: las clases son casi
+linealmente separables en el espacio estandarizado, como mide el alineamiento del
+Ejercicio 5, y ahí los cuatro llegan al mismo techo. SVM eligió
 $\gamma = `r m10(sel10("clasificacion", "SVM", "gamma"))`$, es decir
 $\sigma = 1/\sqrt{2\gamma} \approx$ `r f10(1 / sqrt(2 * g_svm), 1)`, del orden de la
 distancia típica entre dos casos estandarizados ($\sqrt{2p} \approx$
 `r f10(sqrt(2 * bc$p), 1)`): un kernel ancho a esa escala (inferencia propia). Gradient
-Boosting eligió árboles de profundidad
-`r sel10("clasificacion", "Gradient Boosting", "max_depth")`: cada árbol usa una sola
-variable, por lo que el modelo es una suma de efectos por variable, sin interacciones.
+Boosting eligió profundidad
+`r sel10("clasificacion", "Gradient Boosting", "max_depth")`: cada árbol usa una
+variable, así que el modelo es una suma de efectos por variable, sin interacciones.
 
 ```{r e10-fig, out.width="52%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
 knitr::include_graphics("codigo/resultados/e10/comparacion_modelos.png")
