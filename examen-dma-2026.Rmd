@@ -204,7 +204,7 @@ cada ventana agrega invariancia a corrimientos chicos. En la Figura 1, el aplana
 convierte los mapas en un vector, la capa densa combina los rasgos y softmax da la
 probabilidad de cada clase.
 
-```{r e1-cnn, out.width="56%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
+```{r e1-cnn, out.width="82%", fig.cap="Capas de una CNN t\\'{\\i}pica de clasificaci\\'on de im\\'agenes."}
 knitr::include_graphics("codigo/resultados/e1/cnn_capas.png")
 ```
 
@@ -247,7 +247,7 @@ $g_t = s(W_g x_t + U_g h_{t-1} + b_g)$, $g \in \{f, i, o\}$: $f_t$ dosifica cuá
 $c_{t-1}$ se conserva, $i_t$ cuánto de la candidata $\tilde c_t$ (tanh) se escribe y
 $o_t$ cuánto sale en $h_t$; con $f_t \approx 1$ el gradiente cruza la celda.
 
-```{r e1-lstm-topo, out.width="42%", fig.cap="Celda LSTM en un paso temporal."}
+```{r e1-lstm-topo, out.width="64%", fig.cap="Celda LSTM en un paso temporal."}
 knitr::include_graphics("codigo/resultados/e1/lstm_celda.png")
 ```
 
@@ -2201,8 +2201,9 @@ https://doi.org/10.1007/BF02551274
 Davidson-Pilon, C. (2019). lifelines: Survival analysis in Python. *Journal of Open
 Source Software, 4*(40), 1317. https://doi.org/10.21105/joss.01317
 
-Davis, L. (1985). Job shop scheduling with genetic algorithms. *Proceedings of the
-First International Conference on Genetic Algorithms and their Applications*, 136-140.
+Davis, L. (1985). Job shop scheduling with genetic algorithms. En J. J. Grefenstette
+(Ed.), *Proceedings of the First International Conference on Genetic Algorithms and
+their Applications* (pp. 136-140). Lawrence Erlbaum Associates.
 
 Ester, M., Kriegel, H.-P., Sander, J., & Xu, X. (1996). A density-based algorithm for
 discovering clusters in large spatial databases with noise. *Proceedings of the Second

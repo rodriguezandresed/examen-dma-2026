@@ -131,11 +131,19 @@ depende del tipo de fuente:
 | Libro | título | `Vapnik, V. N. (1995). *The nature of statistical learning theory*. Springer.` |
 | Artículo | revista **y** volumen | `Breiman, L. (2001). Random forests. *Machine Learning, 45*(1), 5-32.` |
 | Capítulo | título del libro | `Apellido, I. (Año). Título del capítulo. En I. Editor (Ed.), *Título del libro* (pp. 1-20). Editorial.` |
-| Actas | nombre del congreso | `Davis, L. (1985). Job shop scheduling with genetic algorithms. *Proceedings of the First International Conference on Genetic Algorithms*, 136-140.` |
+| Actas, volumen con editor | título de las actas | `Davis, L. (1985). Job shop scheduling with genetic algorithms. En J. J. Grefenstette (Ed.), *Proceedings of the First International Conference on Genetic Algorithms and their Applications* (pp. 136-140). Lawrence Erlbaum Associates.` |
+| Actas periódicas | título de las actas **y** volumen | `Ho, T. K. (1995). Random decision forests. *Proceedings of the Third International Conference on Document Analysis and Recognition (ICDAR)*, 278-282.` |
 | Dataset | título, con `[Conjunto de datos]` | `Wolberg, W. H., Street, W. N., & Mangasarian, O. L. (1995). *Breast Cancer Wisconsin (Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.` |
 | Software | título, con `[Software]` o su paper | `Fortin, F.-A., et al. (2012). DEAP: Evolutionary algorithms made easy. *Journal of Machine Learning Research, 13*, 2171-2175.` |
 
-- En artículos el rango de páginas va solo; `pp.` es únicamente para capítulos y actas.
+- **Las actas tienen dos formas y no se mezclan.** Si el volumen salió una sola vez,
+  con editor y editorial (el caso de Davis, 1985), va como capítulo de libro: `En
+  Editor (Ed.), *Título* (pp. x-y). Editorial.` Si la serie sale de forma periódica y
+  se cita por volumen o por año, como *Proceedings of the IEEE*, *Advances in Neural
+  Information Processing Systems* o las actas de ICDAR, KDD, CVPR y SIGKDD, va como
+  artículo: título de las actas en cursiva y el rango de páginas solo, sin `pp.`
+- En artículos el rango de páginas va solo; `pp.` es únicamente para capítulos y para
+  las actas en forma de libro.
 - Hasta 20 autores se listan todos. Con 21 o más, los primeros 19, puntos suspensivos
   y el último.
 - DOI o URL al final cuando existe.

@@ -102,15 +102,37 @@ lo pide la consigna, así que no es un incumplimiento. Pero en un examen donde e
 mide, el contraste se nota, y el alineamiento kernel-objetivo de Cristianini et al. (2002)
 se podía calcular sobre los mismos datos del Ejercicio 10 en diez líneas de código.
 
-### 5. `figuras.py` es el único script sin un comentario personal
+### 5. Las dos figuras imprimían sus rótulos a unos 5 pt · CORREGIDO
 
-Criterio 3 de la consigna: "código perfecto sin comentarios personales". Los seis scripts
-promedian entre el 6 % y el 24 % de líneas de comentario, y cinco de los seis tienen
-marcas claras de ensayo y error. `codigo/e1_lstm/figuras.py` tiene nueve comentarios sobre
-148 líneas y ninguno dice por qué se eligió nada.
+Este reemplaza a un hallazgo anterior que estaba mal. Yo había anotado que `figuras.py`
+era el único script sin comentarios personales, y eso salió de contar palabras clave, no
+de leerlo. Leído, el script tiene las mejores notas de diseño del repositorio, incluida
+esta: *"Con fuentes de 9 pt, al 50 % del ancho las ecuaciones quedaban en ~4 pt impresas:
+se suben las fuentes para que se lean al 60 %"*. El criterio 3 estaba cubierto.
 
-Es el script de menor riesgo, porque solo dibuja. Pero es el único al que ese criterio se
-le podría aplicar.
+Lo que apareció al leerlo es mejor y es real: **la figura estaba incluida al 42 %, no al
+60 % para el que fue diseñada.** Medido sobre el PDF, comparando los píxeles de cada PNG
+con el ancho al que se muestra:
+
+| | Escala | Rótulo de 9 pt | Rótulo de 12 pt |
+|---|---|---|---|
+| Figura 1, capas de la CNN, antes al 56 % | 0,53 | **4,8 pt** | |
+| Figura 2, celda LSTM, antes al 42 % | 0,42 | | **5,0 pt** |
+| Figura 1, ahora al 82 % | 0,78 | 7,0 pt | |
+| Figura 2, ahora al 64 % | 0,64 | 5,7 pt | 7,7 pt |
+
+Cinco puntos contra un cuerpo de texto de 12 es ilegible impreso, y es justo lo que el
+autor del script había tratado de evitar. Venía de la compresión del Ejercicio 1 a 4
+hojas: achicar las figuras era parte de cómo se ganó esa hoja.
+
+Con el Ejercicio 1 en 5 hojas, achicarlas dejó de comprar nada: **la quinta hoja tenía
+15,5 cm libres**. Las dos volvieron a un tamaño legible sin mover el conteo de hojas, y la
+página se revisó renderizada como imagen, que es lo que pide el `CLAUDE.md`.
+
+Queda una sola cosa chica: dentro de la Figura 2, la caja de $h_t = o_t \odot \tanh(c_t)$
+usa cuerpo 10 y no 12, así que imprime a unos 6,4 pt, por debajo del resto del diagrama.
+Se lee, y la fórmula también está en el cuerpo del texto. Agrandarla pide reacomodar las
+flechas de esa esquina, y no parece valer el riesgo.
 
 ---
 
@@ -186,10 +208,29 @@ corrector escéptico buscaría primero (Cybenko 1989, Ho 1995, Breiman 1996 y 20
 Schölkopf et al. 1998, Belkin et al. 2019, Grinsztajn et al. 2022) son todas reales y
 están citadas donde corresponde, no decorando el final.
 
-**Único punto blando: Davis (1985).** El trabajo existe y está acreditado en la literatura
-de *scheduling*, pero el rango de páginas 136-140 no se pudo confirmar, porque las actas
-del primer ICGA no están digitalizadas. Si el profesor es de los que verifica una
-referencia al azar y cae justo en esa, la respuesta tiene que ser esa misma.
+**Davis (1985) quedó confirmada contra la fuente original, y de paso corregida.** Era el
+único punto blando: el rango de páginas venía de listas de referencias de terceros y no
+de las actas, que se daban por no digitalizadas. Sí lo están: hay un escaneo del volumen
+completo, y su índice dice que "Job shop scheduling with genetic algorithms", de Lawrence
+Davis, empieza en la **página 136**, y que el trabajo siguiente, el de Fourman sobre
+compactación de layout, empieza en la **141**. El rango 136-140 es correcto.
+
+La portada agrega lo que faltaba: editor **John J. Grefenstette**, publicado por
+**Lawrence Erlbaum Associates**, 1985, ISBN 0-8058-0426-9, del congreso del 24 al 26 de
+julio de 1985 en Carnegie-Mellon.
+
+Con esos datos la entrada cambió de forma, porque en APA 7 unas actas publicadas una sola
+vez como libro con editor y editorial se citan como capítulo, no como artículo:
+
+> Davis, L. (1985). Job shop scheduling with genetic algorithms. En J. J. Grefenstette
+> (Ed.), *Proceedings of the First International Conference on Genetic Algorithms and
+> their Applications* (pp. 136-140). Lawrence Erlbaum Associates.
+
+Las otras quince referencias de congresos no cambian, y eso también es APA: *Proceedings
+of the IEEE*, *Advances in Neural Information Processing Systems* y las actas de ICDAR,
+KDD, CVPR y SIGKDD son series periódicas, que van con formato de artículo y el rango de
+páginas sin `pp.`. La regla quedó escrita en el `CLAUDE.md`, con las dos formas separadas
+y un ejemplo de cada una, para que no se mezclen la próxima vez.
 
 ### Criterio 5. Estilo de escritura inconsistente
 
@@ -283,11 +324,12 @@ sin contestar. Pero es una lectura, no un hecho, y la decisión es del grupo.
 |---|---|---|
 | 1 | Las tres palabras del `model.summary()` en el 1.VI | **Hecho** |
 | 2 | "Con pocas neuronas por capa" en el 1.II, verificado contra el apunte y corregido | **Hecho** |
-| 3 | Comentarios propios en `figuras.py`, por el criterio 3 | Pendiente |
-| 4 | Alineamiento kernel-objetivo del Ejercicio 5 sobre datos reales | Pendiente |
-| 5 | Rango de páginas de Davis (1985) | Sin vía de confirmación |
-| 6 | Decidir la hoja del Ejercicio 1 | Decisión del grupo, PR #8 |
-| 7 | Repaso cruzado oral con las diez preguntas de arriba | Del grupo, y es lo de mayor retorno |
+| 3 | Las dos figuras del Ejercicio 1, que imprimían a unos 5 pt | **Hecho** |
+| 4 | Davis (1985): páginas confirmadas en el escaneo de las actas y entrada pasada a formato de capítulo | **Hecho** |
+| 5 | La regla de actas, en sus dos formas, escrita en el `CLAUDE.md` | **Hecho** |
+| 6 | Alineamiento kernel-objetivo del Ejercicio 5 sobre datos reales | Pendiente |
+| 7 | Decidir la hoja del Ejercicio 1 | Decisión del grupo, PR #8 |
+| 8 | Repaso cruzado oral con las diez preguntas de arriba | Del grupo, y es lo de mayor retorno |
 
 ## Cómo reproducir esta corrección
 
