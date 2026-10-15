@@ -119,7 +119,8 @@ centrada en cero: en las dos, lejos del origen la derivada es casi nula y su pro
 capa tras capa tiende a cero (desvanecimiento del gradiente). La sigmoide arrastra además
 una salida que no está centrada, lo que sesga el gradiente de la capa siguiente, y las dos
 cuestan una exponencial. La neurona muerta es el defecto de ReLU, que no satura para
-$z > 0$, es una comparación en lugar de una exponencial, deja activaciones ralas y
+$z > 0$, es una comparación en lugar de una exponencial, deja activaciones ralas (en cero
+exacto, no en un valor chico, así que no hay que propagarlas) y
 converge más rápido, pero deja de actualizarse si recibe siempre $z < 0$; Leaky ReLU y ELU
 lo corrigen con una pendiente chica para $z < 0$. Los dos extremos quedan fuera de esa
 comparación: el escalón, de salida binaria y derivada nula (salvo en 0, donde no existe),
