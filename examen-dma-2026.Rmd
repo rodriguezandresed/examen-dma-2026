@@ -1516,14 +1516,22 @@ La presentación reproduce un ejemplo con semiplanos verticales u horizontales c
 Las tres rondas se rehicieron con la fórmula.
 
 ```{r e8-rondas, echo=FALSE}
+# Los seis valores publicados se transcriben de la diapositiva, que es su
+# fuente. La ponderación recalculada y la observación NO se tipean: salen de
+# la fórmula. Si el recálculo estuviera escrito a mano no habría verificación,
+# que es justamente lo que esta tabla afirma hacer.
+e8err  <- c(0.30, 0.21, 0.14)
+e8apub <- c(0.42, 0.65, 0.92)
+e8a    <- 0.5 * log((1 - e8err) / e8err)
+f8 <- function(x, d) formatC(x, format = "f", digits = d, decimal.mark = ",")
 e8 <- data.frame(
   Ronda = c("1", "2", "3"),
-  err   = c("0,30", "0,21", "0,14"),
-  apub  = c("0,42", "0,65", "0,92"),
-  acalc = c("0,4236", "0,6625", "0,9076"),
-  obs   = c("coincide al redondear",
-            "redondea a 0,66, no a 0,65",
-            "redondea a 0,91, no a 0,92"),
+  err   = f8(e8err, 2),
+  apub  = f8(e8apub, 2),
+  acalc = f8(e8a, 4),
+  obs   = ifelse(round(e8a, 2) == e8apub, "coincide al redondear",
+                 paste0("redondea a ", f8(round(e8a, 2), 2), ", no a ",
+                        f8(e8apub, 2))),
   stringsAsFactors = FALSE)
 names(e8) <- c("Ronda", "Error", "Ponderación publicada",
                "Ponderación recalculada", "Observación")
@@ -1537,9 +1545,10 @@ ponderación, el $\alpha_t = \tfrac{1}{2}\log((1-\varepsilon_t)/\varepsilon_t)$ 
 la hipótesis entra al voto. Los seis valores publicados se leen de las diapositivas del
 ejemplo.
 
-Dos de las tres rondas no cierran: el error que produce exactamente 0,65 es 0,2142 y el que
-produce 0,92 es 0,137, de manera que lo más probable es que las cuentas originales se hayan
-hecho con los errores sin redondear. La diferencia
+Dos de las tres rondas no cierran: el error que produce exactamente 0,65 es
+`r f8(1 / (1 + exp(2 * 0.65)), 4)` y el que produce 0,92 es
+`r f8(1 / (1 + exp(2 * 0.92)), 3)`, de manera que lo más probable es que las cuentas
+originales se hayan hecho con los errores sin redondear. La diferencia
 es de un centésimo y no cambia nada, pero queda constancia de que se verificó. El clasificador
 base, un único corte paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
 

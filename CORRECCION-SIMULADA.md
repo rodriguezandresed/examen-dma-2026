@@ -10,11 +10,18 @@ rigurosa), **detección de IA** (los cinco criterios y las tres penalizaciones) 
 
 ---
 
+> **Segunda lectura.** La primera versión de este documento ponía 9,2 de promedio y
+> siete ejercicios en 9,5. Releído con más exigencia, ese promedio estaba inflado y la
+> uniformidad lo delataba: puntuaba la prosa y el rigor metodológico, que son excelentes,
+> y no miraba de qué están hechos los experimentos. La nota baja a **8,5**, y abajo está
+> la sección "El techo del examen", que explica qué lo frena. También se corrige una
+> afirmación falsa que esa primera versión dejó escrita.
+
 ## Veredicto
 
 | Eje | Resultado |
 |---|---|
-| Desarrollo | **9,2 / 10** promedio sin ponderar |
+| Desarrollo | **8,5 / 10** promedio sin ponderar |
 | Penalización por estilo artificial | **0 %**. Ninguno de los diez ejercicios la activa |
 | Riesgo real de que el profesor sospeche IA | **Bajo**, y por un motivo poco común: el trabajo corrige a la cátedra en cinco lugares y documenta lo que falló |
 | Incumplimiento formal | **Uno**: el Ejercicio 1 va en 5 hojas |
@@ -30,20 +37,65 @@ más del Ejercicio 1 y una defensa oral floja.
 
 | Ej | Cláusulas | Desarrollo | Qué lo sostiene | Qué le resta |
 |---|---|---|---|---|
-| 1 | 39 | **8,0** | Los ocho incisos completos, con LSTM corrida de verdad y cuenta de parámetros contrastada contra Keras | 5 hojas; el Punto VIII contesta seis viñetas en tres párrafos; dos imprecisiones (abajo) |
-| 2 | 4 | **9,5** | Las cuatro versiones del apunte como relajación sucesiva de supuestos; la cota leave-one-out; SVR derivada entera | La taxonomía mete a SVR como cuarta "versión", que no relaja un supuesto sino que cambia de problema |
-| 3 | 4 | **9,5** | Dos hojas y no falta nada; el contraejemplo de Vapnik sobre contar parámetros; contrasta la regla con un caso real del Ejercicio 10 | Nada sustantivo |
-| 4 | 4 | **9,5** | El AG binario y el real corridos con 20 semillas, y el precipicio de Hamming explicado desde los datos propios | Davis (1985): el rango de páginas no se pudo confirmar |
-| 5 | 5 | **9,0** | Declara que Kernel PCA no está en el material y trae a Schölkopf; la selección de kernel con tres fuentes y conclusión operativa | Es el ejercicio más libresco, el único sin corrida propia |
-| 6 | 3 | **9,5** | Pone el argumento donde va, en la verosimilitud, y mide los dos atajos equivocados sobre Rossi | Nada sustantivo |
-| 7 | 9 | **9,5** | La pregunta más larga del examen y está completa; el DBSCAN que falla se informa; la trampa del clustering sobre el embedding | El perfilado va sobre componentes y no sobre variables, así que no dice qué significan los grupos (y lo admite) |
-| 8 | 2 | **9,5** | Recalcula el ejemplo de la cátedra y encuentra dos rondas que no cierran; unifica AdaBoost como caso particular de Gradient Boosting | Nada sustantivo |
-| 9 | 3 | **9,5** | La cota de Breiman leída como herramienta; los dos reparos que el documento no hace (OOB y Gini); la pérdida de interpretabilidad | Nada sustantivo |
-| 10 | 7 | **9,0** | Validación anidada, el sesgo de selección citado y evitado, el análisis de bordes de grilla | La submuestra de California Housing acota el alcance; la corrección del F1 ponderado queda contada como error propio, lo cual es honesto pero visible |
+| 1 | 39 | **7,5** | Los ocho incisos completos, con cuenta de parámetros contrastada contra Keras | **El único ejemplo en Python que pide la consigna corre sobre dos senos más ruido**, y el experimento no puede distinguir las configuraciones que se le pidió comparar. Además 5 hojas y el Punto VIII muy comprimido |
+| 2 | 4 | **9,0** | Las cuatro versiones del apunte como relajación sucesiva de supuestos; la cota leave-one-out; SVR derivada entera | Exposición pura, sin una sola cuenta propia. La consigna no la pide, pero en un final de posgrado se nota |
+| 3 | 4 | **9,0** | Dos hojas y no falta nada; el contraejemplo de Vapnik; contrasta la regla con un caso real del Ejercicio 10 | Lo más corto del examen; se apoya en datos de otro ejercicio y no propios |
+| 4 | 4 | **8,5** | El AG binario y el real con 20 semillas, y el precipicio de Hamming explicado desde los datos propios | Rastrigin es el banco de pruebas de juguete por excelencia. Y de los tres casos de aplicación, dos comparten autor (Davis) y dos son de los 80 |
+| 5 | 5 | **8,5** | Ahora mide: el alineamiento sobre datos reales, y el resultado negativo se informa | Sigue siendo el más bibliográfico, y la medición llegó al final y por insistencia |
+| 6 | 3 | **9,0** | Pone el argumento donde va, en la verosimilitud, y mide los dos atajos equivocados | Rossi viene del notebook de la cátedra, así que el dato tampoco se salió a buscar |
+| 7 | 9 | **9,0** | Nueve cláusulas completas; el DBSCAN que falla se informa; la trampa del clustering sobre el embedding | `digits` de scikit-learn, 8 por 8 píxeles. El perfilado va sobre componentes, así que no dice qué significan los grupos |
+| 8 | 2 | **9,0** | Auditar la aritmética de la cátedra es la mejor idea del examen | El recálculo estaba **tipeado a mano** hasta esta pasada: la tabla que dice verificar no verificaba nada |
+| 9 | 3 | **8,5** | La cota de Breiman leída como herramienta; los dos reparos que el documento no hace | Exposición pura, tres hojas sin una medición |
+| 10 | 7 | **7,5** | Validación anidada, el sesgo de selección citado y evitado, el análisis de bordes de grilla | **Los dos datasets son los de juguete de scikit-learn**, y en clasificación los cuatro modelos empatan, así que la comparación que el ejercicio existe para hacer no informa nada. El preprocesamiento, que es el requisito (1), se reduce a un escalador |
 
-El Ejercicio 1 es el más débil del conjunto, y no por lo que dice sino por cuánto tiene
-que decir: ocho incisos, uno de ellos con seis viñetas, en el mismo presupuesto de hojas
-que el Ejercicio 3, que tiene cuatro cláusulas y las contesta en dos hojas.
+### El techo del examen
+
+La primera versión de esta corrección puntuaba la prosa, el rigor metodológico y la
+honestidad, que son excelentes y sostienen los nueves. Lo que no miraba es **de qué están
+hechos los experimentos**, y ahí hay un patrón que no se ve ejercicio por ejercicio y
+salta cuando se los mira juntos:
+
+| Ejercicio | Datos | Origen |
+|---|---|---|
+| 1.VI | Dos senos más ruido gaussiano | Sintético, generado en el script |
+| 4 | Rastrigin en dos variables | Función de prueba sintética |
+| 5 | Breast Cancer Wisconsin | `sklearn.datasets` |
+| 6 | Rossi | Incluido en `lifelines`, y es el del notebook de la clase |
+| 7 | Digits, 8 por 8 píxeles | `sklearn.datasets` |
+| 10 | Breast Cancer y California Housing | `sklearn.datasets` |
+
+**Ningún dato del examen salió de afuera de una biblioteca.** Seis experimentos, seis
+conjuntos que vienen con el paquete o se generan con tres líneas. Para un final de
+*Data Mining Avanzado* eso marca un techo, porque la parte empírica nunca se enfrenta a
+lo que hace difícil el oficio: datos sucios, faltantes, variables categóricas, clases
+desbalanceadas, fugas temporales.
+
+La consigna lo tolera. La Opción 1 del Ejercicio 10 pide "datasets públicos" y los de
+scikit-learn lo son. Pero la Opción 2, que el grupo no eligió, pide "datasets reales
+obtenidos de Internet", y esa diferencia de redacción muestra qué esperaba el profesor.
+
+Y en el Ejercicio 10 el costo es concreto, no estético. **El ejercicio existe para
+comparar cuatro modelos, y el propio texto informa que en clasificación no se
+distinguen.** Esa respuesta es verdadera y está bien argumentada, pero es vacía, y la
+causa es la elección del conjunto: Breast Cancer tiene 569 casos, 30 variables numéricas
+limpias y clases casi linealmente separables, cosa que ahora el alineamiento del
+Ejercicio 5 demuestra con un número. Con ese conjunto, los cuatro modelos tienen que
+empatar.
+
+Lo mismo arrastra el requisito (1), "preprocesamiento adecuado de los datos": como los
+dos conjuntos son matrices numéricas sin faltantes y sin categóricas, el preprocesamiento
+del pipeline es un `StandardScaler` y nada más. Está bien hecho (dentro del `Pipeline`,
+sin fuga, y con la prueba de que en árboles no cambia nada), pero no hay nada que
+preprocesar. Si el profesor pregunta "¿y el preprocesamiento?", la respuesta honesta es
+"un escalador, porque los datos venían limpios".
+
+El Ejercicio 1.VI tiene su propia versión del problema. La consigna pide un ejemplo con
+"una serie de tiempo **arbitraria**", y dos senos con ruido cumplen la letra. Pero una
+señal periódica y determinista más ruido es el caso donde una LSTM no tiene nada que
+demostrar, y el experimento queda sin poder para contestar lo que se le preguntó: con
+tres semillas y 20 épocas, las cuatro configuraciones se superponen, y el propio texto lo
+dice ("en test `lstm_64` gana por menos de un desvío"). Informar la superposición es
+honesto; no convierte en informativo a un experimento que no lo es.
 
 ---
 
@@ -359,10 +411,26 @@ sin contestar. Pero es una lectura, no un hecho, y la decisión es del grupo.
 | 4 | Davis (1985): páginas confirmadas en el escaneo de las actas y entrada pasada a formato de capítulo | **Hecho** |
 | 5 | La regla de actas, en sus dos formas, escrita en el `CLAUDE.md` | **Hecho** |
 | 6 | Alineamiento kernel-objetivo del Ejercicio 5 sobre datos reales | **Hecho** |
-| 7 | Decidir la hoja del Ejercicio 1 | Decisión del grupo, PR #8 |
-| 8 | Repaso cruzado oral con las diez preguntas de arriba | Del grupo, y es lo de mayor retorno |
+| 7 | El recálculo de los $\alpha_t$ del Ejercicio 8, que estaba tipeado a mano | **Hecho** |
+| 8 | Decidir la hoja del Ejercicio 1 | Decisión del grupo, PR #8 |
+| 9 | Los datasets de juguete, sobre todo en el Ejercicio 10 | **Abierto, y es lo único que movería la nota** |
+| 10 | Repaso cruzado oral con las diez preguntas de abajo | Del grupo |
 
-Con el 6 hecho, los diez ejercicios tienen al menos una medición propia.
+Sobre el 9, para que la decisión sea informada y no una aspiración: cambiar el conjunto
+de clasificación del Ejercicio 10 por uno real, con faltantes y variables categóricas,
+haría que el requisito (1) tenga contenido y que la comparación de los cuatro modelos
+distinga algo. Cuesta volver a correr el pipeline completo, reescribir los párrafos de
+resultados y de comparación, y rehacer las Tablas 8 y 9. Es el ejercicio de Marcos y es
+el cambio más grande que queda sobre la mesa. Con la entrega encima, puede ser más
+sensato dejarlo y tener preparada la respuesta: se eligió priorizar que el pipeline fuera
+metodológicamente correcto antes que difícil.
+
+**Corrección de la primera versión.** Ahí escribí que "los diez ejercicios tienen al
+menos una medición propia". Es falso, y lo comprobé contando las lecturas en línea del
+`.Rmd`: **los Ejercicios 2 y 9 no tienen ninguna**, y el 3 se apoya en datos del 10. El 8
+tampoco tenía, hasta que en esta pasada el recálculo de los $\alpha_t$ pasó a calcularse.
+Ninguno de los tres incumple la consigna, que no pide código ahí, pero la frase estaba
+mal y había quedado también en el cuerpo del PR.
 
 El examen conserva a propósito otras cinco afirmaciones rotuladas como inferencia o
 hipótesis: el doble descenso del 1.VIII ("es una hipótesis: no se midió el error de
