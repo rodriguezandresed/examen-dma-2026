@@ -12,8 +12,12 @@ Conocimiento, Universidad Austral), desarrollado en R Markdown y compilado a PDF
   - `e1_lstm/lstm_serie.py`: LSTM del Ejercicio 1.VI (TensorFlow).
   - `e1_lstm/figuras.py`: diagramas de CNN y celda LSTM del Ejercicio 1.
   - `e4_ag/ag_rastrigin.py`: AG binario contra AG real con DEAP (Ejercicio 4).
+  - `e5_kernels/alineamiento_kernel.py`: alineamiento kernel-objetivo sobre la partición
+    de entrenamiento del Ejercicio 10 (Ejercicio 5).
   - `e6_supervivencia/supervivencia_rossi.py`: atajos de regresión contra Kaplan-Meier
     y Cox sobre los datos Rossi (Ejercicio 6).
+  - `e7_tsne/tsne_digits.py`: t-SNE, DBSCAN, k-means y perfilado de los grupos sobre los
+    dígitos de scikit-learn (Ejercicio 7).
   - `e10_pipeline/pipeline_opcion1.py`: pipeline comparativo del Ejercicio 10.
   - `verificacion/revisar_entrega.py`: controles de la entrega sobre el `.Rmd` y
     el PDF compilado (ver más abajo).
@@ -35,9 +39,15 @@ Desde la raíz del repo:
 .venv/bin/python codigo/e4_ag/ag_rastrigin.py
 .venv/bin/python codigo/e6_supervivencia/supervivencia_rossi.py
 
-# Ejercicio 10 (scikit-learn, pandas, matplotlib)
+# Ejercicios 5, 7 y 10 (scikit-learn, pandas, matplotlib)
+.venv/bin/python codigo/e5_kernels/alineamiento_kernel.py
+.venv/bin/python codigo/e7_tsne/tsne_digits.py
 .venv/bin/python codigo/e10_pipeline/pipeline_opcion1.py
 ```
+
+El Ejercicio 5 usa la misma semilla y la misma partición que el 10, a propósito: la
+comparación entre el alineamiento y la validación cruzada solo tiene sentido si los dos
+miran el mismo conjunto de entrenamiento.
 
 Los entornos `.venv` y `.venv-tf` no se versionan.
 

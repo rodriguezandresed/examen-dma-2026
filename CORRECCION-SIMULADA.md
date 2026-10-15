@@ -95,12 +95,43 @@ medida, lo cual es correcto y honesto. Pero si el profesor pregunta por ahí, ha
 sostenerlo, porque es el único lugar del examen donde se invoca un resultado reciente sin
 nada propio que lo apoye.
 
-### 4. Ejercicio 5: el único sin corrida propia
+### 4. Ejercicio 5: era el único sin corrida propia · CORREGIDO
 
-Los otros nueve traen números de una corrida real. El 5 es enteramente bibliográfico. No
-lo pide la consigna, así que no es un incumplimiento. Pero en un examen donde el resto
-mide, el contraste se nota, y el alineamiento kernel-objetivo de Cristianini et al. (2002)
-se podía calcular sobre los mismos datos del Ejercicio 10 en diez líneas de código.
+Los otros nueve traían números de una corrida real y el 5 era enteramente bibliográfico.
+No lo pide la consigna, así que no era un incumplimiento, pero en un examen donde el resto
+mide, el contraste se nota.
+
+Se calculó el alineamiento kernel-objetivo de Cristianini et al. (2002) sobre el conjunto
+de clasificación del Ejercicio 10, con su misma semilla, su misma partición y su mismo
+escalado, y se comparó el orden que produce contra el que produjo la validación cruzada.
+Eso es lo que de verdad se le pide al método: se vende como un atajo para elegir kernel
+sin entrenar un modelo por candidato, así que la prueba es si coincide con haber
+entrenado.
+
+| Kernel | *A* |
+|---|---|
+| **Lineal** | **0,5255** |
+| RBF, γ = 0,1 | 0,3692 |
+| RBF, γ = 0,01, el que eligió la validación cruzada | 0,2172 |
+| RBF, γ = 0,001 | 0,0845 |
+| RBF, γ = 0,0001 | 0,0660 |
+| RBF, γ = 1 | 0,0538 |
+| Polinómico de grado 2 | 0,0419 |
+| Polinómico de grado 3 | 0,0357 |
+
+**No coincide, y eso es el hallazgo.** Dentro de la familia RBF, el alineamiento prefiere
+γ = 0,1 y la validación cruzada eligió γ = 0,01, que es apenas el tercero de su familia.
+Como sustituto de la validación cruzada para ajustar un hiperparámetro, acá falla.
+
+Donde sí acierta es en la familia, y ese acuerdo vale más de lo que parece: el
+alineamiento más alto por lejos es el del kernel lineal, y eso **respalda con una
+medición una frase del Ejercicio 10 que hasta ahora era una conjetura declarada**, la de
+que las clases son casi linealmente separables en el espacio estandarizado. Esa frase
+llevaba el rótulo "inferencia propia, no verificada"; ahora está verificada y remite al
+Ejercicio 5.
+
+Dos ejercicios que antes se tocaban de lejos quedaron atados por un número, que es
+exactamente lo contrario de lo que busca el criterio 1 de la consigna.
 
 ### 5. Las dos figuras imprimían sus rótulos a unos 5 pt · CORREGIDO
 
@@ -327,9 +358,20 @@ sin contestar. Pero es una lectura, no un hecho, y la decisión es del grupo.
 | 3 | Las dos figuras del Ejercicio 1, que imprimían a unos 5 pt | **Hecho** |
 | 4 | Davis (1985): páginas confirmadas en el escaneo de las actas y entrada pasada a formato de capítulo | **Hecho** |
 | 5 | La regla de actas, en sus dos formas, escrita en el `CLAUDE.md` | **Hecho** |
-| 6 | Alineamiento kernel-objetivo del Ejercicio 5 sobre datos reales | Pendiente |
+| 6 | Alineamiento kernel-objetivo del Ejercicio 5 sobre datos reales | **Hecho** |
 | 7 | Decidir la hoja del Ejercicio 1 | Decisión del grupo, PR #8 |
 | 8 | Repaso cruzado oral con las diez preguntas de arriba | Del grupo, y es lo de mayor retorno |
+
+Con el 6 hecho, los diez ejercicios tienen al menos una medición propia.
+
+El examen conserva a propósito otras cinco afirmaciones rotuladas como inferencia o
+hipótesis: el doble descenso del 1.VIII ("es una hipótesis: no se midió el error de
+entrenamiento"), la causa probable del comportamiento de DBSCAN en el 7, y tres del 10
+(el kernel ancho, la explicación de por qué los árboles ganan y la conjetura sobre el
+MLP). Esas no son deudas y no hay que sacarlas: declarar una inferencia como inferencia
+es lo que separa un razonamiento propio de una afirmación inventada, y es de las cosas
+que más juegan a favor frente al criterio del 30 %. La que cambió es solo la de la
+separabilidad lineal, porque ahora hay con qué medirla.
 
 ## Cómo reproducir esta corrección
 

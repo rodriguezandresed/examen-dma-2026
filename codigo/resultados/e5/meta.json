@@ -1,0 +1,9 @@
+{
+  "n_entrenamiento": 455,
+  "mejor_familia": "lineal",
+  "mejor_parametro": "",
+  "mejor_alineamiento": 0.5255,
+  "gamma_elegido_por_cv": 0.01,
+  "alineamiento_del_gamma_cv": 0.2172,
+  "coincide_con_cv": false
+}

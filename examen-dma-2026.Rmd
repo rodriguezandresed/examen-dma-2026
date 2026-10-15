@@ -1021,6 +1021,30 @@ elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), 
 combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
 2011).
 
+```{r e5-load, include=FALSE}
+e5a <- read.csv("codigo/resultados/e5/alineamiento.csv", stringsAsFactors = FALSE)
+e5m <- jsonlite::fromJSON("codigo/resultados/e5/meta.json")
+f5 <- function(x, d = 4) formatC(as.numeric(x), format = "f", digits = d, decimal.mark = ",")
+a5 <- function(par) e5a$alineamiento[e5a$parametro == par]
+e5_rbf <- e5a[e5a$familia == "RBF", ]
+e5_rbf_mejor <- e5_rbf[which.max(e5_rbf$alineamiento), ]
+e5_g <- sub("gamma ", "", e5_rbf_mejor$parametro)
+```
+
+El atajo se puso a prueba sobre el conjunto de clasificación del Ejercicio 10, con la
+misma partición y el mismo escalado: `r e5m$n_entrenamiento` casos de Breast Cancer, con
+el maligno como clase positiva. El kernel lineal da *A* = `r f5(a5(""))`, muy por encima
+del resto; el mejor RBF es el de $\gamma$ = `r sub("\\.", ",", e5_g)` con
+`r f5(e5_rbf_mejor$alineamiento)`, y los polinómicos de grado 2 y 3 quedan en
+`r f5(a5("grado 2"))` y `r f5(a5("grado 3"))`. La validación cruzada del Ejercicio 10
+eligió $\gamma$ = `r sub("\\.", ",", e5m$gamma_elegido_por_cv)`, cuyo alineamiento es
+`r f5(e5m$alineamiento_del_gamma_cv)`: **el atajo no reproduce la elección del
+hiperparámetro**. Donde sí coincide es en la familia, y ese acuerdo vale, porque el
+alineamiento más alto es el del kernel lineal y respalda con una medición la lectura del
+Ejercicio 10 de que las clases son casi linealmente separables en el espacio
+estandarizado. Se interpreta que el alineamiento sirve para descartar familias antes de
+entrenar, no para ajustar un parámetro dentro de una.
+
 En la práctica conviene empezar por el RBF y recurrir al alineamiento cuando entrenar cada
 candidato sale caro. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
 contra las cuales validar: en la práctica el kernel se ajusta por el error de
@@ -1033,7 +1057,7 @@ kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selecció
 sistemática de kernel no tienen material de clase: Schölkopf et al. (1998) para Kernel PCA;
 Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
 (2002) para el alineamiento kernel-objetivo; Gönen y Alpaydın (2011) para el aprendizaje de
-múltiples kernels.
+múltiples kernels. Código propio: Apéndice A.4.
 
 \newpage
 
@@ -1176,7 +1200,7 @@ Rossi). Kleinbaum y Klein (2012) para la censura y los tipos de análisis; Kapla
 proporcionales; Grambsch y Therneau (1994) para el diagnóstico de ese supuesto; Ishwaran et
 al. (2008) para los bosques de supervivencia; Rossi et al. (1980) para los datos;
 Davidson-Pilon (2019), Pölsterl (2020) y Therneau y Grambsch (2000) para las
-implementaciones. Código propio: Apéndice A.4.
+implementaciones. Código propio: Apéndice A.5.
 
 \newpage
 
@@ -1367,7 +1391,7 @@ un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o 
 jerárquica HDBSCAN (Campello et al., 2013), y validar mediante la superposición de las
 etiquetas obtenidas sobre la proyección.
 
-El ejemplo (apéndice A.5) aplica ese pipeline sobre los
+El ejemplo (apéndice A.6) aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
@@ -1378,7 +1402,7 @@ distancias son las de los datos.
 
 ## Resultados sobre los dígitos
 
-El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.5. Para medir
+El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.6. Para medir
 su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
 al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y cuanto más alto, más
 compactos y separados están los grupos. Sobre las clases verdaderas dio
@@ -1431,7 +1455,7 @@ muy baja puede producir grupos nítidos a partir de datos sin estructura.
 Clustering*, *Assessing Clustering Results* y `TSNE_Perplejidad_Clustering_NoLineal`
 (clase 8). Van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE; Ester et
 al. (1996) y Campello et al. (2013) para DBSCAN; McInnes et al. (2018) para UMAP. Código:
-A.5.
+A.6.
 
 \newpage
 
@@ -2019,8 +2043,8 @@ informal, los cuatro modelos no se distinguen. En *hold-out* difieren en entre
 `r min(e10_c$test_fn)` y `r max(e10_c$test_fn)` malignos no detectados sobre
 `r pc$malignos_test` (`r if (sum(e10_c$test_fp) == 0) "ningún modelo produjo falsos positivos" else paste(sum(e10_c$test_fp), "falsos positivos en total")`), y cada
 maligno no detectado resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
-bloques. Se interpreta (inferencia propia, no verificada) que las clases son casi
-linealmente separables en el espacio estandarizado. SVM eligió
+bloques. Se interpreta que las clases son casi linealmente separables en el espacio
+estandarizado, que es lo que mide el alineamiento del Ejercicio 5. SVM eligió
 $\gamma = `r m10(sel10("clasificacion", "SVM", "gamma"))`$, es decir
 $\sigma = 1/\sqrt{2\gamma} \approx$ `r f10(1 / sqrt(2 * g_svm), 1)`, del orden de la
 distancia típica entre dos casos estandarizados ($\sqrt{2p} \approx$
@@ -2077,7 +2101,7 @@ y de ensambles y apunte de redes. Wolberg et al. (1993) y Pace y Barry (1997) pa
 datos; Bergstra y Bengio (2012) para la búsqueda aleatoria; Hsu et al. (2003) para las
 grillas logarítmicas; Cawley y Talbot (2010) para el sesgo de selección; Breiman (2001)
 para el número de árboles; Grinsztajn et al. (2022) para la comparación entre árboles y
-redes. Código propio: Apéndice A.6.
+redes. Código propio: Apéndice A.7.
 
 \newpage
 
@@ -2110,13 +2134,22 @@ cat(readLines("codigo/e1_lstm/figuras.py"), sep = "\n")
 cat(readLines("codigo/e4_ag/ag_rastrigin.py"), sep = "\n")
 ```
 
-## A.4 Atajos de regresión contra Kaplan-Meier y Cox en Rossi (Ejercicio 6)
+## A.4 Alineamiento kernel-objetivo sobre Breast Cancer (Ejercicio 5)
+
+Produce `codigo/resultados/e5/alineamiento.csv`: el alineamiento de cada kernel
+candidato sobre la partición de entrenamiento del Ejercicio 10.
+
+```{r e5-code, echo=FALSE, comment=NA}
+cat(readLines("codigo/e5_kernels/alineamiento_kernel.py"), sep = "\n")
+```
+
+## A.5 Atajos de regresión contra Kaplan-Meier y Cox en Rossi (Ejercicio 6)
 
 ```{r e6-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e6_supervivencia/supervivencia_rossi.py"), sep = "\n")
 ```
 
-## A.5 t-SNE y clustering sobre dígitos (Ejercicio 7)
+## A.6 t-SNE y clustering sobre dígitos (Ejercicio 7)
 
 Produce `codigo/resultados/e7/`: las métricas, el barrido del radio de DBSCAN, los
 perfiles de los grupos, el ANOVA por componente y el mapa.
@@ -2132,7 +2165,7 @@ cubre dos nubes que a la izquierda son dígitos distintos y otras nubes aparecen
 cat(readLines("codigo/e7_tsne/tsne_digits.py"), sep = "\n")
 ```
 
-## A.6 Pipeline Opción 1 (Ejercicio 10)
+## A.7 Pipeline Opción 1 (Ejercicio 10)
 
 ```{r e10-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e10_pipeline/pipeline_opcion1.py"), sep = "\n")

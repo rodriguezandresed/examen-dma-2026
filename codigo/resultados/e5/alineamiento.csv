@@ -1,0 +1,9 @@
+familia,parametro,alineamiento
+lineal,,0.5255
+polinomico,grado 2,0.0419
+polinomico,grado 3,0.0357
+RBF,gamma 0.0001,0.0660
+RBF,gamma 0.001,0.0845
+RBF,gamma 0.01,0.2172
+RBF,gamma 0.1,0.3692
+RBF,gamma 1,0.0538
