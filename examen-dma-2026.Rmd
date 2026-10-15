@@ -149,7 +149,8 @@ sobreajuste, el apunte de taxonomía de la clase 4 agrupa early stopping (cortar
 sube el error de validación), weight decay y dropout como formas de la misma idea,
 restringir la familia de funciones. Una red superficial (shallow) tiene una sola capa
 oculta. Una profunda (deep) apila capas que arman rasgos sobre rasgos (bordes, formas,
-objetos) con pocas neuronas por capa; pide más datos y el gradiente se desvanece más,
+objetos) y necesita menos neuronas en total que una sola capa oculta de igual
+expresividad; pide más datos y el gradiente se desvanece más,
 lo que motivó ReLU y las conexiones residuales, que suman la entrada de un bloque a su
 salida (Goodfellow et al., 2016).
 
@@ -258,7 +259,8 @@ salidas de la primera.
 Con la fórmula de ese apunte,
 $4 \times [(\text{units} \times \text{input\_dim}) + \text{units}^{2} + \text{units}]$
 por capa (tres puertas y la candidata, cada una con $W$, $U$ y sesgo), `lstm_32` tiene
-$4 \times [(32 \times 1) + 32^{2} + 32] = 4352$ parámetros, como `model.summary()`. El
+$4 \times [(32 \times 1) + 32^{2} + 32] = 4352$ parámetros, los que `model.summary()`
+asigna a la capa LSTM; los `r p32$params_keras` del total agregan la densa de salida. El
 script del Apéndice usa dos senos más ruido gaussiano de desvío
 `r fmt_e1(e1m("noise_sd"), 1)`, ventanas de `r e1m("lookback")` valores,
 `r e1m("epochs")` épocas con Adam (paso adaptado a cada peso), corte temporal 80/20
