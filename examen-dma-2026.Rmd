@@ -1197,7 +1197,13 @@ e7anova <- read.csv("codigo/resultados/e7/anova_componentes.csv", stringsAsFacto
 e7eps <- read.csv("codigo/resultados/e7/barrido_eps.csv", stringsAsFactors = FALSE)
 e7imp <- read.csv("codigo/resultados/e7/importancia_rf.csv", stringsAsFactors = FALSE)
 e7est <- read.csv("codigo/resultados/e7/estabilidad_rf.csv", stringsAsFactors = FALSE)
+e7mc <- read.csv("codigo/resultados/e7/manova_candisc.csv", stringsAsFactors = FALSE)
 est <- function(k) e7est$valor[e7est$metrica == k]
+# read.csv devuelve la columna como numérica, así que el formato va acá: coma
+# decimal y punto de miles, y sin notación científica para el chi cuadrado.
+mcn <- function(k) as.numeric(e7mc$valor[e7mc$metrica == k])
+mcpct <- function(k) paste0(fmt(100 * mcn(k), 1), "\\thinspace{}%")
+mcmil <- function(k) formatC(mcn(k), format = "d", big.mark = ".", decimal.mark = ",")
 epsf <- function(x) formatC(x, format = "f", digits = 2, decimal.mark = ",")
 # Grupo de atípicos: el que más se aleja en la quinta componente.
 e7_at <- which.max(e7perf$PC5)
@@ -1208,10 +1214,9 @@ e7_funde <- min(e7eps$eps[e7eps$clusters == 1 & e7eps$eps > val("db_eps")])
 
 ## Técnicas de pre-proceso
 
-Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no los haya.
-Por eso conviene mirar antes si esa estructura existe. Y como los datos suelen tener más
-dimensiones de las que entran en un gráfico, mirar quiere decir proyectarlos a dos
-dimensiones.
+Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no. Por eso
+conviene mirar antes si esa estructura existe, y como los datos suelen tener más dimensiones
+de las que entran en un gráfico, mirar quiere decir proyectarlos a dos dimensiones.
 
 La guía de clustering de la cátedra trae tres ayudas gráficas. Los gráficos de componentes
 principales (PRINCOMP) proyectan sobre las dos primeras componentes. El escalado
@@ -1227,8 +1232,8 @@ gráficos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandari
 énfasis en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS
 estima la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos
 para que la distancia euclídea en el espacio transformado se comporte como una distancia de
-Mahalanobis en el original, la euclídea después de descontar la covarianza, lo cual sirve cuando los grupos son elipsoidales y están rotados
-respecto de los ejes.
+Mahalanobis en el original, la euclídea después de descontar la covarianza, útil con grupos
+elipsoidales y rotados respecto de los ejes.
 
 La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
 estandarizan las variables, se calculan los autovectores de la matriz de correlación y se
@@ -1248,24 +1253,22 @@ precisamente el problema que motiva a t-SNE.
 El perfilado es la generación de descripciones de cada grupo a partir de las variables de
 entrada, y la guía lo ordena en tres pasos: los vectores de
 medias de cada grupo, el MANOVA y, recién después, el ANOVA por variable. El MANOVA es un
-análisis de varianza con varias variables respuesta simultáneas: en lugar de preguntar si
-los grupos difieren en una variable, pregunta si difieren en el vector completo. Va primero
-porque de esa manera controla el error de tipo I a nivel del experimento, en lugar de
-inflarlo con una prueba separada por variable. El ANOVA por variable va acompañado del
-análisis discriminante canónico, que identifica qué variables concretas producen las diferencias; en
-la dirección inversa es igual de útil, porque las variables que no difieren entre grupos
-probablemente puedan podarse del conjunto de entrada.
+análisis de varianza con varias variables respuesta a la vez: pregunta si los grupos
+difieren en el vector completo y no en una variable. Va primero porque así controla el error
+de tipo I a nivel del experimento, en lugar de inflarlo con una prueba por variable. El
+ANOVA va acompañado del análisis discriminante canónico, que identifica qué variables
+producen las diferencias; a la inversa es igual de útil, porque las que no difieren entre
+grupos pueden podarse del conjunto de entrada.
 
 La propia guía advierte que los resultados de MANOVA y ANOVA deben interpretarse con
-cautela, porque el proceso de clustering viola supuestos clave de esas pruebas: los grupos no
-se definieron de forma independiente de los datos sino para maximizar la separación, así que
-los valores *p* quedan sesgados hacia la significación. Valen como medida descriptiva del
-tamaño de las diferencias, no como prueba de hipótesis. La guía deja ahí el problema y no ofrece
-salida, así que acá se entrena un clasificador contra la etiqueta de grupo, tratada como si
-fuera una clase dada, y se lee su importancia de variables: no hay supuesto distribucional
-que violar, la salida ya es la descripción del grupo y la exactitud mide de paso cuán
-separables son. Es la vía que reaparece en el Ejercicio 9. Se descarta la alternativa de
-pruebas no paramétricas variable por variable, porque el sesgo viene de que los grupos se
+cautela, porque el clustering viola supuestos clave de esas pruebas: los grupos no se
+definieron de forma independiente de los datos sino para maximizar la separación, así que
+los valores *p* quedan sesgados hacia la significación. Valen como medida del tamaño de las
+diferencias, no como prueba de hipótesis. La guía deja ahí el problema, así que a los tres
+pasos se agrega un clasificador contra la etiqueta de grupo, tratada como clase dada, y se
+lee su importancia de variables: no hay supuesto distribucional que violar, la salida ya es
+la descripción del grupo y la exactitud mide cuán separables son. Se descarta la alternativa
+de pruebas no paramétricas variable por variable, porque el sesgo viene de que los grupos se
 construyeron con estos mismos datos y no del supuesto de normalidad.
 
 Se aplicó a los diez grupos de k-means sobre los dígitos que se describen más abajo; con 64
@@ -1297,16 +1300,23 @@ están los apartamientos: un grupo se aleja hasta `r fmt(e7perf$PC2[e7_at], 2)` 
 mientras que otros dos se oponen sobre la primera componente con
 `r fmt(min(e7_resto$PC1), 2)` contra `r fmt(max(e7_resto$PC1), 2)`.
 
+El MANOVA, que va primero, se calculó con las matrices de dispersión dentro de los grupos y
+total: el $\Lambda$ de Wilks es `r fmt(mcn("wilks_lambda"), 4)`, y la aproximación de
+Bartlett lo lleva a $\chi^2$(`r mcn("gl")`) = `r mcmil("chi2_bartlett")`. Con 1 como ninguna separación y 0
+como separación total, los diez grupos difieren en el vector y no en una sola componente.
+
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
 `r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
 para las cinco componentes. Más que las magnitudes importa que el orden de los *F* no
 coincide con el de las componentes: la quinta separa mejor los grupos que la cuarta pese a
 explicar menos varianza total. Esa es exactamente la diferencia entre
-varianza total y varianza entre grupos, que es la razón de ser de CANDISC y el motivo por el
-cual un eje de máxima varianza no es necesariamente un eje de máxima separación. Los valores
+varianza total y varianza entre grupos, y el discriminante canónico la pone en números: sus
+dos primeros ejes concentran el `r mcpct("sep_canonica_2ejes")` de la separación entre
+grupos, contra el `r mcpct("var_pca_2comp")` de la varianza total que explican las dos
+primeras componentes principales. Los valores
 *p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
 
-Queda la vía que se eligió en lugar del MANOVA. Un bosque aleatorio de 500 árboles contra la
+Queda el agregado al esquema de la guía. Un bosque aleatorio de 500 árboles contra la
 etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
 bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* en dos pares, y uno de ellos es
 justo donde el párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez

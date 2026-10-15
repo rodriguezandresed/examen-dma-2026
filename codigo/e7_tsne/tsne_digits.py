@@ -27,6 +27,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.cluster import DBSCAN, KMeans
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 from sklearn.neighbors import NearestNeighbors
@@ -196,8 +197,56 @@ with open(os.path.join(SAL, "anova_componentes.csv"), "w", newline="", encoding=
         F, _ = f_oneway(*[X30[km == c, j] for c in range(10)])
         w.writerow(["PC%d" % (j + 1), "%.1f" % F])
 
-# Paso 3 del perfilado por la via alternativa. El capitulo propone MANOVA +
-# ANOVA, pero sus p quedan sesgados porque los grupos se construyeron para
+# Paso 2 del capitulo, el que faltaba. El MANOVA va ANTES del ANOVA por
+# variable, porque pregunta si los grupos difieren en el VECTOR completo y asi
+# no infla el error de tipo I con una prueba por componente. Se calcula a mano
+# con las matrices de dispersion para no sumar statsmodels: Lambda de Wilks es
+# det(W)/det(T), con W la dispersion dentro de los grupos y T la total, y la
+# aproximacion de Bartlett la lleva a una chi cuadrado. Lambda cerca de 0 es
+# separacion total y cerca de 1 es ninguna. La advertencia del ANOVA vale
+# igual: el p esta sesgado hacia la significacion porque los grupos salieron de
+# estos mismos datos, asi que esto se lee como tamano de la diferencia.
+P5 = X30[:, :5]
+n_obs, p_var = P5.shape
+k_gr = 10
+W = np.zeros((p_var, p_var))
+for c in range(k_gr):
+    Z = P5[km == c] - P5[km == c].mean(axis=0)
+    W += Z.T @ Z
+Zt = P5 - P5.mean(axis=0)
+T = Zt.T @ Zt
+wilks = float(np.linalg.det(W) / np.linalg.det(T))
+gl_manova = p_var * (k_gr - 1)
+chi2 = float(-(n_obs - 1 - (p_var + k_gr) / 2) * np.log(wilks))
+
+# CANDISC, el otro paso que el capitulo pide junto al ANOVA. Los ejes canonicos
+# maximizan la separacion ENTRE grupos, que NO es lo mismo que la varianza
+# total que ordena las componentes principales. Lo interesante es el contraste
+# de los dos primeros ejes de cada cosa: si el canonico concentra mas
+# separacion que lo que las dos primeras componentes explican de varianza, esa
+# brecha es la razon de ser de CANDISC y lo que explica que el F de PC5 supere
+# al de PC4.
+cand = LinearDiscriminantAnalysis().fit(P5, km)
+sep_can2 = float(cand.explained_variance_ratio_[:2].sum())
+var_pca2 = float(pca.explained_variance_ratio_[:2].sum())
+
+with open(os.path.join(SAL, "manova_candisc.csv"), "w", newline="",
+          encoding="utf-8") as f:
+    w = csv.writer(f); w.writerow(["metrica", "valor"])
+    w.writerow(["wilks_lambda", "%.4f" % wilks])
+    w.writerow(["chi2_bartlett", "%.0f" % chi2])
+    w.writerow(["gl", gl_manova])
+    w.writerow(["sep_canonica_2ejes", "%.3f" % sep_can2])
+    w.writerow(["var_pca_2comp", "%.3f" % var_pca2])
+
+print("\nMANOVA sobre PC1..PC5: Lambda de Wilks=%.4f, chi2 Bartlett=%.0f (gl=%d)"
+      % (wilks, chi2, gl_manova))
+print("CANDISC: los 2 primeros ejes canonicos concentran %.1f%% de la separacion; "
+      "las 2 primeras componentes explican %.1f%% de la varianza total"
+      % (100 * sep_can2, 100 * var_pca2))
+
+# Paso 3 del perfilado, con un agregado propio. El capitulo cierra con el ANOVA
+# por variable, cuyos p quedan sesgados porque los grupos se construyeron para
 # maximizar la separacion. Un clasificador contra la etiqueta de grupo no tiene
 # ese problema: no asume nada sobre la distribucion, y su importancia de
 # variables dice lo mismo que buscaba el ANOVA sin pedir prestado un valor p.
@@ -253,6 +302,6 @@ print("estabilidad: orden identico en %d/%d semillas, oob %.4f-%.4f"
       % (len(oobs) if estable else 0, len(oobs), min(oobs), max(oobs)))
 
 print("escritos en resultados/e7: metricas.csv, barrido_eps.csv, "
-      "perfiles_kmeans.csv, anova_componentes.csv, importancia_rf.csv, "
-      "estabilidad_rf.csv, "
+      "perfiles_kmeans.csv, anova_componentes.csv, manova_candisc.csv, "
+      "importancia_rf.csv, estabilidad_rf.csv, "
       "tsne_mapa.png")
