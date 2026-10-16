@@ -78,6 +78,11 @@ for q in [10, 50, 90]:
     M["kdist_q%d" % q] = float(np.percentile(dist_k, q))
 print("distancia al 8.o vecino, cuantiles 10/50/90: %.2f %.2f %.2f"
       % (M["kdist_q10"], M["kdist_q50"], M["kdist_q90"]))
+# El informe atribuye el fracaso de un eps unico a que la densidad cambia de un
+# digito a otro. Se mide en vez de suponerlo: mediana de esa distancia por digito.
+kd_dig = [float(np.median(dist_k[y == d])) for d in range(10)]
+M["kdist_dig_min"] = min(kd_dig); M["kdist_dig_min_d"] = int(np.argmin(kd_dig))
+M["kdist_dig_max"] = max(kd_dig); M["kdist_dig_max_d"] = int(np.argmax(kd_dig))
 
 barrido = []
 print("eps  clusters  ruido   ARI  ARI_sin_ruido")
@@ -164,7 +169,7 @@ for a in ax:
 fig.tight_layout()
 fig.savefig(os.path.join(SAL, "tsne_mapa.png"), dpi=160, bbox_inches="tight")
 plt.close(fig)
-print("\nescrito fig_ej07_tsne.png")
+print("\nescrito tsne_mapa.png")
 
 
 # --- Exportacion para el informe ------------------------------------------
@@ -221,14 +226,21 @@ chi2 = float(-(n_obs - 1 - (p_var + k_gr) / 2) * np.log(wilks))
 
 # CANDISC, el otro paso que el capitulo pide junto al ANOVA. Los ejes canonicos
 # maximizan la separacion ENTRE grupos, que NO es lo mismo que la varianza
-# total que ordena las componentes principales. Lo interesante es el contraste
-# de los dos primeros ejes de cada cosa: si el canonico concentra mas
-# separacion que lo que las dos primeras componentes explican de varianza, esa
-# brecha es la razon de ser de CANDISC y lo que explica que el F de PC5 supere
-# al de PC4.
+# total que ordena las componentes principales. Primera version: comparaba el
+# % de separacion de 2 ejes canonicos (sobre las 5 componentes) con el % de
+# varianza de PC1+PC2 sobre los 64 pixeles: dos bases distintas, la comparacion
+# no decia nada. Ahora las dos se miden sobre las MISMAS 5 componentes.
 cand = LinearDiscriminantAnalysis().fit(P5, km)
 sep_can2 = float(cand.explained_variance_ratio_[:2].sum())
-var_pca2 = float(pca.explained_variance_ratio_[:2].sum())
+var_pca2 = float(P5[:, :2].var(axis=0).sum() / P5.var(axis=0).sum())
+# Que componentes arman cada eje canonico: correlacion de estructura dentro de
+# los grupos (la que el capitulo usa para decir que variables producen la
+# diferencia).
+Zc = cand.transform(P5)[:, :2]
+Pw = P5 - np.array([P5[km == c].mean(axis=0) for c in range(k_gr)])[km]
+Zw = Zc - np.array([Zc[km == c].mean(axis=0) for c in range(k_gr)])[km]
+estructura = np.array([[np.corrcoef(Pw[:, j], Zw[:, e])[0, 1] for e in range(2)]
+                       for j in range(p_var)])
 
 with open(os.path.join(SAL, "manova_candisc.csv"), "w", newline="",
           encoding="utf-8") as f:
@@ -238,6 +250,16 @@ with open(os.path.join(SAL, "manova_candisc.csv"), "w", newline="",
     w.writerow(["gl", gl_manova])
     w.writerow(["sep_canonica_2ejes", "%.3f" % sep_can2])
     w.writerow(["var_pca_2comp", "%.3f" % var_pca2])
+    for j in range(p_var):
+        for e in range(2):
+            w.writerow(["estructura_pc%d_eje%d" % (j + 1, e + 1), "%.2f" % estructura[j, e]])
+
+# Segunda forma de perfilado del capitulo (Assessing Clustering Results 5.2):
+# respecto de una clase dada. Aca la clase existe, el digito real, asi que se
+# cruza en lugar de inferir la mezcla solo por los tamanos de los grupos.
+import pandas as pd
+cruce = pd.crosstab(pd.Series(km, name="grupo"), pd.Series(y, name="digito"))
+cruce.to_csv(os.path.join(SAL, "cruce_grupo_digito.csv"))
 
 print("\nMANOVA sobre PC1..PC5: Lambda de Wilks=%.4f, chi2 Bartlett=%.0f (gl=%d)"
       % (wilks, chi2, gl_manova))
@@ -256,10 +278,16 @@ print("CANDISC: los 2 primeros ejes canonicos concentran %.1f%% de la separacion
 # las 30, para que la importancia sea comparable con los F de arriba. Primero
 # lo probe sobre las 30 y la importancia se reparte entre tantas componentes
 # que no se puede contrastar con nada.
-rf = RandomForestClassifier(n_estimators=500, oob_score=True, random_state=0,
-                            n_jobs=-1)
+rf = RandomForestClassifier(n_estimators=500, oob_score=True,
+                            random_state=RANDOM_STATE, n_jobs=-1)
 rf.fit(X30[:, :5], km)
-imp = rf.feature_importances_
+imp = rf.feature_importances_  # caida media de impureza de Gini
+# La de Gini tiene sesgos conocidos (Ejercicio 9), asi que se controla el orden
+# con la importancia por permutacion.
+from sklearn.inspection import permutation_importance
+perm = permutation_importance(rf, X30[:, :5], km, n_repeats=10,
+                              random_state=RANDOM_STATE, n_jobs=-1).importances_mean
+M["orden_perm_igual"] = int(list(np.argsort(-perm)) == list(np.argsort(-imp)))
 
 with open(os.path.join(SAL, "importancia_rf.csv"), "w", newline="",
           encoding="utf-8") as f:

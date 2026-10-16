@@ -415,7 +415,7 @@ resto de los algoritmos de Machine Learning?*
 Una máquina de vectores soporte (SVM, por Support Vector Machine) es un algoritmo de
 clasificación que busca un hiperplano separador entre dos clases (Volpacchio, s.f.). En
 las diapositivas de la materia el título es Vector Support Machines (VSM); se unifica a
-SVM, la sigla de Burges (1998), la referencia de base del apunte.
+SVM, la sigla de Burges (1998), en quien se basa la parte de clasificación del apunte.
 
 Un hiperplano es la generalización de una recta a espacios de mayor dimensión: en un
 espacio de $k$ variables explicativas queda definido por la ecuación
@@ -463,8 +463,8 @@ eso aparece en cada paso un componente nuevo del algoritmo (Volpacchio, s.f.).
   predicción de una variable continua; se desarrolla al final de este ejercicio.
 
 El apunte se detiene en esas cuatro versiones. Fuera de él existen otras: $\nu$-SVM
-reemplaza $C$ por $\nu \in (0, 1]$, una cota de la fracción de errores y de vectores
-soporte (Schölkopf et al., 2000); One-Class SVM separa una sola clase del resto del
+reemplaza $C$ por $\nu \in (0, 1]$, que acota por arriba la fracción de errores de margen
+y por abajo la de vectores soporte (Schölkopf et al., 2000); One-Class SVM separa una sola clase del resto del
 espacio para detectar anomalías (Schölkopf et al., 2001); y con más de dos clases se
 combinan clasificadores binarios, uno contra uno o uno contra el resto (Hsu & Lin,
 2002).
@@ -489,7 +489,7 @@ así.
   $K(x, x_i) = \tanh(\kappa \langle x, x_i \rangle - \theta)$, que no satisface la
   condición de Mercer para toda combinación de valores. La condición de Mercer es el
   requisito que garantiza que una función simétrica se comporte como un producto
-  interno: la matriz de Gram $G$, con los valores $K(x_i, x_j)$ para todos los pares de
+  interno: la matriz de Gram $G$, con los valores $K(x_i, x_j)$ para cualquier conjunto finito de
   datos, debe ser semidefinida positiva ($z^\top G z \ge 0$ para todo vector $z$).
 - Si se admite margen blando, la constante de penalización $C$, que en el dual acota
   los multiplicadores: $C \ge \alpha_i \ge 0$.
@@ -502,12 +502,15 @@ comparación (Volpacchio, s.f.).
 
 ## La característica que lo distingue
 
-La característica que distingue a SVM es que el control de la capacidad está dentro
-del propio criterio que optimiza y tiene respaldo en la teoría del Ejercicio 3. En
-otros algoritmos de la materia la regularización se agrega aparte y se ajusta por
-validación (weight decay en redes, tamaño de hoja en árboles); SVM sigue el paradigma
-de minimización del riesgo estructural (Vapnik, 1995): maximizar el margen controla a
-la vez el error de entrenamiento y la capacidad del modelo.
+La característica que distingue a SVM es que su término de regularización tiene lectura
+geométrica y respaldo en la teoría del Ejercicio 3. En
+$\frac{1}{2}\lVert w \rVert^2 + C \sum_i \xi_i$, el primer término maximiza el margen, que
+acota la dimensión VC, y el segundo penaliza el error de entrenamiento; weight decay en
+redes agrega un término de la misma forma, pero sin esa conexión con la capacidad. Es la
+idea de la minimización del riesgo estructural (Vapnik, 1995): bajar a la vez el error de
+entrenamiento y la capacidad, que el Ejercicio 3 define. El apunte aclara que no hay
+demostración rigurosa de que SVM la implemente; la respalda su desempeño frente a las
+redes en muchos conjuntos de datos (Volpacchio, s.f.).
 
 Además, la solución depende solo de los vectores soporte, unos pocos puntos de la
 muestra. Vapnik (1995) da por eso una cota del riesgo real basada en el procedimiento
@@ -520,8 +523,8 @@ $$E\bigl[P(\text{error})\bigr]
 donde $n$ es la cantidad de observaciones de entrenamiento y las esperanzas son sobre
 las muestras posibles. Con una sola corrida, la proporción de vectores soporte es una
 aproximación de esa cota, obtenida sin armar un conjunto de prueba aparte (hold-out).
-Otros algoritmos estiman el error sin hold-out, como el error out-of-bag de Random
-Forest, pero no dan una cota leída de la propia solución. El problema de optimización,
+Random Forest tiene una cota análoga, la de correlación y fuerza del Ejercicio 9, pero no
+se usa para calcular; la de SVM se aproxima con solo contar los vectores soporte. El problema de optimización,
 además, es convexo (mínimo global), a diferencia de las redes neuronales, que pueden
 quedar atrapadas en mínimos locales.
 
@@ -624,13 +627,14 @@ La capacidad de un algoritmo es la aptitud de su familia de funciones para adapt
 los datos: cuanto más grande es el espacio de funciones entre las que el algoritmo
 puede elegir, más patrones distintos puede representar y más riesgo corre de
 sobreajuste, la memorización de la muestra con pérdida de generalización. La medida
-formal de la capacidad es la dimensión VC (Vapnik-Chervonenkis), definida a partir del
-concepto de shattering: un conjunto de puntos queda shattered (discriminado por
-completo) por una familia de funciones si, para cualquier asignación de etiquetas a
-esos puntos, existe una función de la familia que los clasifica sin error. La dimensión
-VC es la cantidad máxima de puntos que la familia puede shatter. El ejemplo del apunte:
-las rectas orientadas en el plano (rectas con un lado positivo y otro negativo) pueden
-shatter tres puntos pero no cuatro, por lo que su dimensión VC es 3; en general, los
+formal de la capacidad es la dimensión VC (Vapnik-Chervonenkis), definida a partir de la
+discriminación completa (*shattering*): un conjunto de puntos queda discriminado por
+completo por una familia de funciones si, para cualquier asignación de etiquetas a esos
+puntos, existe una función de la familia que los clasifica sin error. La dimensión VC es
+la mayor cantidad de puntos para la que existe algún conjunto de ese tamaño discriminado
+por completo por la familia. El ejemplo del apunte: las rectas orientadas en el plano
+(rectas con un lado positivo y otro negativo) discriminan por completo tres puntos no
+alineados, pero ningún conjunto de cuatro, por lo que su dimensión VC es 3; en general, los
 hiperplanos orientados en un espacio de $k$ dimensiones tienen dimensión VC $k + 1$.
 
 La dimensión VC importa porque aparece en la cota de riesgo de Vapnik y Chervonenkis,
@@ -654,39 +658,41 @@ intervalo de confianza VC sea la menor (Vapnik, 1995; Volpacchio, s.f.).
 
 Fuera del caso de SVM, la dimensión VC en general no se calcula en forma exacta. La
 manera heurística que propone la teoría, según el apunte, es una regla sobre la
-relación entre capacidad y datos: $d/l < 0{,}05$, para que el intervalo de confianza VC
-sea chico frente al riesgo empírico (Volpacchio, s.f.). La estimación de $d$ cuenta los
+relación entre capacidad y datos: $d/l < 0{,}05$, el umbral que el apunte fija para que
+el riesgo real quede cerca del empírico (Volpacchio, s.f.). La estimación de $d$ cuenta los
 parámetros libres del modelo; para un clasificador del tipo hiperplano sobre $k$
 variables, $d = k + 1$, el valor exacto del párrafo anterior. Esa vía es la genérica, no la fórmula de
-capacidad propia de SVM, donde el margen acota la dimensión VC y que acá queda fuera. El
+capacidad propia de SVM, donde el margen acota la dimensión VC y que aquí queda fuera. El
 propio apunte avisa que contar parámetros no equivale a medir la capacidad y remite al
 contraejemplo de Vapnik (1995); de ahí que la vía sea heurística. Para modelos no lineales
-contar parámetros es solo una
-aproximación, y el Ejercicio 1.VIII muestra que en una red sobrestima la capacidad.
+es solo una aproximación: en una red la dimensión VC no se deduce del conteo de pesos, y
+el Ejercicio 1.VIII muestra una red que generaliza con $d/l$ muy por encima de 0,05.
 
 Con $l = 1000$ observaciones y $k$ variables, la regla exige
-$d < 0{,}05 \times 1000 = 50$; con $d = k + 1$, se cumple con hasta 48 variables. El
-apunte agrega otra regla para el control del sobreajuste: 30 veces más datos que
-parámetros si hay ruido y 5 veces si no lo hay. Con 1000 observaciones eso da hasta
-33 parámetros con ruido ($k \le 32$) y hasta 200 sin ruido ($k \le 199$). Se adopta la
-regla de 30 veces para datos reales, que casi siempre tienen ruido, y $d/l < 0{,}05$
-como la heurística de Vapnik-Chervonenkis. Si hay
+$d < 0{,}05 \times 1000 = 50$; con $d = k + 1$, la heurística de Vapnik-Chervonenkis
+admite hasta 48 variables. El apunte agrega una regla más estricta para datos con ruido,
+30 veces más datos que parámetros (5 veces sin ruido), que con 1000 observaciones baja el
+límite a 33 parámetros ($k \le 32$; sin ruido, $k \le 199$). Si hay
 más variables, las salidas son reducir la dimensión, por ejemplo con componentes
 principales (combinaciones lineales de las variables que concentran su varianza), o
 conseguir más observaciones.
 
-La regla es una condición suficiente, no necesaria. En el Ejercicio 10, Breast Cancer
-tiene $k$ = `r e3k` variables y `r e3l` casos de entrenamiento: un clasificador lineal
-tendría $d/l$ = `r f3((e3k + 1) / e3l)`, por encima de 0,05, y aun así los cuatro
-modelos tienen un F1 de al menos `r f3(floor(min(e3c$test) * 100) / 100, 2)` en el
-hold-out. Se interpreta que la regla es conservadora: cuando se cumple, el intervalo de
-confianza VC es chico; cuando no se cumple, no implica que el modelo sobreajuste.
+La regla es conservadora. En el Ejercicio 10, Breast Cancer tiene $k$ = `r e3k` variables
+y `r e3l` casos de entrenamiento: un clasificador lineal ya tendría $d/l$ =
+`r f3((e3k + 1) / e3l)`, por encima de 0,05, y los cuatro modelos ajustados, todos de
+mayor capacidad (la SVM con kernel RBF tiene dimensión VC infinita; Burges, 1998), tienen
+un F1 (media armónica de precisión y sensibilidad) de al menos
+`r f3(floor(min(e3c$test) * 100) / 100, 2)` en el hold-out. No cumplir la regla no
+implica que el modelo sobreajuste.
 
 **Fuentes del Ejercicio 3.** Material de cátedra (Volpacchio, s.f.): presentación
 `SLT Universidad Austral1.pdf` y diapositivas `Statistical Learning Theory.pptx`
 (clase 1), en particular las secciones de riesgo empírico y real, consistencia,
 dimensión VC, intervalo de confianza VC y minimización del riesgo estructural.
-Vapnik (1995) para la formulación general de la teoría y la cota de riesgo.
+`SVM Universidad Austral.pdf` (clase 2) para la cota por vectores soporte. Vapnik (1995)
+para la formulación general, la cota de riesgo y el contraejemplo del conteo de
+parámetros; Burges (1998) para la dimensión VC del kernel RBF. Wolberg et al. (1993) y
+la corrida del Ejercicio 10 (Apéndice A.7) para el contraste con Breast Cancer.
 
 \newpage
 
