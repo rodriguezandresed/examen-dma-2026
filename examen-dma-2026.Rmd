@@ -734,12 +734,12 @@ tomada de Michalewicz (1996):
 ```
 Inicio
     t <- 0
-    Inicializar P(t)          # poblacion inicial aleatoria de pop_size cromosomas
+    Inicializar P(t)          # pop_size cromosomas al azar
     Evaluar P(t)              # fitness de cada cromosoma
     Mientras no se cumpla la condicion de terminacion:
         t <- t + 1
-        Seleccionar P(t) a partir de P(t-1)  # ruleta proporcional al fitness o torneo
-        Alterar P(t)          # cruce con probabilidad p_c; mutacion con probabilidad p_m
+        Seleccionar P(t) a partir de P(t-1)  # ruleta o torneo
+        Alterar P(t)          # cruce con p_c; mutacion con p_m
         Evaluar P(t)          # P(t) reemplaza por completo a P(t-1)
         # elitismo opcional: copiar el mejor de P(t-1) hacia P(t)
     Fin mientras
@@ -775,7 +775,7 @@ En el AG real el cromosoma es directamente un vector de números reales, sin
 decodificación. El cruce pasa a ser una operación numérica sobre los padres: el cruce
 aritmético toma $\lambda p_1 + (1-\lambda) p_2$ con $\lambda \in [0, 1]$ (Michalewicz,
 1996), y el cruce de mezcla BLX-$\alpha$ sortea cada gen del hijo en el intervalo que
-forman los dos padres, ampliado en una fracción $\alpha$ de su ancho. La mutación suma
+forman los dos padres, ampliado en $\alpha$ veces su ancho hacia cada lado. La mutación suma
 una perturbación gaussiana al gen. La Tabla \ref{tab:e4-dif} resume las diferencias.
 
 ```{r e4-dif}
@@ -805,19 +805,19 @@ genética, donde el individuo es un programa representado como árbol, es una de
 del mismo esquema y no se toma como el pseudocódigo pedido.
 
 Para ver la diferencia en un caso concreto se programaron los dos AG con DEAP sobre la
-función de Rastrigin en dos variables, que es el banco de pruebas del notebook de
-algoritmos evolutivos de la clase 7, de donde se toman también el dominio, el cruce de
-mezcla con $\alpha = 0{,}5$, la mutación gaussiana de desvío 0,3 y el torneo de tres,
+función de Rastrigin en dos variables,
 $f(x) = 20 + \sum_{i=1}^{2} \left(x_i^2 - 10\cos 2\pi x_i\right)$ en
 $[-5{,}12;\, 5{,}12]^2$, cuyo mínimo global $f = 0$ está en el origen, rodeado de una
-grilla de mínimos locales cerca de los puntos enteros. Se descartó la esfera
-$x_1^2 + x_2^2$ del primer borrador, porque cualquier método de gradiente la resuelve y
-no distingue las codificaciones. Los dos AG comparten población de `r e4m$pop`,
+grilla de mínimos locales cerca de los puntos enteros. Es el banco de pruebas del notebook
+de algoritmos evolutivos de la clase 7, de donde se toman también el dominio, el cruce de
+mezcla con $\alpha = 0{,}5$, la mutación gaussiana de desvío 0,3 y el torneo de tres. Se
+descartó la esfera $x_1^2 + x_2^2$ del primer borrador, porque cualquier método de
+gradiente la resuelve y no distingue las codificaciones. Los dos AG comparten población de `r e4m$pop`,
 `r e4m$ngen` generaciones, torneo de tres, $p_c$ = `r f4(e4m$cxpb, 1)` y probabilidad
 de mutar un individuo de `r f4(e4m$mutpb, 1)`. El binario usa `r e4m$bits` bits por
 variable, cruce de un punto y mutación con probabilidad 1/`r 1 / e4m$p_mut_bit` por
-bit; el real usa BLX-0,5 y mutación gaussiana con desvío 0,3. Se corrieron
-`r e4m$n_semillas` semillas por codificación (Tabla \ref{tab:e4-tab}).
+bit; el real usa BLX-0,5 y mutación gaussiana con desvío 0,3 y probabilidad 0,5 por gen.
+Se corrieron `r e4m$n_semillas` semillas por codificación (Tabla \ref{tab:e4-tab}).
 
 ```{r e4-tab}
 e4t <- data.frame(
@@ -825,17 +825,16 @@ e4t <- data.frame(
   opt = c(e4m$binario$n_umbral, e4m$real$n_umbral),
   cuenca = c(e4m$binario$n_cuenca, e4m$real$n_cuenca),
   vecino = c(e4m$binario$n_vecino, e4m$real$n_vecino),
-  med = c(e4m$binario$mediana_final, e4m$real$mediana_final),
   gen = c(e4m$binario$gen_umbral_mediana, e4m$real$gen_umbral_mediana))
 kable(e4t, format = "latex", booktabs = TRUE, row.names = FALSE,
-      digits = c(0, 0, 0, 0, 3, 0),
+      digits = c(0, 0, 0, 0, 0),
       col.names = c("Codificación", "f < 0,01", "Cuenca global", "Valle vecino",
-                    "Mediana del mejor f", "Generación mediana a f < 0,01"),
+                    "Generación mediana a f < 0,01"),
       caption = "AG binario y AG real sobre Rastrigin: estado final de las corridas.",
       format.args = list(decimal.mark = ",")) %>%
   kable_styling(latex_options = "HOLD_position", position = "center", font_size = 9) %>%
   column_spec(1, width = "2.2cm") %>% column_spec(2:4, width = "1.8cm") %>%
-  column_spec(5:6, width = "2.8cm")
+  column_spec(5, width = "3.2cm")
 ```
 
 *Nota.* Elaboración propia. Conteos sobre `r e4m$n_semillas` corridas por
@@ -846,29 +845,34 @@ corridas que bajaron de 0,01.
 Ninguna codificación garantiza el óptimo: las dos llegan a $f < 0{,}01$ en cerca de la
 mitad de las corridas.
 
-La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino`
-binarias que no entran a la cuenca global quedan clavadas en un valle vecino, con
-alguna coordenada en $\pm 1$: el entero que codifica $x = 1$ difiere en
-`r e4m$hamming_1_0` bits del más cercano de los dos enteros que rodean a $x = 0$, y con probabilidad
-1/`r 1 / e4m$p_mut_bit` por bit una mutación que cambie esos bits a la vez es casi
-imposible. Es el fenómeno anticipado al comparar las codificaciones: valores vecinos
-del dominio con códigos lejanos. Las reales entran a la cuenca global en
+La diferencia está en cómo fallan. Las `r e4m$binario$n_vecino` binarias que no entran a
+la cuenca global quedan clavadas en un valle vecino, con alguna coordenada en $\pm 1$.
+Desde esos cromosomas ningún cambio de un bit mejora $f$: hace falta invertir a la vez
+`r e4m$bits_salida` bits concretos (hasta `r e4m$bits_salida_max` en una corrida), y con
+probabilidad 1/`r 1 / e4m$p_mut_bit` por bit esa mutación sale en promedio una vez cada
+`r formatC(round(e4m$mutaciones_por_salida, -1), format = "d", big.mark = ".", decimal.mark = ",")`
+mutaciones, contra unas `r formatC(e4m$mutaciones_por_corrida, format = "d", big.mark = ".", decimal.mark = ",")`
+por corrida. Es el fenómeno anticipado al comparar las codificaciones: la vecindad de la
+mutación binaria no coincide con la del dominio. Las reales entran a la cuenca global en
 `r e4m$real$n_cuenca` de `r e4m$n_semillas` corridas; `r sum(e4_fino)` de ellas quedan
 a menos de `r f4(ceiling(100 * max(e4_dist[e4_fino])) / 100)` del origen sin terminar
 el ajuste fino, porque un desvío de 0,3 es grueso a esa escala.
 
-Se interpreta que, con
-el mismo presupuesto de `r formatC(e4m$n_evals, format = "d", big.mark = ".", decimal.mark = ",")` evaluaciones, la
+Se interpreta que, con un presupuesto parecido (unas
+`r formatC(round(e4m$evaluaciones_media$binario, -1), format = "d", big.mark = ".", decimal.mark = ",")`
+evaluaciones por corrida en las dos codificaciones, según el registro de DEAP), la
 codificación real explora mejor la vecindad del óptimo; la binaria necesitaría una
 mutación más agresiva o un código Gray, en el que enteros consecutivos difieren en un
 solo bit (Goldberg, 1989).
 
-Tres casos de aplicación documentados, en dominios distintos:
+## Casos de aplicación
 
-1. **Programación de tareas (*job shop scheduling*).** Davis (1985) aplicó AG a la
-   asignación de trabajos a máquinas en una planta: el cromosoma codifica preferencias
-   de orden entre tareas y el fitness es el tiempo total del cronograma. Es uno de los
-   primeros usos industriales del método.
+Tres casos documentados, en dominios distintos:
+
+1. **Programación de tareas (*job shop scheduling*).** Davis (1985) propuso la primera
+   aplicación de AG a la asignación de trabajos a máquinas: cada cromosoma guarda, para
+   cada máquina, una lista de preferencias de orden entre tareas, y un simulador la
+   convierte en un cronograma para evaluarla.
 2. **Entrenamiento de redes neuronales.** Montana y Davis (1989) ajustaron los pesos de
    una red hacia adelante (*feedforward*) con un AG de codificación real sobre datos de
    sonar, como alternativa a la retropropagación cuando la superficie de error tiene
@@ -876,8 +880,8 @@ Tres casos de aplicación documentados, en dominios distintos:
 3. **Selección de variables en datos de alta dimensión.** Feng (2024) usa un AG en el
    que cada individuo representa un subconjunto de variables y el fitness es el
    desempeño del clasificador, y lo evalúa sobre Fashion-MNIST y sobre ocho conjuntos de
-   expresión génica (colon, leucemia, linfoma, SRBCT, sistema nervioso central, ovario y
-   dos más). Sobre Fashion-MNIST el filtrado baja de 724 a 372 variables y la exactitud
+   expresión génica (colon, leucemia, linfoma, SRBCT, sistema nervioso central, ovario,
+   leucemia de tres clases y MLL). Sobre Fashion-MNIST el filtrado baja de 724 a 372 variables y la exactitud
    sube de 0,935 a 0,982.
 
 ## Implementación con software libre
@@ -892,8 +896,8 @@ evaluación del problema; `algorithms.eaSimple` ejecuta el bucle con `cxpb`, `mu
 `ngen`. El caso binario y el real comparten el esqueleto y solo cambian los atributos
 del individuo y los operadores; así está armada la comparación anterior (Apéndice A.3).
 
-En R, el paquete GA (Scrucca, 2013) resuelve el mismo problema con una sola llamada:
-`ga(type = "real-valued", fitness = function(x) -f(x), lower = c(-5.12, -5.12),
+En R, el paquete GA (Scrucca, 2013) resuelve el mismo problema con una sola llamada; en la
+versión actual del paquete: `ga(type = "real-valued", fitness = function(x) -f(x), lower = c(-5.12, -5.12),
 upper = c(5.12, 5.12), popSize = 50, pcrossover = 0.8, pmutation = 0.1, maxiter = 100)`;
 con `type = "binary"` y el argumento `nBits` pasa a la codificación binaria. El paquete
 maximiza, por eso la aptitud es $-f$. Se prefirió DEAP para la corrida porque cada
@@ -949,8 +953,9 @@ Kernel PCA figura en el material sin desarrollo: el apunte de taxonomía de la c
 lista como variante no lineal del PCA, y `t_sne.pdf` de la clase 7 lo menciona entre las
 alternativas no lineales. De la selección de kernel solo hay prueba y error sobre datos de
 validación, con la herramienta de SVM del Ejercicio 2. No corresponde tomar el PDF
-`Transformación de clústeres no lineales` como Kernel PCA: ese material mapea clusters con
-una $\phi$ explícita y no diagonaliza una matriz de kernel.
+`Transformación de clústeres no lineales` como Kernel PCA: ese material aplica PCA por
+clúster y una transformación Z local para compactar los grupos antes de k-medias, y no
+diagonaliza una matriz de kernel.
 
 \needspace{7\baselineskip}
 
@@ -1055,28 +1060,32 @@ el maligno como clase positiva. Sin centrar, el lineal gana con *A* =
 `r f5(e5m$alineamiento_del_gamma_cv)`: el atajo parecía no reproducir la elección. Centrado,
 el orden cambia: gana el RBF con $\gamma$ = `r g5(e5m$centrado_mejor_parametro)`
 (`r f5(e5m$centrado_mejor)`), el mismo que eligió la validación cruzada, por delante del
-lineal (`r f5(a5(""))`) y de los polinómicos de grado 2 y 3 (`r f5(a5("grado 2"))` y
+lineal (`r f5(a5(""))`) y de los polinómicos $(\langle x, x' \rangle + 1)^q$ de grado 2 y 3 (`r f5(a5("grado 2"))` y
 `r f5(a5("grado 3"))`). El desacuerdo de la primera corrida era un efecto de la parte
-constante, no del método. Que el lineal quede cerca tiene explicación: un SVM lineal de
-margen duro acierta el `r round(100 * e5m$acierto_entrenamiento_svm_lineal_margen_duro)`\thinspace{}%
-del entrenamiento, así que las clases ya son linealmente separables en el espacio
-estandarizado. Se interpreta que el alineamiento centrado sirve como filtro barato antes
+constante, no del método. Aparte, un SVM lineal de margen duro acierta el
+`r round(100 * e5m$acierto_entrenamiento_svm_lineal_margen_duro)`\thinspace{}% del
+entrenamiento: las clases son linealmente separables en el espacio estandarizado. Eso no
+explica el alineamiento, porque el RBF con $\gamma$ = 1 también acierta el
+`r round(100 * e5m$acierto_entrenamiento_rbf_gamma1_margen_duro)`\thinspace{}% y queda
+último. Se interpreta que el alineamiento centrado sirve como filtro barato antes
 de entrenar; con un solo conjunto no alcanza para afirmar que coincida siempre con la
 validación cruzada.
 
-En la práctica conviene empezar por el RBF y recurrir al alineamiento cuando entrenar cada
+Se recomienda empezar por el RBF y recurrir al alineamiento cuando entrenar cada
 candidato sale caro. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
-contra las cuales validar: en la práctica el kernel se ajusta por el error de
-reconstrucción o por el desempeño de la tarea posterior que usa las componentes.
+contra las cuales validar: el kernel se ajusta por el error de reconstrucción de una
+pre-imagen aproximada o por el desempeño de la tarea posterior que usa las componentes.
 
 **Fuentes del Ejercicio 5.** Material de cátedra (Volpacchio, s.f.):
 `Preparation for Clustering.pdf` (PCA como visualización previa al clustering) y
 presentación `SVM Universidad Austral.pdf` (espacio de características, truco del
-kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selección
-sistemática de kernel no tienen material de clase: Schölkopf et al. (1998) para Kernel PCA;
+kernel y kernels lineal, polinómico, RBF y sigmoide); apunte de taxonomía de la clase 4 y
+`t_sne.pdf`, que solo nombran Kernel PCA. Kernel PCA y la selección
+sistemática de kernel se desarrollan con bibliografía externa: Schölkopf et al. (1998) para Kernel PCA;
 Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
 (2002) y Cortes et al. (2012) para el alineamiento, sin centrar y centrado; Gönen y
-Alpaydın (2011) para el aprendizaje de múltiples kernels. Código propio: Apéndice A.4.
+Alpaydın (2011) para el aprendizaje de múltiples kernels; Wolberg et al. (1993) para los
+datos. Código propio: Apéndice A.4.
 
 \newpage
 
@@ -1100,7 +1109,7 @@ hasta que ocurre algo definido: la falla de un equipo, la baja de un cliente, la
 reincidencia de un liberado, la recaída de un paciente. En la notación de la clase 7, el
 dato de cada individuo no es un número sino la pareja $(T_i, \delta_i)$: $T_i$ es el
 tiempo observado y $\delta_i$ el indicador de evento, con $\delta_i = 1$ si el evento
-ocurrió y $\delta_i = 0$ si la observación está censurada (Volpacchio, s.f.; Kleinbaum & Klein, 2012). La
+ocurrió y $\delta_i = 0$ si la observación está censurada (Kleinbaum & Klein, 2012; Volpacchio, s.f.). La
 censura por derecha, la más frecuente, se produce cuando el seguimiento termina antes
 del evento. Un cliente seguido 100 días que sigue activo aporta $T_i = 100$ y
 $\delta_i = 0$: solo se sabe que su baja, si ocurre, será posterior al día 100. También
@@ -1114,7 +1123,9 @@ tiempos se subestiman. El análisis de supervivencia resuelve el problema en la
 verosimilitud, la función que mide qué tan compatibles son los datos con los
 parámetros del modelo: un caso con evento aporta la densidad en $T_i$ y un caso
 censurado aporta la probabilidad $P(T > T_i)$, y la información parcial se aprovecha
-en lugar de descartarse o falsearse.
+en lugar de descartarse o falsearse, siempre que la censura sea no informativa: que el fin
+del seguimiento no dependa del riesgo del individuo, como en un estudio que cierra en una
+fecha fija.
 
 A esa ventaja se suma el objeto que se estima. La cantidad central es la función de
 supervivencia $S(t) = P(T > t)$, la probabilidad de que el evento no haya ocurrido
@@ -1130,7 +1141,7 @@ Los tipos de análisis se ordenan por la cantidad de supuestos. El estimador no
 paramétrico de Kaplan-Meier (Kaplan & Meier, 1958) construye la supervivencia como
 producto de supervivencias condicionales en cada tiempo de evento,
 $\hat{S}(t) = \prod_{t_i \le t} (1 - d_i/n_i)$, donde $d_i$ cuenta los eventos en
-$t_i$ y $n_i$ es el conjunto en riesgo justo antes de $t_i$. No admite covariables
+$t_i$ y $n_i$ el número de individuos en riesgo justo antes de $t_i$. No admite covariables
 continuas: los grupos se comparan por estratificación, y el test de log-rank decide si
 dos curvas difieren más de lo esperable por azar.
 
@@ -1142,16 +1153,17 @@ del conjunto en riesgo, el que tenga el evento, un cociente en el que $h_0(t)$ s
 cancela. El exponencial de cada coeficiente es un *hazard ratio*: cuánto multiplica esa
 covariable el riesgo instantáneo. El supuesto de riesgos proporcionales se verifica con
 la prueba de Grambsch y Therneau (1994) sobre los residuos de Schoenfeld (la diferencia
-entre la covariable de quien tuvo el evento y su promedio en el conjunto en riesgo); el
-desempeño se mide con el índice de concordancia (C-index), la probabilidad de que el
-modelo ordene bien los tiempos de un par de individuos.
+entre la covariable de quien tuvo el evento y su promedio, ponderado por $e^{\beta^\top X}$,
+en el conjunto en riesgo); el desempeño se mide con el índice de concordancia (C-index),
+la proporción de pares comparables cuyos tiempos el modelo ordena bien.
 
 El enfoque paramétrico son los modelos de tiempo de falla acelerado (AFT), que modelan
 $\log T = \beta^\top X + \sigma \varepsilon$, con $\sigma$ un parámetro de escala y
 $\varepsilon$ un error cuya distribución define el modelo (valor extremo si $T$ es
 Weibull, logística si $T$ es log-logístico). La lectura se invierte respecto de Cox: un
-coeficiente positivo alarga el tiempo hasta el evento. Se los prefiere cuando el
-supuesto de riesgos proporcionales no se cumple o cuando se necesitan tiempos absolutos;
+coeficiente positivo alarga el tiempo hasta el evento. Se los prefiere cuando se necesitan
+tiempos absolutos o, con la log-logística, cuando no se cumplen los riesgos proporcionales
+(el Weibull es a la vez AFT y de riesgos proporcionales);
 entre modelos paramétricos se comparan con el criterio de Akaike (AIC), que penaliza la
 verosimilitud por la cantidad de parámetros. Por último, hay extensiones de aprendizaje
 automático, como los *Random Survival Forests* (Ishwaran et al., 2008), que no están en
@@ -1167,26 +1179,32 @@ el re-arresto da `r f6(e6m$atajo_imputa)`. El primero mira solo al
 `r p6(100 * e6m$eventos / e6m$n)` que tuvo el evento; el segundo no es un tiempo hasta el evento sino una media truncada en
 `r e6m$horizonte` semanas, que coincide con el área bajo la curva de Kaplan-Meier hasta
 ese horizonte (`r f6(e6m$rmst)`) porque toda la censura cae en la misma semana.
-Kaplan-Meier da la respuesta que la regresión no puede expresar:
-$\hat S(`r e6m$horizonte`)$ = `r f6(e6m$s_horizonte, 3)`, la mediana no se alcanza dentro
-del seguimiento, y lo correcto es informar que más de la mitad no reincide en
+Kaplan-Meier da $\hat S(`r e6m$horizonte`)$ = `r f6(e6m$s_horizonte, 3)`, que aquí coincide
+con la proporción cruda de no reincidentes porque toda la censura cae en la misma semana;
+su ventaja aparece con censura escalonada, que Rossi no tiene. La mediana no se alcanza
+dentro del seguimiento, y lo correcto es informar que más de la mitad no reincide en
 `r e6m$horizonte` semanas, no inventar una cantidad de días.
 
 El efecto de una covariable muestra lo mismo. Una regresión lineal de las semanas sobre
 las siete covariables, ajustada solo con los re-arrestados, asigna a la ayuda
-financiera (`fin`) un coeficiente de `r f6(e6m$coef_ols_fin, 2)` semanas, un efecto
+financiera (`fin`) un coeficiente de `r sub("^-", "−", f6(e6m$coef_ols_fin, 2))` semanas, un efecto
 casi nulo y, en todo caso, hacia un re-arresto más temprano. Cox, con los `r e6m$n` individuos, estima un *hazard ratio* de
 `r f6(e6m$hr_fin, 3)` (IC 95 %: `r f6(e6m$hr_fin_lo, 3)` a `r f6(e6m$hr_fin_hi, 3)`;
 $p$ = `r f6(e6m$p_fin, 3)`): la ayuda reduce el riesgo instantáneo en un
-`r p6(100 * (1 - e6m$hr_fin))`. Se interpreta que la regresión no lo ve porque la ayuda
+`r p6(100 * (1 - e6m$hr_fin))` (re-arresto de `r p6(100 * e6m$tasa_arresto_fin1)` con ayuda
+contra `r p6(100 * e6m$tasa_arresto_fin0)` sin ella). Se interpreta que la regresión no lo ve porque la ayuda
 actúa sobre quiénes llegan a la semana `r e6m$horizonte` sin re-arresto, que son los
-casos que descarta. El C-index del modelo de Cox es `r f6(e6m$c_index, 2)`.
+casos que descarta. La prueba de Grambsch y Therneau no rechaza el supuesto para `fin`
+($p$ = `r f6(e6m$ph_p_fin, 2)`) y sí para `r paste(e6m$ph_rechaza, collapse = " y ")`
+($p$ = `r paste(f6(e6m$ph_p_rechaza, 3), collapse = " y ")`): el *hazard ratio* de `fin` se
+sostiene, y el modelo completo pediría estratificar por esas dos. El C-index es
+`r f6(e6m$c_index, 2)`: ordena bien el `r p6(100 * e6m$c_index)` de los pares comparables.
 
 ```{r e6-tab}
 e6t <- data.frame(
   Tipo = c("No paramétrico", "Semiparamétrico", "Paramétrico (AFT)",
            "Aprendizaje automático"),
-  Sup = c("Ninguno sobre la distribución de T", "Riesgos proporcionales",
+  Sup = c("Censura no informativa", "Riesgos proporcionales",
           "Distribución de T (Weibull, log-logística)", "Ninguno; ensamble de árboles"),
   Py = c("lifelines: KaplanMeierFitter, logrank_test",
          "lifelines: CoxPHFitter; statsmodels: PHReg",

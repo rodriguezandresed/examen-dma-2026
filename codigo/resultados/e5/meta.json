@@ -8,5 +8,6 @@
   "alineamiento_del_gamma_cv": 0.2172,
   "alineamiento_centrado_del_gamma_cv": 0.6143,
   "coincide_con_cv_centrado": true,
-  "acierto_entrenamiento_svm_lineal_margen_duro": 1.0
+  "acierto_entrenamiento_svm_lineal_margen_duro": 1.0,
+  "acierto_entrenamiento_rbf_gamma1_margen_duro": 1.0
 }

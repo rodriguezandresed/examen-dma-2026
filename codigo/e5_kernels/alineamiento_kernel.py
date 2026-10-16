@@ -110,6 +110,9 @@ fila_cv = [f for f in filas if f[1] == "gamma %g" % gamma_cv][0]
 # Separabilidad lineal del entrenamiento: margen duro aproximado con C enorme.
 svm_duro = SVC(kernel="linear", C=1e6).fit(Xtr, ytr)
 acierto_duro = float(svm_duro.score(Xtr, ytr))
+# Control: separar el entrenamiento no implica alinear bien. El RBF de gamma 1
+# (alineamiento casi nulo) tambien deberia separarlo, porque K es casi la identidad.
+acierto_duro_rbf1 = float(SVC(kernel="rbf", gamma=1.0, C=1e6).fit(Xtr, ytr).score(Xtr, ytr))
 
 meta = {
     "n_entrenamiento": n,
@@ -122,6 +125,7 @@ meta = {
     "alineamiento_centrado_del_gamma_cv": round(fila_cv[3], 4),
     "coincide_con_cv_centrado": mejor_c[1] == "gamma %g" % gamma_cv,
     "acierto_entrenamiento_svm_lineal_margen_duro": acierto_duro,
+    "acierto_entrenamiento_rbf_gamma1_margen_duro": acierto_duro_rbf1,
 }
 with open(os.path.join(SAL, "meta.json"), "w", encoding="utf-8") as f:
     json.dump(meta, f, indent=2, ensure_ascii=False)

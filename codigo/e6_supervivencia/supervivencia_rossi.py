@@ -53,6 +53,14 @@ tasa_fin = df.groupby("fin")["arrest"].mean()
 cph = CoxPHFitter().fit(df, duration_col="week", event_col="arrest")
 res = cph.summary[["coef", "exp(coef)", "exp(coef) lower 95%", "exp(coef) upper 95%", "p"]]
 
+# El informe explica la prueba de Grambsch y Therneau y al principio no la corria
+# sobre el Cox que interpreta. Se corre aca, con transformacion por rangos como en el
+# notebook de la clase: si fin la pasa, su hazard ratio se puede leer aunque otras
+# covariables no la pasen.
+from lifelines.statistics import proportional_hazard_test
+ph = proportional_hazard_test(cph, df, time_transform="rank").summary["p"]
+ph_rechaza = sorted(c for c in COVS if ph[c] < 0.05)
+
 lr = logrank_test(T[df.fin == 1], T[df.fin == 0], E[df.fin == 1], E[df.fin == 0])
 km1 = KaplanMeierFitter().fit(T[df.fin == 1], E[df.fin == 1])
 km0 = KaplanMeierFitter().fit(T[df.fin == 0], E[df.fin == 0])
@@ -75,6 +83,9 @@ meta = {
     "logrank_p": float(lr.p_value),
     "s_horizonte_fin1": float(km1.survival_function_at_times(horizonte).iloc[0]),
     "s_horizonte_fin0": float(km0.survival_function_at_times(horizonte).iloc[0]),
+    "ph_p_fin": float(ph["fin"]),
+    "ph_rechaza": ph_rechaza,
+    "ph_p_rechaza": [float(ph[c]) for c in ph_rechaza],
 }
 (OUT / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
 print(json.dumps(meta, indent=2, ensure_ascii=False))
