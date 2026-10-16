@@ -52,9 +52,11 @@ def _arrow(ax, x1, y1, x2, y2):
 def figura_cnn() -> None:
     # Lienzo chato y tipografía grande: en el PDF entra al ancho del texto
     # y los rótulos tienen que leerse a unos 9 pt, no como una tira.
-    fig, ax = plt.subplots(figsize=(7.4, 1.58))
+    fig, ax = plt.subplots(figsize=(7.4, 1.06))
     ax.set_xlim(0, 17.6)
-    ax.set_ylim(0, 2.05)
+    # Solo las cajas: el aire de arriba y la leyenda de abajo se fueron (la
+    # leyenda pasó al caption del informe) para que el Ejercicio 1 entre en 4 hojas.
+    ax.set_ylim(0.38, 1.75)
     ax.axis("off")
 
     boxes = [
@@ -75,16 +77,10 @@ def figura_cnn() -> None:
     for i in range(len(xs) - 1):
         _arrow(ax, xs[i] + ws[i] + 0.02, 1.07, xs[i + 1] - 0.02, 1.07)
 
-    ax.text(
-        8.8,
-        0.08,
-        "El bloque CONV-POOL se puede repetir. Cada filtro comparte sus pesos.",
-        ha="center",
-        fontsize=8,
-        color="#333333",
-    )
     fig.tight_layout()
-    fig.savefig(OUT / "cnn_capas.png", dpi=180, bbox_inches="tight", facecolor="white")
+    # pad_inches chico: el aire alrededor ya lo pone el LaTeX de la figura.
+    fig.savefig(OUT / "cnn_capas.png", dpi=180, bbox_inches="tight", pad_inches=0.03,
+                facecolor="white")
     plt.close(fig)
 
 
@@ -93,17 +89,18 @@ def figura_lstm() -> None:
     # atraviesa otra: olvido, entrada y candidata entran a c_t; la salida, a h_t.
     # Con fuentes de 9 pt, al 50 % del ancho las ecuaciones quedaban en ~4 pt
     # impresas: se suben las fuentes para que se lean al 60 %.
-    fig, ax = plt.subplots(figsize=(7.05, 2.32))
+    fig, ax = plt.subplots(figsize=(7.05, 1.63))
     ax.set_xlim(0, 13.8)
-    ax.set_ylim(0, 4.45)
+    # Sin título interno (repetía el caption) y sin aire debajo de c_t; el
+    # alto del lienzo baja en la misma proporción para no deformar las cajas.
+    # Las puertas bajan 0,4 hacia c_t (flechas más cortas) por el mismo motivo.
+    ax.set_ylim(0.25, 3.38)
     ax.axis("off")
 
-    ax.text(6.9, 4.18, "Celda LSTM, paso $t$", ha="center", fontsize=13, fontweight="bold")
-
-    _box(ax, 1.85, 2.58, 2.45, 1.12, "Olvido $f_t$\nsigmoidal", fc="#f7d6d6", size=12)
-    _box(ax, 4.55, 2.58, 2.45, 1.12, "Entrada $i_t$\nsigmoidal", fc="#d6e8f7", size=12)
-    _box(ax, 7.25, 2.58, 2.55, 1.12, "Candidata $\\tilde{c}_t$\ntanh", fc="#e8e0d6", size=12)
-    _box(ax, 10.15, 2.58, 2.45, 1.12, "Salida $o_t$\nsigmoidal", fc="#d6f0d6", size=12)
+    _box(ax, 1.85, 2.18, 2.45, 1.12, "Olvido $f_t$\nsigmoidal", fc="#f7d6d6", size=12)
+    _box(ax, 4.55, 2.18, 2.45, 1.12, "Entrada $i_t$\nsigmoidal", fc="#d6e8f7", size=12)
+    _box(ax, 7.25, 2.18, 2.55, 1.12, "Candidata $\\tilde{c}_t$\ntanh", fc="#e8e0d6", size=12)
+    _box(ax, 10.15, 2.18, 2.45, 1.12, "Salida $o_t$\nsigmoidal", fc="#d6f0d6", size=12)
 
     _box(
         ax,
@@ -119,16 +116,16 @@ def figura_lstm() -> None:
          fc="#e8e8e8", size=10)
 
     # De cada puerta a la caja de abajo. Terminan en el borde superior.
-    _arrow(ax, 3.07, 2.58, 3.07, 1.62)
-    _arrow(ax, 5.77, 2.58, 5.77, 1.62)
-    _arrow(ax, 8.52, 2.58, 8.52, 1.62)
-    _arrow(ax, 11.37, 2.58, 11.37, 1.62)
+    _arrow(ax, 3.07, 2.18, 3.07, 1.62)
+    _arrow(ax, 5.77, 2.18, 5.77, 1.62)
+    _arrow(ax, 8.52, 2.18, 8.52, 1.62)
+    _arrow(ax, 11.37, 2.18, 11.37, 1.62)
 
     # c_t alimenta a h_t por el costado, sin cruzar la caja gris.
     _arrow(ax, 9.82, 1.15, 10.13, 1.15)
 
-    ax.text(0.0, 3.05, r"$x_t,\, h_{t-1}$", fontsize=12)
-    _arrow(ax, 1.42, 3.14, 1.83, 3.14)
+    ax.text(0.0, 2.65, r"$x_t,\, h_{t-1}$", fontsize=12)
+    _arrow(ax, 1.42, 2.74, 1.83, 2.74)
     ax.text(0.15, 0.85, r"$c_{t-1}$", fontsize=13)
     _arrow(ax, 1.15, 0.98, 1.83, 0.98)
 
@@ -138,7 +135,8 @@ def figura_lstm() -> None:
     _arrow(ax, 9.82, 0.52, 13.15, 0.52)
     ax.text(13.2, 0.38, r"$c_t$", fontsize=13)
     fig.tight_layout()
-    fig.savefig(OUT / "lstm_celda.png", dpi=180, bbox_inches="tight", facecolor="white")
+    fig.savefig(OUT / "lstm_celda.png", dpi=180, bbox_inches="tight", pad_inches=0.03,
+                facecolor="white")
     plt.close(fig)
 
 
