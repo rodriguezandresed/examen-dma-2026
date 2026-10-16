@@ -2,25 +2,28 @@
 Ejercicio 5 - Alineamiento kernel-objetivo sobre un data set real.
 
 La pregunta del enunciado es si existen metodos sencillos para elegir el kernel
-apropiado en un determinado data set. El Ejercicio 5 contesta con bibliografia,
-y hasta aca era el unico ejercicio del examen sin una medicion propia. Esto lo
-corrige: se calcula el alineamiento de Cristianini et al. (2002) sobre los
-mismos datos y la misma particion del Ejercicio 10, y se compara el orden que
-produce con el que produjo la validacion cruzada.
+apropiado en un determinado data set. El alineamiento se presenta como un atajo:
+elegir kernel sin entrenar un modelo por candidato. Si el atajo sirve, tiene que
+coincidir con lo que dio entrenar, asi que se calcula sobre los mismos datos y la
+misma particion del Ejercicio 10 y se compara con la gamma que eligio la CV.
 
-Eso es lo que de verdad se le pide al metodo. El alineamiento se vende como un
-atajo: elegir kernel sin entrenar un modelo por candidato. Si el atajo sirve,
-tiene que coincidir con lo que dio entrenar. Si no coincide, tambien es un
-resultado, y es el que hay que informar.
+    A = <K, yy'>_F / (||K||_F * ||yy'||_F),   y en {-1, +1}
 
-    A = <K, yy'>_F / (||K||_F * ||yy'||_F)
+La primera version usaba solo la formula sin centrar de Cristianini et al.
+(2002). Dio que el lineal ganaba lejos y que el atajo no coincidia con la CV,
+pero al revisarla aparecio el problema: sin centrar, A premia o castiga la parte
+constante de K (el polinomico con coef0 = 1 suma un termino enorme igual para
+todos los pares, y el RBF con gamma chica es casi todo unos), y eso no tiene que
+ver con las clases. Cortes, Mohri y Rostamizadeh (2012) proponen centrar K y yy'
+en el espacio de caracteristicas, HKH con H = I - 11'/n, antes de comparar. Se
+informan las dos versiones; la conclusion del informe sale de la centrada.
 
-con y en {-1, +1}. Se usa la version SIN centrar, que es la del paper original
-y la que esta escrita en el cuerpo del examen. La variante centrada es
-posterior; no se mezcla para que el numero del informe sea el de la formula
-que el informe muestra.
+Ademas se verifica de forma directa lo que el Ejercicio 10 afirma sobre la
+separabilidad: un SVM lineal de margen duro (C muy grande) sobre el entrenamiento
+escalado. Si clasifica bien todos los casos, el entrenamiento es linealmente
+separable.
 
-Salida: codigo/resultados/e5/alineamiento.csv
+Salida: codigo/resultados/e5/alineamiento.csv y meta.json
 Correr:  python codigo/e5_kernels/alineamiento_kernel.py
 """
 
@@ -33,6 +36,7 @@ from sklearn.datasets import load_breast_cancer
 from sklearn.metrics.pairwise import linear_kernel, polynomial_kernel, rbf_kernel
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from sklearn.svm import SVC
 
 AQUI = os.path.dirname(os.path.abspath(__file__))
 SAL = os.path.join(AQUI, "..", "resultados", "e5")
@@ -61,11 +65,14 @@ Xtr = StandardScaler().fit_transform(Xtr)
 n = Xtr.shape[0]
 
 ideal = np.outer(ytr, ytr)
-norma_ideal = np.linalg.norm(ideal)  # con y en {-1,+1} da exactamente n
+H = np.eye(n) - np.ones((n, n)) / n  # centrado en el espacio de caracteristicas
 
 
-def alineamiento(K):
-    return float(np.sum(K * ideal) / (np.linalg.norm(K) * norma_ideal))
+def alineamiento(K, centrar):
+    Y = ideal
+    if centrar:
+        K, Y = H @ K @ H, H @ ideal @ H
+    return float(np.sum(K * Y) / (np.linalg.norm(K) * np.linalg.norm(Y)))
 
 
 # Los candidatos son los del enunciado del Ejercicio 5 (lineal, polinomico,
@@ -78,36 +85,53 @@ for q in (2, 3):
 for g in (0.0001, 0.001, 0.01, 0.1, 1.0):
     candidatos.append(("RBF", "gamma %g" % g, rbf_kernel(Xtr, gamma=g)))
 
-filas = [(fam, par, alineamiento(K)) for fam, par, K in candidatos]
-mejor = max(filas, key=lambda f: f[2])
+filas = [(fam, par, alineamiento(K, False), alineamiento(K, True))
+         for fam, par, K in candidatos]
 
 with open(os.path.join(SAL, "alineamiento.csv"), "w", newline="",
           encoding="utf-8") as f:
     w = csv.writer(f)
-    w.writerow(["familia", "parametro", "alineamiento"])
-    for fam, par, a in filas:
-        w.writerow([fam, par, "%.4f" % a])
+    w.writerow(["familia", "parametro", "alineamiento", "alineamiento_centrado"])
+    for fam, par, a, ac in filas:
+        w.writerow([fam, par, "%.4f" % a, "%.4f" % ac])
 
-# El RBF elegido por validacion cruzada en el Ejercicio 10, para poder decir en
-# el texto si el atajo coincide o no con el resultado de entrenar.
-gamma_cv = 0.01
-a_cv = [a for fam, par, a in filas if par == "gamma %g" % gamma_cv][0]
+# La gamma que eligio la CV se lee del Ejercicio 10, no se tipea: si el
+# pipeline cambia, esta comparacion lo acompana.
+hp = os.path.join(AQUI, "..", "resultados", "e10", "hiperparametros_elegidos.csv")
+with open(hp, encoding="utf-8") as f:
+    for r in csv.DictReader(f):
+        if (r["tarea"], r["modelo"], r["hiperparametro"]) == ("clasificacion", "SVM", "gamma"):
+            gamma_cv = float(r["valor"].replace(",", "."))
+
+mejor_sc = max(filas, key=lambda f: f[2])
+mejor_c = max(filas, key=lambda f: f[3])
+fila_cv = [f for f in filas if f[1] == "gamma %g" % gamma_cv][0]
+
+# Separabilidad lineal del entrenamiento: margen duro aproximado con C enorme.
+svm_duro = SVC(kernel="linear", C=1e6).fit(Xtr, ytr)
+acierto_duro = float(svm_duro.score(Xtr, ytr))
+
 meta = {
     "n_entrenamiento": n,
-    "mejor_familia": mejor[0],
-    "mejor_parametro": mejor[1],
-    "mejor_alineamiento": round(mejor[2], 4),
     "gamma_elegido_por_cv": gamma_cv,
-    "alineamiento_del_gamma_cv": round(a_cv, 4),
-    "coincide_con_cv": mejor[1] == "gamma %g" % gamma_cv,
+    "sin_centrar_mejor": "%s %s" % (mejor_sc[0], mejor_sc[1]),
+    "centrado_mejor_familia": mejor_c[0],
+    "centrado_mejor_parametro": mejor_c[1],
+    "centrado_mejor": round(mejor_c[3], 4),
+    "alineamiento_del_gamma_cv": round(fila_cv[2], 4),
+    "alineamiento_centrado_del_gamma_cv": round(fila_cv[3], 4),
+    "coincide_con_cv_centrado": mejor_c[1] == "gamma %g" % gamma_cv,
+    "acierto_entrenamiento_svm_lineal_margen_duro": acierto_duro,
 }
 with open(os.path.join(SAL, "meta.json"), "w", encoding="utf-8") as f:
     json.dump(meta, f, indent=2, ensure_ascii=False)
 
 print("alineamiento kernel-objetivo sobre %d casos de entrenamiento" % n)
-for fam, par, a in filas:
-    marca = "  <- mejor" if (fam, par) == (mejor[0], mejor[1]) else ""
-    marca += "  <- elegido por CV en E10" if par == "gamma %g" % gamma_cv else ""
-    print("  %-12s %-12s A = %.4f%s" % (fam, par, a, marca))
-print("coincide con la validacion cruzada:", meta["coincide_con_cv"])
-print("escrito en resultados/e5: alineamiento.csv, meta.json")
+print("  %-12s %-12s %8s %9s" % ("familia", "parametro", "A", "A centr."))
+for fam, par, a, ac in filas:
+    marca = "  <- elegido por CV en E10" if par == "gamma %g" % gamma_cv else ""
+    print("  %-12s %-12s %8.4f %9.4f%s" % (fam, par, a, ac, marca))
+print("mejor sin centrar:", meta["sin_centrar_mejor"])
+print("mejor centrado:", mejor_c[0], mejor_c[1], "| coincide con CV:",
+      meta["coincide_con_cv_centrado"])
+print("SVM lineal de margen duro, acierto en entrenamiento:", acierto_duro)

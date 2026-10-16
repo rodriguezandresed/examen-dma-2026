@@ -1025,7 +1025,10 @@ etiquetas $y_i \in \{-1, +1\}$,
 $A = \langle K, yy^\top \rangle_F / (\lVert K \rVert_F \, \lVert yy^\top \rVert_F)$, donde
 $\langle \cdot, \cdot \rangle_F$ suma los productos elemento a elemento. Un $A$ alto
 indica que el kernel ve parecidas a las observaciones de la misma clase y distintas a
-las de clases distintas; se elige el kernel de mayor alineamiento. Una variante más
+las de clases distintas; se elige el kernel de mayor alineamiento. Cortes et al. (2012)
+muestran que conviene centrar antes $K$ y $yy^\top$ (restar medias de fila y de columna,
+como en Kernel PCA), porque sin centrar $A$ también responde a la parte constante del
+kernel, que es igual para todos los pares y no dice nada de las clases. Una variante más
 elaborada es el aprendizaje de múltiples kernels (*multiple kernel learning*), que
 combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & Alpaydın,
 2011).
@@ -1034,25 +1037,26 @@ combina varios kernels con pesos que se aprenden en el entrenamiento (Gönen & A
 e5a <- read.csv("codigo/resultados/e5/alineamiento.csv", stringsAsFactors = FALSE)
 e5m <- jsonlite::fromJSON("codigo/resultados/e5/meta.json")
 f5 <- function(x, d = 4) formatC(as.numeric(x), format = "f", digits = d, decimal.mark = ",")
-a5 <- function(par) e5a$alineamiento[e5a$parametro == par]
-e5_rbf <- e5a[e5a$familia == "RBF", ]
-e5_rbf_mejor <- e5_rbf[which.max(e5_rbf$alineamiento), ]
-e5_g <- sub("gamma ", "", e5_rbf_mejor$parametro)
+a5 <- function(par, col = "alineamiento_centrado") e5a[[col]][e5a$parametro == par]
+g5 <- function(x) sub(".", ",", sub("gamma ", "", x), fixed = TRUE)
 ```
 
 El atajo se puso a prueba sobre el conjunto de clasificación del Ejercicio 10, con la
 misma partición y el mismo escalado: `r e5m$n_entrenamiento` casos de Breast Cancer, con
-el maligno como clase positiva. El kernel lineal da *A* = `r f5(a5(""))`, muy por encima
-del resto; el mejor RBF es el de $\gamma$ = `r sub("\\.", ",", e5_g)` con
-`r f5(e5_rbf_mejor$alineamiento)`, y los polinómicos de grado 2 y 3 quedan en
-`r f5(a5("grado 2"))` y `r f5(a5("grado 3"))`. La validación cruzada del Ejercicio 10
-eligió $\gamma$ = `r sub("\\.", ",", e5m$gamma_elegido_por_cv)`, cuyo alineamiento es
-`r f5(e5m$alineamiento_del_gamma_cv)`: **el atajo no reproduce la elección del
-hiperparámetro**. Donde sí coincide es en la familia, y ese acuerdo vale, porque el
-alineamiento más alto es el del kernel lineal y respalda con una medición la lectura del
-Ejercicio 10 de que las clases son casi linealmente separables en el espacio
-estandarizado. Se interpreta que el alineamiento sirve para descartar familias antes de
-entrenar, no para ajustar un parámetro dentro de una.
+el maligno como clase positiva. Sin centrar, el lineal gana con *A* =
+`r f5(a5("", "alineamiento"))` y el RBF que eligió la validación cruzada
+($\gamma$ = `r g5(e5m$gamma_elegido_por_cv)`) queda en
+`r f5(e5m$alineamiento_del_gamma_cv)`: el atajo parecía no reproducir la elección. Centrado,
+el orden cambia: gana el RBF con $\gamma$ = `r g5(e5m$centrado_mejor_parametro)`
+(`r f5(e5m$centrado_mejor)`), el mismo que eligió la validación cruzada, por delante del
+lineal (`r f5(a5(""))`) y de los polinómicos de grado 2 y 3 (`r f5(a5("grado 2"))` y
+`r f5(a5("grado 3"))`). El desacuerdo de la primera corrida era un efecto de la parte
+constante, no del método. Que el lineal quede cerca tiene explicación: un SVM lineal de
+margen duro acierta el `r round(100 * e5m$acierto_entrenamiento_svm_lineal_margen_duro)`\thinspace{}%
+del entrenamiento, así que las clases ya son linealmente separables en el espacio
+estandarizado. Se interpreta que el alineamiento centrado sirve como filtro barato antes
+de entrenar; con un solo conjunto no alcanza para afirmar que coincida siempre con la
+validación cruzada.
 
 En la práctica conviene empezar por el RBF y recurrir al alineamiento cuando entrenar cada
 candidato sale caro. Para Kernel PCA la elección es más difícil, porque no hay etiquetas
@@ -1065,8 +1069,8 @@ presentación `SVM Universidad Austral.pdf` (espacio de características, truco 
 kernel y kernels lineal, polinómico, RBF y sigmoide). Kernel PCA y la selección
 sistemática de kernel no tienen material de clase: Schölkopf et al. (1998) para Kernel PCA;
 Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
-(2002) para el alineamiento kernel-objetivo; Gönen y Alpaydın (2011) para el aprendizaje de
-múltiples kernels. Código propio: Apéndice A.4.
+(2002) y Cortes et al. (2012) para el alineamiento, sin centrar y centrado; Gönen y
+Alpaydın (2011) para el aprendizaje de múltiples kernels. Código propio: Apéndice A.4.
 
 \newpage
 
@@ -2061,9 +2065,10 @@ informal, los cuatro modelos no se distinguen. En *hold-out* difieren en entre
 `r min(e10_c$test_fn)` y `r max(e10_c$test_fn)` malignos no detectados sobre
 `r pc$malignos_test` (`r if (sum(e10_c$test_fp) == 0) "ningún modelo produjo falsos positivos" else paste(sum(e10_c$test_fp), "falsos positivos en total")`), y cada
 uno resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
-bloques. El empate es del conjunto antes que de los modelos: las clases son casi
-linealmente separables en el espacio estandarizado, como mide el alineamiento del
-Ejercicio 5, y ahí los cuatro llegan al mismo techo. SVM eligió
+bloques. El empate es del conjunto antes que de los modelos: en el entrenamiento escalado
+las clases son linealmente separables (un SVM lineal de margen duro acierta el
+`r round(100 * e5m$acierto_entrenamiento_svm_lineal_margen_duro)`\thinspace{}% de los
+casos; Ejercicio 5), y ahí los cuatro llegan al mismo techo. SVM eligió
 $\gamma = `r m10(sel10("clasificacion", "SVM", "gamma"))`$, es decir
 $\sigma = 1/\sqrt{2\gamma} \approx$ `r f10(1 / sqrt(2 * g_svm), 1)`, del orden de la
 distancia típica entre dos casos estandarizados ($\sqrt{2p} \approx$
@@ -2234,6 +2239,10 @@ Research, 11*, 2079-2107. http://jmlr.org/papers/v11/cawley10a.html
 Chen, T., & Guestrin, C. (2016). XGBoost: A scalable tree boosting system.
 *Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery
 and Data Mining*, 785-794. https://doi.org/10.1145/2939672.2939785
+
+Cortes, C., Mohri, M., & Rostamizadeh, A. (2012). Algorithms for learning kernels based
+on centered alignment. *Journal of Machine Learning Research, 13*(28), 795-828.
+http://jmlr.org/papers/v13/cortes12a.html
 
 Cortes, C., & Vapnik, V. (1995). Support-vector networks. *Machine Learning, 20*(3),
 273-297. https://doi.org/10.1007/BF00994018

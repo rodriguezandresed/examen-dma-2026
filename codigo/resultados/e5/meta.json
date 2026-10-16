@@ -1,9 +1,12 @@
 {
   "n_entrenamiento": 455,
-  "mejor_familia": "lineal",
-  "mejor_parametro": "",
-  "mejor_alineamiento": 0.5255,
   "gamma_elegido_por_cv": 0.01,
+  "sin_centrar_mejor": "lineal ",
+  "centrado_mejor_familia": "RBF",
+  "centrado_mejor_parametro": "gamma 0.01",
+  "centrado_mejor": 0.6143,
   "alineamiento_del_gamma_cv": 0.2172,
-  "coincide_con_cv": false
+  "alineamiento_centrado_del_gamma_cv": 0.6143,
+  "coincide_con_cv_centrado": true,
+  "acierto_entrenamiento_svm_lineal_margen_duro": 1.0
 }
