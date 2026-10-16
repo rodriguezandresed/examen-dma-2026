@@ -1253,15 +1253,23 @@ epsf <- function(x) formatC(x, format = "f", digits = 2, decimal.mark = ",")
 # Grupo de atípicos: el que más se aleja en la quinta componente.
 e7_at <- which.max(e7perf$PC5)
 e7_resto <- e7perf[-e7_at, ]
+# Cruce grupo-dígito: los dígitos que más aportan al grupo más grande y al más chico.
+e7cr <- read.csv("codigo/resultados/e7/cruce_grupo_digito.csv", check.names = FALSE)
+mezcla <- function(g, k) {
+  fila <- unlist(e7cr[e7cr$grupo == g, -1]); o <- order(-fila)[1:k]
+  s <- paste0(fila[o], " del ", names(fila)[o]); s[1] <- sub(" del ", " imágenes del ", s[1])
+  paste0(paste(s[-k], collapse = ", "), " y ", s[k])
+}
+e7_gmax <- e7perf$grupo[which.max(e7perf$n)]
+e7_gmin <- e7perf$grupo[which.min(e7perf$n)]
 # Primer radio, por encima del mejor, desde el cual DBSCAN devuelve un solo grupo.
 e7_funde <- min(e7eps$eps[e7eps$clusters == 1 & e7eps$eps > val("db_eps")])
 ```
 
 ## Técnicas de pre-proceso
 
-Todo algoritmo de clustering devuelve una partición, haya grupos en los datos o no. Por eso
-conviene mirar antes si esa estructura existe, y como los datos suelen tener más dimensiones
-de las que entran en un gráfico, mirar quiere decir proyectarlos a dos dimensiones.
+Todo algoritmo de clustering devuelve una partición, haya grupos o no. Por eso conviene mirar
+antes si esa estructura existe, y con más de tres variables mirar es proyectar a dos dimensiones.
 
 La guía de clustering de la cátedra trae tres ayudas gráficas. Los gráficos de componentes
 principales (PRINCOMP) proyectan sobre las dos primeras componentes. El escalado
@@ -1269,27 +1277,22 @@ multidimensional (MDS) ubica los puntos en dos dimensiones con la mayor conserva
 de las distancias originales. El discriminante canónico (CANDISC) busca las direcciones que
 maximizan la separación entre grupos, pero las necesita ya definidas: sirve para mirar una
 partición que ya se tiene, no para descubrirla, y por eso reaparece más abajo como tercer
-paso del perfilado. A esas tres hoy se les suman t-SNE y UMAP (McInnes et al., 2018), que
-para este fin desplazaron a MDS.
+paso del perfilado. A esas tres hoy se les suman t-SNE y UMAP (McInnes et al., 2018).
 
 El capítulo trata además tres pasos que no son de visualización pero deciden qué muestran los
-gráficos. VARCLUS selecciona variables y elimina colinealidad. STDIZE estandariza, con
-énfasis en la escala y en el efecto del orden de los datos sobre la inicialización. Y ACECLUS
-estima la matriz de covarianza dentro de los grupos sin conocerlos, y transforma los datos
-para que la distancia euclídea en el espacio transformado se comporte como una distancia de
-Mahalanobis en el original, la euclídea después de descontar la covarianza, útil con grupos
-elipsoidales y rotados respecto de los ejes.
+gráficos: VARCLUS selecciona variables y elimina colinealidad; STDIZE estandariza; ACECLUS
+estima la covarianza dentro de los grupos sin conocerlos y transforma los datos para que la
+distancia euclídea se comporte como la de Mahalanobis (euclídea después de descontar la
+covarianza), útil con grupos elipsoidales y rotados.
 
-La técnica que se desarrolla es la primera. En los gráficos de componentes principales se
-estandarizan las variables, se calculan los autovectores de la matriz de correlación y se
-proyectan las observaciones sobre las dos primeras componentes. El fundamento para este uso
-es que, si existen grupos separados y la separación tiene una componente lineal apreciable,
-las direcciones de máxima varianza tienden a alinearse con ella y los grupos aparecen como
-nubes distinguibles. La ventaja es el costo bajo y el hecho de que las cargas indican en
-función de qué variables se separan los grupos. La limitación es la misma que se señala en el
-Ejercicio 5: al tratarse de una proyección lineal, no detecta grupos definidos por estructuras
-curvas, y un conjunto de anillos concéntricos aparece como una nube sin estructura. Ese es
-precisamente el problema que motiva a t-SNE.
+La técnica que se desarrolla es la primera: se estandarizan las variables, se calculan los
+autovectores de la matriz de correlación y se proyectan las observaciones sobre las dos
+primeras componentes. Si hay grupos separados y la separación tiene una componente lineal
+apreciable, las direcciones de máxima varianza tienden a alinearse con ella y los grupos
+aparecen como nubes distinguibles. Es barata y las cargas indican qué variables separan los
+grupos. Su límite es el del Ejercicio 5: como proyección lineal no detecta grupos definidos
+por estructuras curvas (dos esferas concéntricas en tres dimensiones se proyectan como un
+único disco), que es el problema que motiva a t-SNE.
 
 \needspace{3\baselineskip}
 
@@ -1335,39 +1338,42 @@ knitr::kable(
 
 *Nota.* Elaboración propia a partir de `codigo/resultados/e7/perfiles_kmeans.csv`.
 
-Lo que más dice de la tabla son los tamaños. Con diez dígitos que aparecen unas 180 veces
-cada uno, un grupo de `r e7perf$n[which.max(e7perf$n)]` casos fusiona al menos dos
-clases y otro de `r min(e7perf$n)` es un fragmento, no una clase. Antes de mirar una sola
-media ya se sabe que la partición no reproduce las diez clases, lo cual es coherente con el
-índice de Rand ajustado de `r fmt(val("ari_kmeans_pca"))` que se reporta más abajo. Después
-están los apartamientos: un grupo se aleja hasta `r fmt(e7perf$PC2[e7_at], 2)` en la segunda componente y
-`r fmt(e7perf$PC5[e7_at], 2)` en la quinta, que es el perfil de un grupo de atípicos,
-mientras que otros dos se oponen sobre la primera componente con
+Lo que más dice de la tabla son los tamaños. Con diez dígitos de unas 180 imágenes cada uno,
+un grupo de `r max(e7perf$n)` casos mezcla clases y otro de `r min(e7perf$n)` es un
+fragmento. La guía prevé además perfilar respecto de una clase dada, y aquí existe: el cruce
+con el dígito real muestra que el primero reúne `r mezcla(e7_gmax, 4)`, y el
+segundo, `r mezcla(e7_gmin, 2)`. La partición no reproduce las diez clases, coherente con
+el índice de Rand ajustado (ARI, acuerdo entre dos particiones corregido por el azar) de
+`r fmt(val("ari_kmeans_pca"))` que se reporta más abajo. Un grupo se aleja hasta
+`r fmt(e7perf$PC2[e7_at], 2)` en la segunda componente y `r fmt(e7perf$PC5[e7_at], 2)` en
+la quinta, perfil de un grupo de atípicos, y otros dos se oponen sobre la primera con
 `r fmt(min(e7_resto$PC1), 2)` contra `r fmt(max(e7_resto$PC1), 2)`.
 
 El MANOVA, que va primero, se calculó con las matrices de dispersión dentro de los grupos y
 total: el $\Lambda$ de Wilks es `r fmt(mcn("wilks_lambda"), 4)`, y la aproximación de
-Bartlett lo lleva a $\chi^2$(`r mcn("gl")`) = `r mcmil("chi2_bartlett")`. Con 1 como ninguna separación y 0
-como separación total, los diez grupos difieren en el vector y no en una sola componente.
+Bartlett, que convierte $-\ln\Lambda$ en un $\chi^2$, da $\chi^2$(`r mcn("gl")`,
+*N* = `r val("n")`) = `r mcmil("chi2_bartlett")`. Con 1 como ninguna separación y 0 como
+separación total, los centroides de los diez grupos difieren en el vector de las cinco
+componentes; cuáles la producen lo dicen los pasos siguientes.
 
 El ANOVA por componente, con los diez grupos como factor, da valores *F* de
 `r fmt(e7anova$F[1], 1)`, `r fmt(e7anova$F[2], 1)`, `r fmt(e7anova$F[3], 1)`, `r fmt(e7anova$F[4], 1)` y `r fmt(e7anova$F[5], 1)`
-para las cinco componentes. Más que las magnitudes importa que el orden de los *F* no
-coincide con el de las componentes: la quinta separa mejor los grupos que la cuarta pese a
-explicar menos varianza total. Esa es exactamente la diferencia entre
-varianza total y varianza entre grupos, y el discriminante canónico la pone en números: sus
-dos primeros ejes concentran el `r mcpct("sep_canonica_2ejes")` de la separación entre
-grupos, contra el `r mcpct("var_pca_2comp")` de la varianza total que explican las dos
-primeras componentes principales. Los valores
-*p* que acompañan a esos *F* no se reportan, por la advertencia del párrafo anterior.
+para las cinco componentes. El orden de los *F* no coincide con el de las componentes: la
+quinta separa mejor que la cuarta pese a explicar menos varianza total, que es la diferencia
+entre varianza total y varianza entre grupos. El discriminante canónico, calculado sobre las
+mismas cinco componentes, reúne en sus dos primeros ejes el `r mcpct("sep_canonica_2ejes")`
+de la separación entre grupos, contra el `r mcpct("var_pca_2comp")` de la varianza que
+reúnen PC1 y PC2; según sus correlaciones de estructura, el primer eje se apoya en PC1
+(`r fmt(mcn("estructura_pc1_eje1"), 2)`) y el segundo en PC2 y PC3
+(`r fmt(mcn("estructura_pc2_eje2"), 2)` y `r fmt(mcn("estructura_pc3_eje2"), 2)`). Los
+valores *p* no se reportan, por la advertencia del párrafo anterior.
 
 Queda el agregado al esquema de la guía. Un bosque aleatorio de 500 árboles contra la
-etiqueta de grupo, sobre esas mismas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % fuera de la
-bolsa, y su importancia las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* en dos pares, y uno de ellos es
-justo donde el párrafo anterior puso el acento, porque el *F* mide la separación de una componente por vez
-y la importancia mide lo que cada una agrega dado lo que aportan las otras: la quinta separa bien
-sola, pero casi todo eso ya está en las tres primeras. El orden se repitió idéntico en las
-`r est("semillas")` semillas, con el OOB entre `r fmt(as.numeric(est("oob_min")), 4)` y `r fmt(as.numeric(est("oob_max")), 4)`. Ninguna de las cinco tiene nombre de
+etiqueta de grupo, sobre esas cinco componentes, acierta el `r fmt(100 * val("rf_oob"), 1)` % de los casos que cada árbol no vio (fuera de la
+bolsa), y su importancia por impureza de Gini las ordena `r paste(e7imp$componente[order(-e7imp$importancia)], collapse = ", ")`. El orden discrepa con los *F* en dos pares: el *F* mide la separación de una componente por vez
+y la importancia, cuánto usa el bosque cada componente cuando las cinco compiten por los
+cortes; la quinta separa bien sola, pero casi todo eso ya está en las tres primeras. La
+importancia por permutación `r if (val("orden_perm_igual") == 1) "da el mismo orden" else "da otro orden"`, y con `r est("semillas")` semillas el orden se repite, con la exactitud fuera de la bolsa entre `r fmt(as.numeric(est("oob_min")), 4)` y `r fmt(as.numeric(est("oob_max")), 4)`. Ninguna de las cinco tiene nombre de
 dominio, así que el perfil dice en qué dirección difieren los grupos y no qué significan.
 
 ## El algoritmo t-SNE
@@ -1393,46 +1399,41 @@ gradiente sobre las coordenadas del mapa (van der Maaten & Hinton, 2008), que el
 la clase 8 inicializa con los componentes principales de un PCA previo para acelerar la
 convergencia.
 
-El único hiperparámetro relevante es la perplejidad, que funciona como ancho de banda del
-kernel. Se define como $2^{H(P_i)}$, con $H$ la entropía de Shannon de la vecindad del punto, de
-manera que 4,9 bits equivalen a unos 30 vecinos efectivos. El $\sigma_i$ de cada punto sale
-por búsqueda binaria hasta alcanzar esa perplejidad, lo cual lo vuelve adaptativo: chico en
-zonas densas y ancho en zonas dispersas, con valores usuales de 5 a 50. La variante de Barnes-Hut agrupa los puntos
-lejanos y los trata como una masa única, con lo cual la complejidad baja de $O(N^2)$ a
-$O(N \log N)$ y el método se vuelve utilizable más allá de unos pocos miles de puntos (van
-der Maaten, 2014).
+El hiperparámetro principal es la perplejidad, el ancho de banda del kernel, definida como
+$2^{H(P_i)}$ con $H$ la entropía de Shannon de la vecindad del punto: 4,9 bits equivalen a
+unos 30 vecinos efectivos, y suele ir de 5 a 50. El $\sigma_i$ de cada punto sale por
+búsqueda binaria hasta alcanzarla, lo que lo vuelve adaptativo: chico en zonas densas y
+ancho en las dispersas. La variante de Barnes-Hut trata los puntos lejanos como una masa
+única y baja el costo de $O(N^2)$ a $O(N \log N)$ (van der Maaten, 2014).
 
-Se utiliza para la visualización exploratoria de datos de alta dimensión: inspección de embeddings,
-exploración previa a un clustering, control visual de una partición y detección de
-subpoblaciones. El apunte propone un pipeline de tres pasos que consiste en
-explorar con t-SNE o UMAP sobre datos estandarizados, modelar sobre el espacio original con
-un algoritmo que no exija grupos esféricos, como DBSCAN (Ester et al., 1996) o su variante
-jerárquica HDBSCAN (Campello et al., 2013), y validar mediante la superposición de las
-etiquetas obtenidas sobre la proyección.
+Se utiliza para la visualización exploratoria de datos de alta dimensión: inspección de
+embeddings, exploración previa a un clustering, control visual de una partición. El apunte
+propone un pipeline de tres pasos: explorar con t-SNE o UMAP sobre datos estandarizados,
+modelar sobre el espacio original con un algoritmo que no exija grupos esféricos, como DBSCAN
+(Ester et al., 1996) o su variante jerárquica HDBSCAN (Campello et al., 2013), y validar
+con la superposición de las etiquetas obtenidas sobre la proyección.
 
-El ejemplo (apéndice A.6) aplica ese pipeline sobre los
+El ejemplo (Apéndice A.6) aplica ese pipeline sobre los
 dígitos manuscritos de `scikit-learn`, `r val("n")` imágenes de 8 por 8 píxeles. Se
 estandariza con `StandardScaler`, se reduce con `PCA(n_components=30)`, se proyecta con
 `TSNE(perplexity=30, init="pca")` y se agrupa con `DBSCAN` o `KMeans` sobre las 30
-componentes, nunca sobre el embedding, que es lo que el apunte admite al hablar de agrupar
-sobre el espacio original "o sobre una reducción PCA previa si la dimensionalidad es
-extrema". El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza, y las
+componentes, no sobre el embedding (salvo el contraejemplo del final), que es lo que el
+apunte admite al hablar de agrupar sobre el espacio original o sobre una reducción PCA
+previa si la dimensionalidad es extrema. El PCA conserva el `r fmt(100 * val("var_pca30"), 1)` % de la varianza, y las
 distancias son las de los datos.
 
 ## Resultados sobre los dígitos
 
-El mapa, con las etiquetas superpuestas sobre la proyección, está en el apéndice A.6. Para medir
-su calidad se usa el coeficiente de silueta, que compara para cada punto su distancia media
-al propio grupo contra la del grupo vecino más cercano: va de -1 a 1, y cuanto más alto, más
-compactos y separados están los grupos. Sobre las clases verdaderas dio
-`r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con 30 y
-`r fmt(val("sil_p50"))` con 50, es decir que mejora al pasar de 5 a 30 y después se estanca.
+El mapa, con las etiquetas superpuestas, está en el Apéndice A.6. Su calidad se mide con el
+coeficiente de silueta, que compara para cada punto su distancia media al propio grupo con la
+del grupo vecino más cercano (de -1 a 1; más alto, grupos más compactos y separados). Sobre las
+clases verdaderas dio `r fmt(val("sil_p5"))` con perplejidad 5, `r fmt(val("sil_p30"))` con
+30 y `r fmt(val("sil_p50"))` con 50: mejora de 5 a 30 y después se estanca.
 
 DBSCAN agrupa por densidad: un punto es núcleo si tiene al menos 8 puntos, él incluido, a
 distancia menor que un radio $\varepsilon$; los núcleos vecinos se encadenan y el resto queda
-como ruido. El acuerdo con los dígitos se mide con el índice de Rand ajustado (ARI), la proporción
-de pares que ambas particiones dejan juntos o separados, corregida por el azar: 1 si
-coinciden, 0 si es el del azar. El radio se ubicó con la distancia al octavo vecino
+como ruido. El acuerdo con los dígitos se mide con el ARI definido arriba: 1 si las
+particiones coinciden, 0 si el acuerdo es el del azar. El radio se ubicó con la distancia al octavo vecino
 (gráfico de distancia *k*; Ester et al., 1996), de mediana `r epsf(val("kdist_q50"))` y
 cuantiles del 10 y del 90 % de `r epsf(val("kdist_q10"))` y `r epsf(val("kdist_q90"))`; una
 primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
@@ -1443,38 +1444,40 @@ primera grilla empezaba por encima de la mediana y no hallaba grupos. Entre los
 (`r fmt(val("ari_dbscan_sin_ruido"))` sin el ruido).
 
 Con $\varepsilon$ = `r epsf(min(e7eps$eps))` quedan `r e7eps$ruido[1]` de los `r val("n")` puntos como ruido, y desde
-$\varepsilon$ = `r epsf(e7_funde)` todo se funde en un grupo (ARI de
+$\varepsilon$ = `r epsf(e7_funde)` queda un solo grupo (ARI de
 `r fmt(e7eps$ari[e7eps$eps == e7_funde])`): bajar el radio parte grupos pero manda puntos al
-ruido, y subirlo los recupera pero funde dígitos. La causa probable es un radio global frente
-a una densidad que varía entre dígitos, más que la concentración de distancias del apunte.
+ruido, y subirlo los recupera pero funde dígitos. La causa es un radio global frente a una
+densidad que varía entre dígitos: la mediana de la distancia al octavo vecino va de
+`r epsf(val("kdist_dig_min"))` (dígito `r val("kdist_dig_min_d")`) a
+`r epsf(val("kdist_dig_max"))` (dígito `r val("kdist_dig_max_d")`).
 
 K-means con $k = 10$ sobre las componentes dio un ARI de `r fmt(val("ari_kmeans_pca"))`, y
-sobre las dos coordenadas del embedding dio `r fmt(val("ari_kmeans_emb"))`, muy por encima. La tentación de quedarse con ese número es la trampa: no mide
-la capacidad de k-means para descubrir estructura sino el trabajo que ya hizo t-SNE al
-separarla: sirve como validación visual, no como modelo.
+sobre las dos coordenadas del embedding, `r fmt(val("ari_kmeans_emb"))`. Quedarse con ese
+número es la trampa: no mide la capacidad de k-means para descubrir estructura sino el
+trabajo que ya hizo t-SNE al separarla; sirve como validación visual, no como modelo.
 
 ## Ventajas y limitantes
 
 Entre las ventajas, t-SNE captura estructura no lineal a diferencia de PCA y desenreda
 superficies curvas (variedades) que MDS superpone; preserva la vecindad local, que es lo que separa visualmente
-los grupos; las colas pesadas de la t resuelven la aglomeración; y tiene un solo
-hiperparámetro relevante.
+los grupos; las colas pesadas de la t resuelven la aglomeración; y tiene un hiperparámetro
+principal.
 
 Entre las limitantes, la principal es que no es clustering: los grupos visuales hay que
-confirmarlos sobre el espacio original. Las distancias entre grupos, los ejes y los tamaños
-relativos no significan nada, por la asimetría de la divergencia. La función de costo no es
+confirmarlos sobre el espacio original. Las distancias entre grupos no significan nada,
+porque la divergencia tolera acercar puntos lejanos; los tamaños tampoco, porque el
+$\sigma_i$ adaptativo iguala densidades; y los ejes carecen de sentido, porque el costo no
+cambia si se rota el mapa. La función de costo no es
 convexa, así que cada corrida da un mapa distinto y hay que fijar la semilla. Es sensible a
 la perplejidad, y que la silueta de arriba apenas se mueva entre 30 y 50 no lo desmiente,
-porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: la
-implementación estándar no proyecta observaciones nuevas sin recalcular todo, y por eso UMAP
-lo reemplaza ahí. Y con perplejidad
-muy baja puede producir grupos nítidos a partir de datos sin estructura.
+porque esa mide clases ya conocidas. Tampoco es un modelo entrenado: no proyecta
+observaciones nuevas sin recalcular todo, y ahí lo reemplaza UMAP. Con perplejidad muy baja
+puede producir grupos nítidos a partir de ruido (Wattenberg et al., 2016).
 
 **Fuentes del Ejercicio 7.** Material de cátedra (Volpacchio, s.f.): *Preparation for
-Clustering*, *Assessing Clustering Results* y `TSNE_Perplejidad_Clustering_NoLineal`
-(clase 8). Van der Maaten y Hinton (2008) y van der Maaten (2014) para t-SNE; Ester et
-al. (1996) y Campello et al. (2013) para DBSCAN; McInnes et al. (2018) para UMAP. Código:
-A.6.
+Clustering*, *Assessing Clustering Results* y `TSNE_Perplejidad_Clustering_NoLineal`. Van
+der Maaten y Hinton (2008), van der Maaten (2014) y Wattenberg et al. (2016) para t-SNE;
+Ester et al. (1996) y Campello et al. (2013) para DBSCAN; McInnes et al. (2018). Código: A.6.
 
 \newpage
 
@@ -1495,16 +1498,16 @@ paralelo y sin mirarse.
 
 La presentación ubica a los dos dentro de los métodos de perturbar y combinar y, más específicamente,
 entre los algoritmos arcing (*adaptive resampling and combining*), en contraposición a
-bagging, que perturba mediante bootstrap. La etiqueta encaja con AdaBoost, que repondera de
+bagging, que perturba mediante bootstrap (remuestreo con reemplazo). La etiqueta encaja con AdaBoost, que repondera de
 manera adaptativa las observaciones en cada ronda, pero le queda grande a Gradient Boosting,
 que no repondera ni remuestrea nada: lo que cambia de ronda en ronda es el objetivo que se
-ajusta. La presentación los agrupa igual, y la diferencia aparece dos párrafos más abajo.
+ajusta. La presentación los agrupa igual, y la diferencia aparece en el párrafo siguiente.
 
 AdaBoost cambia la importancia de las
 observaciones y mantiene fijo el objetivo; Gradient Boosting cambia el objetivo y mantiene
 fija la importancia de las observaciones. Son dos maneras distintas de indicarle al siguiente
 modelo dónde están los errores del anterior. De ahí se desprende el resto: AdaBoost nació para
-clasificación y tiene una función de pérdida implícita, la exponencial $e^{-yF(x)}$, mientras
+clasificación y tiene una función de pérdida implícita, la exponencial $e^{-yF(x)}$ (Friedman et al., 2000), mientras
 que Gradient Boosting admite cualquier pérdida diferenciable y sirve igual para regresión;
 AdaBoost pondera cada hipótesis con un $\alpha_t$ que sale en forma cerrada y Gradient
 Boosting obtiene su coeficiente por minimización; y AdaBoost es más sensible a los valores
@@ -1513,8 +1516,8 @@ Gradient Boosting esa sensibilidad se regula con la elección de la pérdida.
 
 El pseudo-residuo es el objetivo nuevo de cada ronda: el gradiente de la pérdida respecto de la predicción, con el signo
 cambiado y evaluado en el modelo acumulado hasta esa ronda,
-$\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática se
-reduce al residuo común $y_i - F_{m-1}(x_i)$, y de ahí viene el nombre: es el residuo cuando
+$\tilde{y}_{im} = -[\partial L(y_i, F(x_i)) / \partial F(x_i)]$. Con pérdida cuadrática
+$L = \tfrac{1}{2}(y - F)^2$ se reduce al residuo común $y_i - F_{m-1}(x_i)$, y de ahí viene el nombre: es el residuo cuando
 la pérdida es la cuadrática y un sustituto del residuo cuando no lo es. El *shrinkage* es el
 factor $\nu$ que multiplica la contribución de cada modelo débil antes de sumarla al acumulado,
 para que cada corrección sea parcial.
@@ -1565,7 +1568,7 @@ ejemplo.
 
 Dos de las tres rondas no cierran: el error que produce exactamente 0,65 es
 `r f8(1 / (1 + exp(2 * 0.65)), 4)` y el que produce 0,92 es
-`r f8(1 / (1 + exp(2 * 0.92)), 3)`, de manera que lo más probable es que las cuentas
+`r f8(1 / (1 + exp(2 * 0.92)), 3)`, así que lo más probable es que las cuentas
 originales se hayan hecho con los errores sin redondear. La diferencia
 es de un centésimo y no cambia nada, pero queda constancia de que se verificó. El clasificador
 base, un único corte paralelo a un eje, es un *stump*, un árbol de un solo nivel, y alcanza.
@@ -1576,12 +1579,14 @@ con $h$ ya fijo, el $\beta$ óptimo se obtiene por minimización. Lo que se gana
 función de pérdida deja de estar cableada en el algoritmo y pasa a ser un parámetro que hay
 que elegir, entre mínimos cuadrados, mínima desviación absoluta, la de Huber (cuadrática
 cerca del cero y lineal en las colas, para que un atípico no domine el ajuste) o la
-log-verosimilitud multinomial negativa para clasificación en varias clases. El otro parámetro
+log-verosimilitud multinomial negativa, la pérdida de la regresión logística con varias
+clases. El otro parámetro
 es el *shrinkage*, que la presentación llama tasa de aprendizaje, y Friedman (2001) estimó que
 valores menores a 0,1 dan los menores errores de generalización. Visto así, AdaBoost es un
-caso particular y no un método aparte: es el Gradient Boosting cuya pérdida es la
-exponencial. Esa unificación la presentación no la hace explícita, pero es la que convierte la lista
-de diferencias en una jerarquía.
+caso particular del modelado aditivo por etapas: el que minimiza la pérdida exponencial
+(Friedman et al., 2000). Con esa pérdida el gradiente en cada observación es proporcional a
+$y_i e^{-y_i F(x_i)}$, y $e^{-y_i F(x_i)}$ es justamente su peso en AdaBoost. La presentación no
+hace explícita esa unificación, que convierte la lista de diferencias en una jerarquía.
 
 ## Cómo trabaja Gradient Boosting
 
@@ -1591,13 +1596,13 @@ aproximación gruesa que en el caso más simple consiste en predecir para todos 
 $y$, y la pelota queda a cierta distancia. El golfista no vuelve al punto de partida: golpea
 desde donde quedó la pelota y calcula el nuevo golpe según cuánto le falta. Ese segundo
 golpe corrige el error del primero, el tercero corrige lo que quedó del segundo, y así
-sucesivamente, de manera que $F_m(x) = F_{m-1}(x) + \nu\, \beta_m h_m(x)$, donde $\nu$
+sucesivamente: $F_m(x) = F_{m-1}(x) + \nu\, \beta_m h_m(x)$, donde $\nu$
 contrae el paso óptimo $\beta_m$ de la fórmula de arriba. Cada modelo débil no intenta
 predecir $y$ sino la distancia que falta, y esa distancia es el pseudo-residuo. El ejemplo
 numérico son los alquileres de cinco departamentos, donde el golpe inicial es la media, 1418, y a partir de
 ahí cada modelo se entrena sobre el vector de residuos que dejó el anterior.
 
-El nombre del método viene de que el gradiente de la pérdida cuadrática respecto de la
+El nombre del método viene de que el gradiente de la pérdida cuadrática $\tfrac{1}{2}(y-F)^2$ respecto de la
 predicción es $\partial L / \partial F = -(y - F)$, con lo cual el vector de residuos es el
 gradiente negativo y no el gradiente.
 
@@ -1632,7 +1637,8 @@ combinar, arcing, ponderación $\alpha_t$ y ejemplo numérico de las tres rondas
 `Gradient boosting explicado` 1 a 3 (clase 6: modelado aditivo, analogía del golfista, ejemplo
 de los alquileres, vector de signos y la demostración de que el gradiente de la pérdida
 cuadrática es el vector residual). Freund y Schapire (1997) para la formulación original de
-AdaBoost, Friedman (2001) para Gradient Boosting y la recomendación sobre la tasa de
+AdaBoost, Friedman et al. (2000) para su lectura como modelado aditivo con pérdida
+exponencial, Friedman (2001) para Gradient Boosting y la recomendación sobre la tasa de
 aprendizaje, y Chen y Guestrin (2016) para las implementaciones actuales. El recálculo de
 los $\alpha_t$ es propio.
 
@@ -1647,11 +1653,11 @@ ensamblaje. Describa los principales usos del algoritmo.*
 
 Cada árbol de un Random Forest se entrena sobre una muestra bootstrap: de las $N$ filas de
 entrenamiento se sortean $N$ casos al azar con reemplazo. Sobre esa muestra el árbol crece con
-subespacio aleatorio de variables (Ho, 1995), es decir que de las $M$ disponibles se fija un número
+sorteo de variables en cada nodo, versión por nodo del subespacio aleatorio que Ho (1995)
+sorteaba una vez por árbol: de las $M$ disponibles se fija un número
 $m \ll M$ tal que en cada nodo se sortean $m$ y se divide por la mejor de ellas, con $m$
 constante durante todo el crecimiento del bosque. Y crece sin poda: cada árbol se desarrolla
-lo más posible y, con el tamaño mínimo de hoja en uno, cada registro termina en su propio
-nodo final.
+lo más posible, hasta que cada hoja es pura o tiene un solo caso.
 
 Para predecir se evalúa la observación en cada árbol y se agregan las salidas, pero la forma
 de agregar depende de la tarea. En clasificación cada árbol vota y gana la clase más votada;
@@ -1684,8 +1690,8 @@ estimación del error OOB. La consecuencia práctica es que no hace falta un con
 separado, con lo cual toda la muestra se usa para entrenar. El documento va más lejos y llama
 insesgada a esa estimación, y ahí corresponde frenar: una serie de pruebas empíricas no
 demuestra insesgadez. Janitza y Hornung (2018) encuentran que el error OOB puede sobrestimar
-el error real, y que la sobrestimación es mayor justo donde no se la esperaría: con clases
-balanceadas, pocas observaciones y muchas variables.
+el error real y que, en clasificación binaria con predictores métricos, la sobrestimación es
+mayor con clases balanceadas, pocas observaciones, muchas variables y efectos débiles.
 
 De la construcción se desprenden otras dos herramientas. La importancia de variables se mide
 de dos maneras. Por permutación, se cuentan los votos a la clase correcta sobre las filas
@@ -1697,9 +1703,9 @@ una clase al azar según la distribución del propio nodo, se acumula la caída 
 corte; esa caída corresponde al promedio ponderado por el tamaño de los nodos hijos, lo cual
 no es un detalle, porque un hijo individual puede quedar más impuro que el padre y lo que
 nunca sube es el promedio. El documento considera las dos medidas muy consistentes entre sí,
-aunque Strobl et al. (2007) le encontraron a la de Gini un sesgo a favor de las variables con
-más categorías, con dos fuentes: la selección sesgada dentro de cada árbol y el muestreo con
-reemplazo. Cuando las dos medidas discrepan conviene la de permutación.
+aunque Strobl et al. (2007) mostraron que las dos favorecen a las variables con más
+categorías o más puntos de corte, por la selección sesgada dentro de cada árbol y por el
+muestreo con reemplazo; la corrección que proponen es submuestrear sin reemplazo.
 
 La otra herramienta es la matriz de proximidad, de tamaño $N \times N$, donde la proximidad entre dos filas
 aumenta cada vez que caen en el mismo nodo terminal; como $1 - \mathrm{prox}$ son distancias
@@ -1717,7 +1723,7 @@ existe una variable muy predictiva, todos los árboles la eligen para la primera
 terminan pareciéndose mucho entre sí, y como el beneficio de promediar depende de que los
 componentes estén poco correlacionados, esa similitud limita la mejora.
 
-Frente a boosting, que se desarrolla en el Ejercicio 8, Boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
+Frente a boosting, que se desarrolla en el Ejercicio 8, la primera diferencia es que boosting es intrínsecamente secuencial, porque cada modelo depende del anterior, mientras
 que los árboles de un bosque son independientes y se construyen en paralelo. También difieren
 en qué componente del error ataca cada familia: Random Forest parte de árboles profundos, de bajo
 sesgo y alta varianza, y los promedia, con lo cual ataca la varianza, mientras que boosting
@@ -1729,7 +1735,7 @@ no por la componente del error, porque boosting también recorta varianza al agr
 que lo distingue es que baja el sesgo.
 
 Y difieren en el comportamiento frente al sobreajuste:
-Breiman afirma que los Random Forest no se sobreajustan y que se pueden correr tantos árboles
+Breiman (2001) afirma que los Random Forest no se sobreajustan y que se pueden correr tantos árboles
 como se desee, lo cual vale para el número de árboles pero no para la capacidad del modelo,
 porque con etiquetas ruidosas o con hojas de un solo caso un bosque sobreajusta como cualquier
 otro. De ahí la diferencia más relevante en la práctica: la cantidad de árboles es acá un
@@ -1744,7 +1750,7 @@ hipótesis verdadera puede no pertenecer al espacio de un modelo único y la com
 interpola entre las halladas.
 
 La misma presentación remarca lo que delimita cuándo conviene: el factor
-clave es la inestabilidad del clasificador base, de manera que los árboles sin podar mejoran
+clave es la inestabilidad del clasificador base, por lo que los árboles sin podar mejoran
 mucho al ser perturbados y combinados, mientras que k vecinos más cercanos es estable y no
 mejora con bagging. Quedan dos parientes cercanos fuera de esa comparación. Los extra-trees (Geurts et
 al., 2006) sortean además el punto de corte en lugar de buscar el mejor, con lo cual bajan
@@ -1755,14 +1761,15 @@ combinarlos con pesos ajustados, mientras que acá se combinan copias del mismo 
 
 ## Principales usos
 
-Breiman y Cutler enumeran los usos en una lista larga y plana. Acá se reordenan según de dónde
+El documento de cátedra enumera los usos en una lista larga y plana, y los ilustra con
+descubrimiento de fármacos, imágenes satelitales y ADN. Acá se reordenan según de dónde
 sale cada uno, porque agrupados así se entiende por qué existen: casi ninguno es una función
 que alguien le agregó al algoritmo, sino un subproducto de cómo está construido. El uso
 principal es la predicción sobre datos tabulares, clasificación o regresión indistintamente;
-de las tres virtudes que reivindica el documento, escrito en 2001, dos siguen intactas, porque
+de las tres virtudes que reivindica el documento, dos siguen intactas, porque
 corre eficiente en bases grandes y tolera miles de variables sin preselección, mientras que la
-tercera, la de una precisión excelente entre los algoritmos disponibles, hay que leerla con la
-fecha puesta.
+tercera, la de una precisión excelente entre los algoritmos disponibles, es un juicio
+anterior a XGBoost.
 
 Del primer subproducto, la muestra *out-of-bag*, sale la estimación del error
 sin reservar datos, que es lo que vuelve barato buscar $m$. Del segundo, la importancia de
@@ -1779,7 +1786,7 @@ entre variables y clase mediante la mediana y los cuartiles de los vecinos más 
 cada clase. Queda fuera del esquema el manejo de clases desbalanceadas, que no es un
 subproducto sino un agregado posterior por ponderación del error.
 
-Hay algo que el documento no menciona y que conviene decir. Frente a un árbol único la mejora
+Hay algo que el documento no menciona. Frente a un árbol único la mejora
 en varianza es grande, pero se pierde la lectura del modelo: un bosque de quinientos árboles
 no se lee como una lista de reglas, y lo que queda es la importancia de variables, que indica
 cuáles pesan pero no en qué dirección ni con qué interacción. Cuando hay que justificar cada
@@ -1787,14 +1794,14 @@ decisión una por una, un árbol podado o una regresión logística son todavía
 respuestas.
 
 **Fuentes del Ejercicio 9.** Material de cátedra (Volpacchio, s.f.), clase 6: documento
-`randon forest explicado.pdf`, traducción de Breiman y Cutler (crecimiento del árbol,
+`randon forest explicado.docx`, traducción de Breiman y Cutler (crecimiento del árbol,
 correlación y fuerza, rol de $m$, error *out-of-bag*, importancia, proximidad y prototipos),
 y presentación `Ensemble Methods Universidad Austral` (razones para
 ensamblar, perturbar y combinar, e inestabilidad del clasificador base). Breiman (1996) para
 bagging y Breiman (2001) para la cota de correlación y fuerza; Ho (1995) para el subespacio
-aleatorio y Geurts et al. (2006) para los extra-trees; Janitza y Hornung (2018) para la
-sobrestimación del error *out-of-bag* y Strobl et al. (2007) para el sesgo de la importancia
-de Gini, los dos reparos que el documento de cátedra no hace.
+aleatorio por árbol y Geurts et al. (2006) para los extra-trees; Janitza y Hornung (2018) para la
+sobrestimación del error *out-of-bag* y Strobl et al. (2007) para el sesgo de las medidas de
+importancia, los dos reparos que el documento de cátedra no hace.
 
 \newpage
 
@@ -1817,8 +1824,7 @@ cross-validation.*
 *Finalmente, presente una comparación clara del rendimiento de cada modelo en cada
 tarea.*
 
-Se resuelve la Opción 1. Sus cuatro modelos son los de la
-materia y se discuten con la notación de clase.
+Se resuelve la Opción 1.
 
 ```{r e10-load, include=FALSE}
 e10_dir <- "codigo/resultados/e10/"
@@ -1875,7 +1881,7 @@ borde_ext <- borde[borde$borde_extensible == "True", ]
   `r f10(tsvr$segundos_por_fit[1], 1)` s por ajuste con la submuestra de
   `r n10(tsvr$filas_submuestra[1])` filas
   (`r n10(n_bloque(tsvr$filas_submuestra[1] * (1 - e10_m$test_size)))` por ajuste dentro
-  de la CV) y `r f10(tsvr$segundos_por_fit[2], 1)` s con `r n10(tsvr$filas_submuestra[2])`.
+  de la validación cruzada, CV) y `r f10(tsvr$segundos_por_fit[2], 1)` s con `r n10(tsvr$filas_submuestra[2])`.
 
 Un hiperparámetro es un valor que se fija antes del entrenamiento (la penalización $C$
 de SVM, la cantidad de árboles), a diferencia de los pesos que el algoritmo aprende. Para
@@ -1888,12 +1894,12 @@ cinco bloques, cada configuración se ajusta cinco veces y en cada vuelta se eva
 el bloque excluido (estratificado en clasificación). La configuración ganadora se
 reentrena con todo el entrenamiento y se mide una sola vez en el *hold-out*.
 
-Una primera corrida informaba el promedio de validación cruzada que había servido para
-elegir la configuración: es optimista, porque la ganadora es en parte la que tuvo
+Una primera corrida informaba solo el promedio de validación cruzada que había servido
+para elegir la configuración, que es optimista: la ganadora es en parte la que tuvo
 suerte con los bloques, y ese sesgo puede ser del orden de las diferencias entre
-algoritmos (Cawley & Talbot, 2010). Por eso se informan la media y el desvío estándar
-(DE) de los cinco bloques y, aparte, el puntaje en *hold-out*. Semilla:
-`r e10_m$seed`.
+algoritmos (Cawley & Talbot, 2010). Ese promedio se mantiene, con el desvío estándar (DE)
+de los cinco bloques, pero la estimación libre de ese sesgo es el puntaje en *hold-out*.
+Semilla: `r e10_m$seed`.
 
 ### Preprocesamiento y métricas
 
@@ -1906,7 +1912,8 @@ gradiente converge mal con variables de magnitudes dispares. En los árboles se 
 y sin escalador y el F1 fue idéntico (Random Forest
 `r f10(esc[["Random Forest"]]$sin_escalador, 4)`, Gradient Boosting
 `r f10(esc[["Gradient Boosting"]]$sin_escalador, 4)` en ambos casos): un corte por umbral
-no cambia ante una transformación monótona. Se lo dejó fuera.
+no cambia ante una transformación monótona. Se lo dejó fuera. Ningún conjunto tiene
+faltantes ni variables categóricas, así que no se imputa ni se codifica.
 
 En el MLP de clasificación se desactivó la parada temprana (*early stopping*, que corta
 el entrenamiento cuando deja de mejorar el error sobre una fracción interna de
@@ -1923,7 +1930,7 @@ para acotar el tiempo.
 
 La clase positiva es maligno (scikit-learn la codifica como 0; se recodificó). Se elige
 por el F1 de esa clase: la media armónica entre la precisión (fracción de verdaderos
-malignos entre los predichos como malignos) y la exhaustividad (fracción de los malignos
+malignos entre los predichos como malignos) y la sensibilidad (fracción de los malignos
 reales que se detectan). Una primera corrida usaba el F1 ponderado con el argumento del
 desbalance, y el argumento era erróneo: ese promedio pesa cada clase por su tamaño y
 favorece a la benigna, la mayoritaria, cuando el error costoso es un maligno no
@@ -1937,7 +1944,7 @@ en unidades de la respuesta, y se informa el $R^2$, la fracción de varianza exp
 La búsqueda es `RandomizedSearchCV`, que evalúa una muestra aleatoria de la grilla en
 lugar de todas sus combinaciones (lo que hace `GridSearchCV`): con el mismo presupuesto
 prueba más valores distintos de cada hiperparámetro (Bergstra & Bengio, 2012). Se
-evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
+evaluaron hasta `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
 `r e10_m$n_iter` o menos, la búsqueda la recorrió completa, como un `GridSearchCV`
 (`r paste(cubre$modelo, ifelse(cubre$tarea == "clasificacion", "en clasificación", "en regresión"), collapse = ", ")`).
 
@@ -1945,8 +1952,8 @@ evaluaron `r e10_m$n_iter` combinaciones por modelo; cuando la grilla tenía
 
 La Tabla \ref{tab:e10-grilla} muestra el espacio de cada modelo en cada tarea. Las
 grillas son logarítmicas en los parámetros de escala, como recomiendan Hsu et al. (2003)
-para SVM. En SVM, $C$ es el costo por violar el margen y $\gamma$ es el inverso del ancho
-del kernel RBF: con la dispersión $\sigma$ del Ejercicio 2,
+para SVM. En SVM, $C$ es el costo por violar el margen y $\gamma$ regula el alcance del
+kernel RBF: con la dispersión $\sigma$ del Ejercicio 2,
 $\gamma = 1/(2\sigma^2)$, y un $\gamma$ grande da una frontera muy local; en regresión se
 suma $\varepsilon$, el radio del tubo de insensibilidad (Volpacchio, s.f.). En Random
 Forest se fijaron `r fijo10("clasificacion", "Random Forest", "n_estimators")` árboles,
@@ -2070,17 +2077,20 @@ En clasificación la media más alta de validación cruzada es la de `r c_ord$mo
 informal, los cuatro modelos no se distinguen. En *hold-out* difieren en entre
 `r min(e10_c$test_fn)` y `r max(e10_c$test_fn)` malignos no detectados sobre
 `r pc$malignos_test` (`r if (sum(e10_c$test_fp) == 0) "ningún modelo produjo falsos positivos" else paste(sum(e10_c$test_fp), "falsos positivos en total")`), y cada
-uno resta `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
+uno resta unos `r f10(f1fn(1) - f1fn(2))` de F1, del orden del DE entre
 bloques. El empate es del conjunto antes que de los modelos: en el entrenamiento escalado
 las clases son linealmente separables (un SVM lineal de margen duro acierta el
 `r round(100 * e5m$acierto_entrenamiento_svm_lineal_margen_duro)`\thinspace{}% de los
-casos; Ejercicio 5), y ahí los cuatro llegan al mismo techo. SVM eligió
+casos; Ejercicio 5), y a los cuatro les sobra capacidad para esa frontera (inferencia
+propia). SVM eligió
 $\gamma = `r m10(sel10("clasificacion", "SVM", "gamma"))`$, es decir
 $\sigma = 1/\sqrt{2\gamma} \approx$ `r f10(1 / sqrt(2 * g_svm), 1)`, del orden de la
 distancia típica entre dos casos estandarizados ($\sqrt{2p} \approx$
 `r f10(sqrt(2 * bc$p), 1)`): un kernel ancho a esa escala (inferencia propia). Gradient
 Boosting eligió profundidad
-`r sel10("clasificacion", "Gradient Boosting", "max_depth")`: cada árbol usa una
+`r sel10("clasificacion", "Gradient Boosting", "max_depth")` y $\nu$ =
+`r sel10("clasificacion", "Gradient Boosting", "learning_rate")`, por encima del 0,1 que el
+Ejercicio 8 toma de Friedman (2001): cada árbol usa una
 variable, así que el modelo es una suma de efectos por variable, sin interacciones.
 
 ```{r e10-fig, out.width="52%", fig.cap="Métrica principal por modelo: media ± DE de la CV interna y puntaje en hold-out."}
@@ -2101,7 +2111,7 @@ superan a SVM y al MLP en las dos particiones, como los árboles frente a las re
 Grinsztajn et al. (2022), que no incluyen SVM. Una explicación posible (inferencia
 propia) es que
 el valor cambia en forma brusca con la ubicación (latitud y longitud son predictores),
-algo que un árbol capta con pocos cortes y que el kernel RBF y el MLP, funciones suaves,
+algo que un árbol capta con pocos cortes y que el kernel RBF y el MLP con ReLU, funciones continuas,
 aproximan peor. Que Gradient Boosting supere a Random Forest es coherente con su
 mecanismo: cada etapa corrige los pseudo-residuos de las anteriores y reduce el sesgo;
 el promedio del bosque reduce sobre todo la varianza.
@@ -2110,8 +2120,7 @@ La brecha entre validación cruzada y *hold-out* no tiene un signo único. En SV
 árboles el RMSE de test es menor: el modelo final se reentrena con `r n10(pr$train)`
 filas y no con `r n10(n_bloque(pr$train))`, y el *hold-out* es una sola partición. El MLP
 empeora de `r f10(e10_r["MLP", "cv_media"])` a `r f10(e10_r["MLP", "test"])`; se
-conjetura, sin verificarlo, que una red con una sola inicialización es más inestable que
-un promedio de árboles.
+conjetura que una red con una sola inicialización es más inestable que un bosque.
 
 La primera corrida dejaba $C$ y $\varepsilon$ del SVR en el máximo de su grilla; tras
 ampliar las grillas quedan `r nrow(borde)` valores en un borde. De ellos,
@@ -2121,25 +2130,22 @@ tareas (árboles completos, como en Breiman, 2001), y profundidad
 `r sel10("clasificacion", "Gradient Boosting", "max_depth")` en Gradient Boosting de
 clasificación. El restante es una limitación: Gradient Boosting de regresión eligió
 `r borde_ext$valor[1]` etapas, el máximo, con
-$\nu = `r m10(sel10("regresion", "Gradient Boosting", "learning_rate"))`$ (con una tasa
-chica hacen falta más etapas); más etapas podrían bajar algo el RMSE, pero esa búsqueda ya es
-la más costosa (`r round(e10_r["Gradient Boosting", "segundos"])` s de
-`r round(e10_m$segundos_total)` s) y su costo crece con las etapas.
+$\nu = `r m10(sel10("regresion", "Gradient Boosting", "learning_rate"))`$; más etapas
+podrían bajar algo el RMSE, pero esa búsqueda ya es la más costosa
+(`r round(e10_r["Gradient Boosting", "segundos"])` s de `r round(e10_m$segundos_total)` s).
 
 **Fuentes del Ejercicio 10.** Material de cátedra (Volpacchio, s.f.): presentaciones de SVM
-y de ensambles y apunte de redes. Wolberg et al. (1993) y Pace y Barry (1997) para los
-datos; Bergstra y Bengio (2012) para la búsqueda aleatoria; Hsu et al. (2003) para las
-grillas logarítmicas; Cawley y Talbot (2010) para el sesgo de selección; Breiman (2001)
-para el número de árboles; Grinsztajn et al. (2022) para la comparación entre árboles y
-redes. Código propio: Apéndice A.7.
+y de ensambles y apunte de redes. Datos: Wolberg et al. (1993); Pace y Barry (1997).
+Método: Bergstra y Bengio (2012), Hsu et al. (2003), Cawley y Talbot (2010), Breiman
+(2001), Friedman (2001) y Grinsztajn et al. (2022). Código propio: Apéndice A.7.
 
 \newpage
 
 # Apéndice · Código
 
 El código se desarrolló y ejecutó fuera del `.Rmd`. Se incluyen los scripts de los
-Ejercicios 1 (LSTM y figuras), 4, 6, 7 y 10, completos y en letra chica; no forman parte del
-desarrollo de cada ejercicio.
+Ejercicios 1 (LSTM y figuras), 4, 5, 6, 7 y 10, completos y en letra chica; no forman parte
+del desarrollo de cada ejercicio, salvo el mapa t-SNE de A.6, que complementa al Ejercicio 7.
 
 \footnotesize
 
@@ -2166,8 +2172,9 @@ cat(readLines("codigo/e4_ag/ag_rastrigin.py"), sep = "\n")
 
 ## A.4 Alineamiento kernel-objetivo sobre Breast Cancer (Ejercicio 5)
 
-Produce `codigo/resultados/e5/alineamiento.csv`: el alineamiento de cada kernel
-candidato sobre la partición de entrenamiento del Ejercicio 10.
+Produce `codigo/resultados/e5/alineamiento.csv` (alineamiento sin centrar y centrado de cada
+kernel candidato) y `meta.json` (la $\gamma$ de la CV del Ejercicio 10 y el SVM lineal de
+margen duro), sobre la partición de entrenamiento del Ejercicio 10.
 
 ```{r e5-code, echo=FALSE, comment=NA}
 cat(readLines("codigo/e5_kernels/alineamiento_kernel.py"), sep = "\n")
@@ -2290,6 +2297,10 @@ learning and an application to boosting. *Journal of Computer and System Science
 
 Friedman, J. H. (2001). Greedy function approximation: A gradient boosting machine.
 *The Annals of Statistics, 29*(5), 1189-1232. https://doi.org/10.1214/aos/1013203451
+
+Friedman, J., Hastie, T., & Tibshirani, R. (2000). Additive logistic regression: A
+statistical view of boosting. *The Annals of Statistics, 28*(2), 337-407.
+https://doi.org/10.1214/aos/1016218223
 
 Gers, F. A., Schmidhuber, J., & Cummins, F. (2000). Learning to forget: Continual
 prediction with LSTM. *Neural Computation, 12*(10), 2451-2471.
@@ -2430,6 +2441,9 @@ Information Processing Systems, 30*, 5998-6008.
 Volpacchio, M. (s.f.). *Data Mining Avanzado: presentaciones, apuntes y notebooks de
 clase* [Material de cátedra]. Universidad Austral, Maestría en Explotación de Datos y
 Gestión del Conocimiento.
+
+Wattenberg, M., Viégas, F., & Johnson, I. (2016). How to use t-SNE effectively.
+*Distill, 1*(10). https://doi.org/10.23915/distill.00002
 
 Wolberg, W., Mangasarian, O., Street, N., & Street, W. (1993). *Breast Cancer
 Wisconsin (Diagnostic)* [Conjunto de datos]. UCI Machine Learning Repository.
