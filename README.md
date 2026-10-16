@@ -81,8 +81,8 @@ falla, así que se puede encadenar:
 
 Las excepciones al límite de hojas viven en `HOJAS_EXCEPCION`, arriba del
 script, con el motivo escrito. Se muestran en cada corrida a propósito: una
-excepción que no se ve se vuelve un incumplimiento olvidado. Hoy hay una, el
-Ejercicio 1 en 5 hojas.
+excepción que no se ve se vuelve un incumplimiento olvidado. Hoy no hay ninguna:
+los diez ejercicios entran en 4 hojas.
 
 Sin PyMuPDF el script igual corre: avisa y saltea los tres controles de maqueta.
 

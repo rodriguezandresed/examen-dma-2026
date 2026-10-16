@@ -1054,14 +1054,10 @@ contra las cuales validar: el kernel se ajusta por el error de reconstrucción d
 pre-imagen aproximada o por el desempeño de la tarea posterior que usa las componentes.
 
 **Fuentes del Ejercicio 5.** Material de cátedra (Volpacchio, s.f.):
-`Preparation for Clustering.pdf` (PCA como visualización previa al clustering) y
-presentación `SVM Universidad Austral.pdf` (espacio de características, truco del
-kernel y kernels lineal, polinómico, RBF y sigmoide); apunte de taxonomía de la clase 4 y
-`t_sne.pdf`, que solo nombran Kernel PCA. Kernel PCA y la selección
-sistemática de kernel se desarrollan con bibliografía externa: Schölkopf et al. (1998) para Kernel PCA;
-Hsu et al. (2003) para la regla de dimensiones y la grilla exponencial; Cristianini et al.
-(2002) y Cortes et al. (2012) para el alineamiento, sin centrar y centrado; Gönen y
-Alpaydın (2011) para el aprendizaje de múltiples kernels; Wolberg et al. (1993) para los
+`Preparation for Clustering.pdf` (PCA para visualizar), `SVM Universidad Austral.pdf`
+(truco del kernel y kernels más usados), apunte de taxonomía y `t_sne.pdf` (solo nombran
+Kernel PCA). Externas: Schölkopf et al. (1998); Hsu et al. (2003); Cristianini et al.
+(2002) y Cortes et al. (2012); Gönen y Alpaydın (2011); Wolberg et al. (1993) para los
 datos. Código propio: Apéndice A.4.
 
 \newpage

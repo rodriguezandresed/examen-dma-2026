@@ -44,12 +44,9 @@ RENGLONES_BAJO_TITULO = 2
 # para que cada corrida las vuelva a mostrar: una excepcion que no se ve se
 # convierte en un incumplimiento olvidado. Si el grupo cambia de criterio, se
 # saca la entrada y el control pasa a fallar.
-HOJAS_EXCEPCION = {
-    "1": (5, "ocho incisos, mas del doble que cualquier otro ejercicio, y "
-              "ninguno pasa de 2 hojas. Completar las clausulas de 1.I, 1.VI, "
-              "1.VII y 1.VIII costo la quinta hoja; volver a 4 son 17 "
-              "renglones menos de respuesta. Decision del grupo, PR #8"),
-}
+# El Ejercicio 1 estuvo registrado en 5 hojas; se volvio a 4 sin perder clausulas,
+# asi que hoy no hay excepciones.
+HOJAS_EXCEPCION = {}
 
 CM = 72 / 2.54  # puntos por centimetro
 
@@ -135,7 +132,7 @@ def controles_rmd():
     ruido = {"Nota", "Tabla", "Figura", "Apendice", "Codigo", "El", "La", "Los",
              "En", "Con", "Para", "De", "Se", "Un", "Una", "Volpacchio", "CONV",
              "DEAP", "SVM", "PCA", "RBF", "SOM", "ARI", "MANOVA", "ANOVA",
-             "CANDISC", "Software", "Conjunto", "Opcion"}
+             "CANDISC", "Software", "Conjunto", "Opcion", "VC"}
     sin_entrada = sorted(c for c in citas if c not in conocidos and c not in ruido)
     if sin_entrada:
         mal("citas sin entrada en Referencias", ", ".join(sin_entrada))
