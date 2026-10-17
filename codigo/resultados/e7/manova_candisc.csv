@@ -1,0 +1,16 @@
+metrica,valor
+wilks_lambda,0.0034
+chi2_bartlett,10180
+gl,45
+sep_canonica_2ejes,0.617
+var_pca_2comp,0.522
+estructura_pc1_eje1,-0.85
+estructura_pc1_eje2,-0.43
+estructura_pc2_eje1,-0.37
+estructura_pc2_eje2,0.57
+estructura_pc3_eje1,-0.10
+estructura_pc3_eje2,0.59
+estructura_pc4_eje1,-0.02
+estructura_pc4_eje2,-0.02
+estructura_pc5_eje1,-0.07
+estructura_pc5_eje2,0.05

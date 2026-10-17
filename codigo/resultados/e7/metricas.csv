@@ -9,6 +9,10 @@ sil_p50,0.47897347807884216
 kdist_q10,2.806264494127706
 kdist_q50,3.7699601074062263
 kdist_q90,5.18160747714014
+kdist_dig_min,2.9908857822603174
+kdist_dig_min_d,0
+kdist_dig_max,4.224102432821846
+kdist_dig_max_d,5
 db_eps,3.5
 db_clusters,10
 db_ruido,713
@@ -18,4 +22,5 @@ ari_kmeans_pca,0.4763985075393763
 ari_kmeans_emb,0.8448846812475733
 ruido_eps_min,1765
 ruido_eps_max,4
-rf_oob,0.915
+orden_perm_igual,1
+rf_oob,0.916

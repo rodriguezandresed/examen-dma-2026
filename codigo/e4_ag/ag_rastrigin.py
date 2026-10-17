@@ -114,6 +114,10 @@ def correr(nombre, tb, semilla):
         "x1": x[0],
         "x2": x[1],
         "gen_umbral": int(llego[0]) if len(llego) else None,
+        # eaSimple solo evalua a los individuos que el cruce o la mutacion tocaron,
+        # asi que POP * (NGEN + 1) es un tope, no lo que se gasto.
+        "evaluaciones": int(sum(log.select("nevals"))),
+        "cromosoma": "".join(str(b) for b in mejor) if nombre == "binario" else "",
     }
 
 
@@ -140,25 +144,52 @@ def resumen(nombre):
                          | (d.x2.abs() - 1).abs().lt(0.1)).sum()),
     }
 
-# Por qué las binarias fallidas no salen de x = 1: el entero que codifica x = 1 y los dos
-# enteros que rodean a x = 0 difieren en muchos bits. Con indpb = 1/32 por bit, cambiar
-# varios bits justos en la misma mutación es casi imposible (precipicio de Hamming).
-def entero(x):
-    return round((x + LIM) * (2**BITS - 1) / (2 * LIM))
+# Por que las binarias fallidas no salen del valle vecino. La primera version de este
+# calculo comparaba el entero de x = 1 con los de x = 0 (6 bits), pero los cromosomas
+# clavados no estan exactamente en ese entero. Se mide sobre los cromosomas reales:
+# la menor cantidad de bits que hay que invertir A LA VEZ para bajar f, y cuantas
+# combinaciones de ese tamano lo logran.
+from itertools import combinations
 
 
-k1 = entero(1.0)
-centro = LIM * (2**BITS - 1) / (2 * LIM)  # x = 0 cae entre dos enteros
-cero = [int(np.floor(centro)), int(np.ceil(centro))]
-hamming_1_0 = min(bin(k1 ^ k0).count("1") for k0 in cero)
+def salida(crom):
+    bits = [int(c) for c in crom]
+    f0 = rastrigin(decodificar(bits))
+    for k in range(1, 5):
+        n_mejora = 0
+        for idx in combinations(range(len(bits)), k):
+            b = bits[:]
+            for i in idx:
+                b[i] = 1 - b[i]
+            if rastrigin(decodificar(b)) < f0:
+                n_mejora += 1
+        if n_mejora:
+            return k, n_mejora
+    return None, 0
+
+
+d_bin = corridas[corridas.codificacion == "binario"]
+clavadas = d_bin[~((d_bin.x1.abs() < 0.5) & (d_bin.x2.abs() < 0.5))]
+sal = [salida(c) for c in clavadas.cromosoma]
+k_min = int(np.median([k for k, _ in sal]))
+p_bit = 1.0 / (N_VAR * BITS)
+# probabilidad de que una mutacion acierte alguna de las combinaciones que mejoran,
+# tomando la corrida tipica (mediana de combinaciones utiles con k_min bits)
+n_utiles = float(np.median([n for k, n in sal if k == k_min]))
+p_salida = n_utiles * p_bit**k_min * (1 - p_bit)**(N_VAR * BITS - k_min)
 
 
 meta = {
     "seed": SEED, "n_semillas": len(SEMILLAS), "pop": POP, "ngen": NGEN,
     "cxpb": CXPB, "mutpb": MUTPB, "bits": BITS, "lim": LIM, "umbral": UMBRAL,
-    "paso_binario": 2 * LIM / (2**BITS - 1), "n_evals": POP * (NGEN + 1),
+    "paso_binario": 2 * LIM / (2**BITS - 1),
+    "evaluaciones_media": {c: float(corridas[corridas.codificacion == c].evaluaciones.mean())
+                           for c in ("binario", "real")},
     "binario": resumen("binario"), "real": resumen("real"),
-    "hamming_1_0": hamming_1_0, "p_mut_bit": 1.0 / (N_VAR * BITS),
+    "p_mut_bit": p_bit, "bits_salida": k_min,
+    "bits_salida_max": int(max(k for k, _ in sal)),
+    "mutaciones_por_salida": 1.0 / p_salida,
+    "mutaciones_por_corrida": POP * MUTPB * NGEN,
 }
 (OUT / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False))
 print(json.dumps(meta, indent=2, ensure_ascii=False))

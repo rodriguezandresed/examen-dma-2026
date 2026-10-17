@@ -9,7 +9,10 @@
   "lim": 5.12,
   "umbral": 0.01,
   "paso_binario": 0.00015625238422217137,
-  "n_evals": 5050,
+  "evaluaciones_media": {
+    "binario": 4253.65,
+    "real": 4248.15
+  },
   "binario": {
     "mediana_final": 0.5869600960307935,
     "n_umbral": 9,
@@ -24,6 +27,9 @@
     "n_cuenca": 15,
     "n_vecino": 5
   },
-  "hamming_1_0": 6,
-  "p_mut_bit": 0.03125
+  "p_mut_bit": 0.03125,
+  "bits_salida": 2,
+  "bits_salida_max": 4,
+  "mutaciones_por_salida": 2654.2907354673703,
+  "mutaciones_por_corrida": 1000.0
 }

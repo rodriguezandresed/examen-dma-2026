@@ -12,9 +12,15 @@ Conocimiento, Universidad Austral), desarrollado en R Markdown y compilado a PDF
   - `e1_lstm/lstm_serie.py`: LSTM del Ejercicio 1.VI (TensorFlow).
   - `e1_lstm/figuras.py`: diagramas de CNN y celda LSTM del Ejercicio 1.
   - `e4_ag/ag_rastrigin.py`: AG binario contra AG real con DEAP (Ejercicio 4).
+  - `e5_kernels/alineamiento_kernel.py`: alineamiento kernel-objetivo sobre la partición
+    de entrenamiento del Ejercicio 10 (Ejercicio 5).
   - `e6_supervivencia/supervivencia_rossi.py`: atajos de regresión contra Kaplan-Meier
     y Cox sobre los datos Rossi (Ejercicio 6).
+  - `e7_tsne/tsne_digits.py`: t-SNE, DBSCAN, k-means y perfilado de los grupos sobre los
+    dígitos de scikit-learn (Ejercicio 7).
   - `e10_pipeline/pipeline_opcion1.py`: pipeline comparativo del Ejercicio 10.
+  - `verificacion/revisar_entrega.py`: controles de la entrega sobre el `.Rmd` y
+    el PDF compilado (ver más abajo).
   - `resultados/`: CSV, JSON y PNG generados por esos scripts.
 - `Austral logo.png`: logo de la portada. Tiene que quedar en la misma carpeta que el
   `.Rmd`.
@@ -33,9 +39,15 @@ Desde la raíz del repo:
 .venv/bin/python codigo/e4_ag/ag_rastrigin.py
 .venv/bin/python codigo/e6_supervivencia/supervivencia_rossi.py
 
-# Ejercicio 10 (scikit-learn, pandas, matplotlib)
+# Ejercicios 5, 7 y 10 (scikit-learn, pandas, matplotlib)
+.venv/bin/python codigo/e5_kernels/alineamiento_kernel.py
+.venv/bin/python codigo/e7_tsne/tsne_digits.py
 .venv/bin/python codigo/e10_pipeline/pipeline_opcion1.py
 ```
+
+El Ejercicio 5 usa la misma semilla y la misma partición que el 10, a propósito: la
+comparación entre el alineamiento y la validación cruzada solo tiene sentido si los dos
+miran el mismo conjunto de entrenamiento.
 
 Los entornos `.venv` y `.venv-tf` no se versionan.
 
@@ -46,6 +58,33 @@ Knit a PDF (`xelatex`). Requiere `rmarkdown`, `knitr` y `kableExtra`:
 ```bash
 Rscript -e 'rmarkdown::render("examen-dma-2026.Rmd")'
 ```
+
+## Verificar la entrega
+
+Después de knitear, desde la raíz del repo:
+
+```bash
+python codigo/verificacion/revisar_entrega.py   # necesita: pip install pymupdf
+```
+
+Corre de una vez los controles que antes se medían a mano y devuelve 1 si algo
+falla, así que se puede encadenar:
+
+- **Sobre el PDF compilado**, que es donde se ven: hojas por pregunta contra el
+  límite de la consigna, distancia del último renglón al número de página
+  (mínimo 0,45 cm) y títulos que quedan colgados al pie sin su contenido.
+- **Sobre el `.Rmd`**: que haya un bloque `Fuentes del Ejercicio N` por
+  ejercicio, que la lista de Referencias no tenga huérfanas ni falte ninguna
+  cita (se comprueba en las dos direcciones) y las reglas de redacción del
+  `CLAUDE.md`: em dashes, muletillas, primera persona, `PENDIENTE`, el símbolo
+  de sección, los rótulos "Cuadro" y "Gráfico", y el punto decimal en prosa.
+
+Las excepciones al límite de hojas viven en `HOJAS_EXCEPCION`, arriba del
+script, con el motivo escrito. Se muestran en cada corrida a propósito: una
+excepción que no se ve se vuelve un incumplimiento olvidado. Hoy no hay ninguna:
+los diez ejercicios entran en 4 hojas.
+
+Sin PyMuPDF el script igual corre: avisa y saltea los tres controles de maqueta.
 
 ## Reglas de la consigna a tener en cuenta
 
